@@ -22,16 +22,23 @@
         <a class="logo" href="#top">
           <img src="assets/logo-gold.png" alt="Crispim &amp; Campos Advogados" />
         </a>
-        <nav class="site-nav">
+        <input class="nav-toggle" id="nav-toggle" type="checkbox" />
+        <label class="nav-toggle-label" for="nav-toggle" aria-label="Abrir menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </label>
+        <nav class="site-nav" aria-label="Navegacao principal">
           <a href="#sobre">Sobre</a>
+          <a href="#manifesto">Manifesto</a>
           <a href="#atuacao">Areas</a>
           <a href="#diferenciais">Diferenciais</a>
           <a href="#metodo">Metodo</a>
           <a href="#impacto">Impacto</a>
-          <a href="#equipe">Equipe</a>
+          <a href="#faq">FAQ</a>
           <a href="#contato">Contato</a>
         </nav>
-        <a class="btn btn-outline" href="#contato">Fale conosco</a>
+        <a class="btn btn-outline header-cta" href="#contato">Fale conosco</a>
       </div>
     </header>
 
@@ -77,17 +84,13 @@
             <div class="hero-card-list">
               <div>
                 <span class="label">Email</span>
-                <a href="mailto:leticiacrispim.adv@gmail.com">leticiacrispim.adv@gmail.com</a>
+                <a href="mailto:crispim.campos@advdf.com.br">crispim.campos@advdf.com.br</a>
               </div>
               <div>
-                <span class="label">WhatsApp</span>
-                <a
-                  href="https://api.whatsapp.com/send?phone=556199927375&text=Gostaria%20de%20um%20atendimento%20juridico"
-                  target="_blank"
-                  rel="noopener"
-                >
-                  +55 61 9992-7375
-                </a>
+                <span class="label">Telefone / WhatsApp</span>
+                <a href="https://api.whatsapp.com/send?phone=556199927375&text=Gostaria%20de%20um%20atendimento%20juridico" target="_blank" rel="noopener">+55 61 9992-7375</a>
+                <span> / </span>
+                <a href="https://api.whatsapp.com/send?phone=556198905988&text=Gostaria%20de%20um%20atendimento%20juridico" target="_blank" rel="noopener">+55 61 9890-5988</a>
               </div>
               <div>
                 <span class="label">Atendimento</span>
@@ -113,7 +116,20 @@
               papel e orientar com clareza, proteger o cliente e garantir que ele se
               sinta seguro para tomar decisoes importantes.
             </p>
-            <a class="btn btn-outline" href="#equipe">Conheca a equipe</a>
+            <div class="stat-strip">
+              <div class="stat-card">
+                <span class="stat-number">2024</span>
+                <span class="stat-label">Fundacao</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-number">DF</span>
+                <span class="stat-label">Base em Brasilia</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-number">Brasil</span>
+                <span class="stat-label">Atendimento digital</span>
+              </div>
+            </div>
           </div>
           <div class="about-card reveal" style="--delay: 0.2s">
             <img src="assets/icon-gold.png" alt="" />
@@ -131,7 +147,42 @@
         </div>
       </section>
 
-      <section class="section section-alt" id="publico">
+      <section class="section section-alt" id="manifesto">
+        <div class="container manifesto-grid">
+          <div class="manifesto-text reveal" style="--delay: 0.1s">
+            <p class="eyebrow">Manifesto</p>
+            <h2>Comunicar com clareza e cuidar com firmeza.</h2>
+            <p>
+              Nossa linguagem e acessivel, respeitosa e transparente. Evitamos
+              juridiquez, tom agressivo ou promessas vazias. O foco e orientar,
+              acolher e entregar estrategia com responsabilidade.
+            </p>
+            <p>
+              Atuamos com sensibilidade feminina, profissionalismo e postura etica
+              para fortalecer a confianca no sistema juridico.
+            </p>
+          </div>
+          <div class="tag-panel reveal" style="--delay: 0.2s">
+            <p class="eyebrow">Essencia da marca</p>
+            <div class="tag-list">
+              <span>Transparencia</span>
+              <span>Lealdade</span>
+              <span>Etica</span>
+              <span>Humanizacao</span>
+              <span>Acolhimento</span>
+              <span>Confianca</span>
+              <span>Clareza</span>
+              <span>Credibilidade</span>
+              <span>Empatia</span>
+              <span>Seguranca</span>
+              <span>Proximidade</span>
+              <span>Elegancia</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="publico">
         <div class="container">
           <div class="section-title reveal" style="--delay: 0.05s">
             <p class="eyebrow">Publico-alvo</p>
@@ -163,7 +214,7 @@
         </div>
       </section>
 
-      <section class="section" id="atuacao">
+      <section class="section section-alt" id="atuacao">
         <div class="container">
           <div class="section-title reveal" style="--delay: 0.05s">
             <p class="eyebrow">Areas de atuacao</p>
@@ -198,7 +249,7 @@
         </div>
       </section>
 
-      <section class="section section-alt" id="diferenciais">
+      <section class="section" id="diferenciais">
         <div class="container">
           <div class="section-title reveal" style="--delay: 0.05s">
             <p class="eyebrow">Diferenciais</p>
@@ -237,7 +288,7 @@
         </div>
       </section>
 
-      <section class="section" id="metodo">
+      <section class="section section-alt" id="metodo">
         <div class="container process-grid">
           <div class="process-text reveal" style="--delay: 0.1s">
             <p class="eyebrow">Nosso metodo</p>
@@ -324,6 +375,46 @@
         </div>
       </section>
 
+      <section class="section section-alt" id="faq">
+        <div class="container">
+          <div class="section-title reveal" style="--delay: 0.05s">
+            <p class="eyebrow">FAQ</p>
+            <h2>Perguntas frequentes sobre o atendimento.</h2>
+          </div>
+          <div class="faq-grid">
+            <details class="faq-item reveal" style="--delay: 0.1s">
+              <summary>Como funciona o atendimento inicial?</summary>
+              <p>
+                Iniciamos com uma conversa para entender sua situacao, documentos
+                e objetivos. A partir disso, indicamos os proximos passos de forma
+                clara e objetiva.
+              </p>
+            </details>
+            <details class="faq-item reveal" style="--delay: 0.15s">
+              <summary>O atendimento pode ser online?</summary>
+              <p>
+                Sim. Atendemos presencialmente em Brasilia/DF e online para todo
+                o Brasil, com reunioes virtuais e assinatura digital.
+              </p>
+            </details>
+            <details class="faq-item reveal" style="--delay: 0.2s">
+              <summary>Como envio documentos?</summary>
+              <p>
+                O envio pode ser feito por WhatsApp ou e-mail, com orientacao
+                sobre o formato necessario e organizacao dos arquivos.
+              </p>
+            </details>
+            <details class="faq-item reveal" style="--delay: 0.25s">
+              <summary>O escritorio acompanha o cliente ao longo do tempo?</summary>
+              <p>
+                Sim. Nosso foco e construir relacoes de longo prazo, com apoio
+                juridico continuo e comunicacao constante.
+              </p>
+            </details>
+          </div>
+        </div>
+      </section>
+
       <section class="section" id="equipe">
         <div class="container">
           <div class="section-title reveal" style="--delay: 0.05s">
@@ -335,14 +426,14 @@
               <div class="team-icon">
                 <img src="assets/icon-gold.png" alt="" />
               </div>
-              <h3>Lorraynny Mendon&ccedil;a Oleg&aacute;rio</h3>
+              <h3>Lorraynny Mendonca Olegario</h3>
               <p>Campos Cristalino - OAB/DF n. 74371</p>
             </article>
             <article class="team-card reveal" style="--delay: 0.15s">
               <div class="team-icon">
                 <img src="assets/icon-gold.png" alt="" />
               </div>
-              <h3>Let&iacute;cia Crispim Mello</h3>
+              <h3>Leticia Crispim Mello</h3>
               <p>OAB/DF n. 84089</p>
             </article>
           </div>
@@ -379,18 +470,12 @@
           <div class="contact-card reveal" style="--delay: 0.2s">
             <div>
               <span class="label">Email</span>
-              <a href="mailto:leticiacrispim.adv@gmail.com">leticiacrispim.adv@gmail.com</a>
-            </div>
-            <div>
-              <span class="label">Email institucional</span>
               <a href="mailto:crispim.campos@advdf.com.br">crispim.campos@advdf.com.br</a>
             </div>
             <div>
-              <span class="label">WhatsApp</span>
+              <span class="label">Telefone / WhatsApp</span>
               <a href="tel:+556199927375">+55 61 9992-7375</a>
-            </div>
-            <div>
-              <span class="label">Telefone</span>
+              <span> / </span>
               <a href="tel:+556198905988">+55 61 9890-5988</a>
             </div>
             <div>
@@ -411,5 +496,15 @@
         </p>
       </div>
     </footer>
+
+    <a
+      class="floating-cta"
+      href="https://api.whatsapp.com/send?phone=556199927375&text=Gostaria%20de%20um%20atendimento%20juridico"
+      target="_blank"
+      rel="noopener"
+      aria-label="WhatsApp"
+    >
+      WhatsApp
+    </a>
   </body>
 </html>
