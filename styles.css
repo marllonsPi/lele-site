@@ -674,7 +674,7 @@ a {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
 
-.contact-card {
+.contact-form-card {
   background: #fff;
   border-radius: var(--radius);
   padding: 30px;
@@ -684,8 +684,61 @@ a {
   border: 1px solid rgba(199, 160, 75, 0.2);
 }
 
-.contact-card .label {
+.contact-form-card .label {
   color: var(--muted);
+}
+
+.contact-form {
+  display: grid;
+  gap: 16px;
+}
+
+.form-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.form-field {
+  display: grid;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(16, 12, 8, 0.15);
+  font-family: "Sora", sans-serif;
+  color: var(--text);
+  background: #faf7f2;
+}
+
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus {
+  outline: 2px solid rgba(199, 160, 75, 0.35);
+  border-color: rgba(199, 160, 75, 0.5);
+}
+
+.form-field.full {
+  grid-column: 1 / -1;
+}
+
+.form-note {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.contact-details {
+  display: grid;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(16, 12, 8, 0.08);
 }
 
 .site-footer {
@@ -791,6 +844,10 @@ a {
   .btn-outline,
   .btn-ghost {
     width: 100%;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
   }
 
   .floating-cta {

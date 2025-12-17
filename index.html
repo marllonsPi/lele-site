@@ -461,26 +461,68 @@
         <div class="container contact-grid">
           <div class="contact-info reveal" style="--delay: 0.1s">
             <p class="eyebrow">Contato</p>
-            <h2>Vamos conversar sobre o seu caso.</h2>
+            <h2>Fale conosco para analisar o seu caso.</h2>
             <p>
               Atendimento por agendamento, com transparencia e objetividade.
               Atuamos presencialmente em Brasilia/DF e online para todo o Brasil.
             </p>
           </div>
-          <div class="contact-card reveal" style="--delay: 0.2s">
-            <div>
-              <span class="label">Email</span>
-              <a href="mailto:crispim.campos@advdf.com.br">crispim.campos@advdf.com.br</a>
-            </div>
-            <div>
-              <span class="label">Telefone / WhatsApp</span>
-              <a href="tel:+556199927375">+55 61 9992-7375</a>
-              <span> / </span>
-              <a href="tel:+556198905988">+55 61 9890-5988</a>
-            </div>
-            <div>
-              <span class="label">Localidade</span>
-              <span>Brasilia - DF</span>
+          <div class="contact-form-card reveal" style="--delay: 0.2s">
+            <form
+              class="contact-form"
+              action="mailto:crispim.campos@advdf.com.br?subject=Contato%20pelo%20site"
+              method="post"
+              enctype="text/plain"
+            >
+              <div class="form-grid">
+                <label class="form-field">
+                  <span>Nome completo</span>
+                  <input type="text" name="nome" placeholder="Seu nome" required />
+                </label>
+                <label class="form-field">
+                  <span>Email</span>
+                  <input type="email" name="email" placeholder="seu@email.com" required />
+                </label>
+                <label class="form-field">
+                  <span>Telefone / WhatsApp</span>
+                  <input type="tel" name="telefone" placeholder="(61) 99999-9999" />
+                </label>
+                <label class="form-field">
+                  <span>Area de interesse</span>
+                  <select name="area">
+                    <option value="Familia e Sucessoes">Familia e Sucessoes</option>
+                    <option value="Imobiliario">Imobiliario</option>
+                    <option value="Gestao Trabalhista Preventiva">Gestao Trabalhista Preventiva</option>
+                    <option value="Civel e Contratos">Civel e Contratos</option>
+                    <option value="Penal">Penal</option>
+                    <option value="Militar">Militar</option>
+                  </select>
+                </label>
+                <label class="form-field full">
+                  <span>Mensagem</span>
+                  <textarea name="mensagem" rows="4" placeholder="Conte um pouco sobre sua demanda" required></textarea>
+                </label>
+              </div>
+              <button class="btn" type="submit">Enviar contato</button>
+              <p class="form-note">
+                Ao enviar, o seu aplicativo de email sera aberto para concluir o envio.
+              </p>
+            </form>
+            <div class="contact-details">
+              <div>
+                <span class="label">Email institucional</span>
+                <a href="mailto:crispim.campos@advdf.com.br">crispim.campos@advdf.com.br</a>
+              </div>
+              <div>
+                <span class="label">Telefone / WhatsApp</span>
+                <a href="tel:+556199927375">+55 61 9992-7375</a>
+                <span> / </span>
+                <a href="tel:+556198905988">+55 61 9890-5988</a>
+              </div>
+              <div>
+                <span class="label">Localidade</span>
+                <span>Brasilia - DF</span>
+              </div>
             </div>
           </div>
         </div>
