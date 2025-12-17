@@ -64,6 +64,7 @@ a {
 .site-nav {
   display: flex;
   gap: 20px;
+  flex-wrap: wrap;
   font-size: 14px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -269,6 +270,7 @@ a {
 .about-text h2,
 .process-text h2,
 .contact-info h2,
+.impact-panel h2,
 .cta h2 {
   font-family: "Cormorant Garamond", serif;
   font-size: clamp(2rem, 3.2vw, 3rem);
@@ -401,6 +403,60 @@ a {
   text-transform: uppercase;
   font-size: 0.7rem;
   letter-spacing: 0.2em;
+}
+
+.impact-grid {
+  display: grid;
+  gap: 32px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.impact-panel {
+  padding: 32px;
+  border-radius: var(--radius);
+  background: #fff;
+  border: 1px solid rgba(199, 160, 75, 0.2);
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 12px;
+}
+
+.impact-panel.highlight {
+  background: linear-gradient(135deg, #1a1410, #2a2218);
+  color: #f9f5ef;
+  border: 1px solid rgba(199, 160, 75, 0.4);
+}
+
+.impact-panel.highlight .eyebrow {
+  color: var(--gold-bright);
+}
+
+.bullet-list {
+  list-style: none;
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.bullet-list li {
+  position: relative;
+  padding-left: 18px;
+  color: var(--muted);
+}
+
+.bullet-list li::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gold);
+  position: absolute;
+  left: 0;
+  top: 0.6em;
+}
+
+.impact-panel.highlight .bullet-list li {
+  color: rgba(255, 255, 255, 0.78);
 }
 
 .team-grid {
