@@ -37,6 +37,7 @@
           <a href="#impacto">Impacto</a>
           <a href="#faq">FAQ</a>
           <a href="#contato">Contato</a>
+          <a class="btn btn-outline nav-cta" href="#contato">Fale conosco</a>
         </nav>
         <a class="btn btn-outline header-cta" href="#contato">Fale conosco</a>
       </div>
@@ -548,5 +549,21 @@
     >
       WhatsApp
     </a>
+    <script>
+      const navToggle = document.getElementById("nav-toggle");
+      const navLinks = document.querySelectorAll(".site-nav a");
+
+      navLinks.forEach((link) => {
+        link.addEventListener("click", () => {
+          navToggle.checked = false;
+        });
+      });
+
+      window.addEventListener("resize", () => {
+        if (window.innerWidth > 900) {
+          navToggle.checked = false;
+        }
+      });
+    </script>
   </body>
 </html>

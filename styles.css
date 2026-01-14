@@ -101,6 +101,10 @@ a {
   padding-bottom: 6px;
 }
 
+.nav-cta {
+  display: none;
+}
+
 .site-nav a::after {
   content: "";
   position: absolute;
@@ -807,23 +811,43 @@ a {
 
 @media (max-width: 900px) {
   .header-inner {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: row;
+    align-items: center;
   }
 
   .nav-toggle-label {
     display: inline-flex;
+    margin-left: auto;
   }
 
   .site-nav {
     display: none;
     flex-direction: column;
     align-items: flex-start;
-    background: rgba(16, 12, 8, 0.96);
-    width: 100%;
-    padding: 20px;
+    position: absolute;
+    top: calc(100% + 12px);
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+    background: rgba(16, 12, 8, 0.98);
+    width: min(560px, 92vw);
+    padding: 18px;
     border-radius: 16px;
     border: 1px solid rgba(255, 255, 255, 0.08);
+    max-height: calc(100vh - 140px);
+    overflow-y: auto;
+    box-shadow: 0 22px 40px rgba(8, 6, 4, 0.45);
+  }
+
+  .site-nav a {
+    width: 100%;
+  }
+
+  .nav-cta {
+    display: inline-flex;
+    text-transform: none;
+    letter-spacing: normal;
+    width: 100%;
   }
 
   .nav-toggle:checked + .nav-toggle-label + .site-nav {
@@ -831,8 +855,7 @@ a {
   }
 
   .header-cta {
-    width: 100%;
-    text-align: center;
+    display: none;
   }
 
   .hero {
@@ -847,6 +870,15 @@ a {
   .cta-inner {
     flex-direction: column;
     align-items: flex-start;
+  }
+}
+
+@media (max-width: 900px) and (max-height: 520px) {
+  .site-nav {
+    top: calc(100% + 6px);
+    max-height: calc(100vh - 110px);
+    padding: 14px;
+    gap: 12px;
   }
 }
 
