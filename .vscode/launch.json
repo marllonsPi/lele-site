@@ -1,0 +1,11 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Abrir index.html no navegador",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "powershell -NoProfile -Command \"Start-Process '${workspaceFolder}\\index.html'\""
+    }
+  ]
+}
