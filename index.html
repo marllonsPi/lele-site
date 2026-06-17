@@ -6,7 +6,7 @@
     <title>Crispim &amp; Campos Advogados</title>
     <meta
       name="description"
-      content="Escritório de advocacia em Brasília/DF com atendimento humanizado, transparente e estratégico. Atuação em Família, Sucessões, Imobiliário e Gestão Trabalhista Preventiva."
+      content="Escritório de advocacia em Brasília/DF com atendimento humanizado, transparente e estratégico. Atuação em Família, Sucessões, Imobiliário, Cível e Contratos."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -30,14 +30,11 @@
         </label>
         <nav class="site-nav" aria-label="Navegação principal">
           <a href="#sobre">Sobre</a>
-          <a href="#manifesto">Manifesto</a>
           <a href="#atuacao">Áreas</a>
-          <a href="#diferenciais">Diferenciais</a>
           <a href="#metodo">Método</a>
-          <a href="#impacto">Impacto</a>
           <a href="#equipe">Equipe</a>
-          <a href="#comentarios">Comentários</a>
-          <a href="#faq">FAQ</a>
+          <a href="#triagem">Triagem</a>
+          <a href="#agenda" id="agenda-nav-link" hidden>Agenda</a>
           <a href="#contato">Contato</a>
         </nav>
       </div>
@@ -54,17 +51,15 @@
             </h1>
             <p class="lead reveal" style="--delay: 0.25s">
               Somos um escritório formado por duas advogadas. Atuamos em Família,
-              Sucessões, Direito Imobiliário e Gestão Trabalhista Preventiva, com
+              Sucessões, Direito Imobiliário, Cível e Contratos, com
               atendimento próximo, transparente e conduzido diretamente pelas sócias.
             </p>
             <div class="hero-actions reveal" style="--delay: 0.35s">
               <a
                 class="btn"
-                href="https://api.whatsapp.com/send?phone=556199927375&text=Gostaria%20de%20um%20atendimento%20jur%C3%ADdico"
-                target="_blank"
-                rel="noopener"
+                href="#triagem"
               >
-                Falar no WhatsApp
+                Iniciar atendimento
               </a>
               <a class="btn btn-ghost" href="#atuacao">Ver áreas de atuação</a>
             </div>
@@ -200,8 +195,8 @@
             <article class="card reveal" style="--delay: 0.15s">
               <h3>Empresas e PJs</h3>
               <p>
-                Gestão trabalhista preventiva, consultoria jurídica constante,
-                contratos e suporte em decisões sensíveis do negócio.
+                Consultoria jurídica preventiva, contratos, negociação e suporte em
+                decisões sensíveis do negócio.
               </p>
             </article>
             <article class="card reveal" style="--delay: 0.2s">
@@ -231,8 +226,8 @@
               <p>Contratos, locações, distratos, usucapião e regularização.</p>
             </article>
             <article class="card reveal" style="--delay: 0.2s">
-              <h3>Gestão Trabalhista Preventiva</h3>
-              <p>Orientação a empresas para reduzir riscos e evitar litígios futuros.</p>
+              <h3>Consultoria Preventiva</h3>
+              <p>Orientação estratégica para reduzir riscos em contratos e decisões importantes.</p>
             </article>
             <article class="card reveal" style="--delay: 0.25s">
               <h3>Cível e Contratos</h3>
@@ -469,12 +464,215 @@
           </div>
           <a
             class="btn"
-            href="https://api.whatsapp.com/send?phone=556199927375&text=Gostaria%20de%20agendar%20um%20atendimento"
-            target="_blank"
-            rel="noopener"
+            href="#triagem"
           >
-            Agendar pelo WhatsApp
+            Iniciar triagem
           </a>
+        </div>
+      </section>
+
+      <section class="section intake-section" id="triagem">
+        <div class="container">
+          <div class="section-title reveal" style="--delay: 0.05s">
+            <p class="eyebrow">Agendamento em três etapas</p>
+            <h2>Primeiro entendemos sua demanda. Depois, você escolhe o horário.</h2>
+          </div>
+          <div class="intake-flow reveal" style="--delay: 0.08s" aria-label="Etapas do agendamento">
+            <div class="active">
+              <strong>1</strong>
+              <span>Preencher triagem</span>
+            </div>
+            <div>
+              <strong>2</strong>
+              <span>Revisar informações</span>
+            </div>
+            <div>
+              <strong>3</strong>
+              <span>Escolher horário</span>
+            </div>
+          </div>
+          <form class="intake-wizard reveal" id="intake-form" style="--delay: 0.1s">
+            <div class="intake-wizard-header">
+              <div>
+                <span class="schedule-kicker">Questionário do cliente</span>
+                <h3>Triagem Crispim &amp; Campos</h3>
+              </div>
+              <div class="intake-status" id="intake-status" data-state="pending">
+                <span class="status-dot"></span>
+                <span id="intake-status-text">Etapa 1 de 3</span>
+              </div>
+            </div>
+            <div class="intake-progress" aria-hidden="true">
+              <span id="intake-progress-bar"></span>
+            </div>
+
+            <div class="intake-step active" data-step="1">
+              <div class="intake-step-heading">
+                <span>01</span>
+                <div>
+                  <h4>Sobre você</h4>
+                  <p>Dados básicos para entrarmos em contato.</p>
+                </div>
+              </div>
+              <div class="form-grid">
+                <label class="form-field">
+                  <span>Nome completo *</span>
+                  <input type="text" name="nome" autocomplete="name" placeholder="Seu nome" required />
+                </label>
+                <label class="form-field">
+                  <span>Telefone / WhatsApp *</span>
+                  <input type="tel" name="telefone" autocomplete="tel" placeholder="(61) 99999-9999" required />
+                </label>
+                <fieldset class="choice-field full">
+                  <legend>Como nos conheceu? *</legend>
+                  <div class="choice-grid">
+                    <label><input type="radio" name="origem" value="Instagram" required /><span>Instagram</span></label>
+                    <label><input type="radio" name="origem" value="Site" /><span>Site</span></label>
+                    <label><input type="radio" name="origem" value="Indicação" /><span>Indicação</span></label>
+                    <label><input type="radio" name="origem" value="Outro" /><span>Outro</span></label>
+                  </div>
+                </fieldset>
+                <fieldset class="choice-field full">
+                  <legend>Melhor período para atendimento *</legend>
+                  <div class="choice-grid">
+                    <label><input type="radio" name="periodo" value="Manhã" required /><span>Manhã</span></label>
+                    <label><input type="radio" name="periodo" value="Tarde" /><span>Tarde</span></label>
+                    <label><input type="radio" name="periodo" value="Noite, excepcionalmente" /><span>Noite, excepcionalmente</span></label>
+                  </div>
+                </fieldset>
+              </div>
+            </div>
+
+            <div class="intake-step" data-step="2" hidden>
+              <div class="intake-step-heading">
+                <span>02</span>
+                <div>
+                  <h4>Sobre o caso</h4>
+                  <p>Informações para direcionar a análise inicial.</p>
+                </div>
+              </div>
+              <div class="form-grid">
+                <label class="form-field full">
+                  <span>Assunto principal *</span>
+                  <select name="assunto" required>
+                    <option value="">Selecione uma área</option>
+                    <option value="Direito de Família e Sucessões">Direito de Família e Sucessões</option>
+                    <option value="Direito Imobiliário">Direito Imobiliário</option>
+                    <option value="Direito Criminal">Direito Criminal</option>
+                    <option value="Direito Militar ou Administrativo">Direito Militar ou Administrativo</option>
+                    <option value="Cível e Contratos">Cível e Contratos</option>
+                    <option value="Outro">Outro assunto</option>
+                  </select>
+                </label>
+                <label class="form-field full">
+                  <span>O que levou você a buscar orientação jurídica? *</span>
+                  <textarea name="motivo" rows="5" maxlength="1600" placeholder="Descreva os fatos principais, sem precisar usar termos jurídicos" required></textarea>
+                </label>
+                <fieldset class="choice-field full">
+                  <legend>Já existe processo judicial ou administrativo?</legend>
+                  <div class="choice-grid compact">
+                    <label><input type="radio" name="temProcesso" value="Sim" /><span>Sim</span></label>
+                    <label><input type="radio" name="temProcesso" value="Não" checked /><span>Não</span></label>
+                    <label><input type="radio" name="temProcesso" value="Não sei" /><span>Não sei</span></label>
+                  </div>
+                </fieldset>
+                <label class="form-field full conditional-field" id="process-number-field" hidden>
+                  <span>Número do processo</span>
+                  <input type="text" name="processo" placeholder="Ex.: 0000000-00.0000.0.00.0000" />
+                </label>
+              </div>
+            </div>
+
+            <div class="intake-step" data-step="3" hidden>
+              <div class="intake-step-heading">
+                <span>03</span>
+                <div>
+                  <h4>Urgência e revisão</h4>
+                  <p>Ajude a equipe a identificar situações que exigem atenção rápida.</p>
+                </div>
+              </div>
+              <fieldset class="choice-field">
+                <legend>Existe alguma urgência? *</legend>
+                <div class="choice-grid urgency-grid">
+                  <label><input type="radio" name="urgencia" value="Prisão preventiva" required /><span>Prisão preventiva</span></label>
+                  <label><input type="radio" name="urgencia" value="Alimentos" /><span>Alimentos</span></label>
+                  <label><input type="radio" name="urgencia" value="Processo em curso" /><span>Processo em curso</span></label>
+                  <label><input type="radio" name="urgencia" value="Risco de perda do imóvel" /><span>Risco de perda do imóvel</span></label>
+                  <label><input type="radio" name="urgencia" value="Busca e apreensão de veículo" /><span>Busca e apreensão de veículo</span></label>
+                  <label><input type="radio" name="urgencia" value="Nenhuma urgência" /><span>Nenhuma urgência</span></label>
+                </div>
+              </fieldset>
+              <label class="form-field full">
+                <span>Observação sobre a urgência</span>
+                <textarea name="urgenciaDetalhe" rows="3" maxlength="700" placeholder="Informe prazos, datas ou riscos imediatos, se houver"></textarea>
+              </label>
+              <div class="document-note">
+                <strong>Documentos</strong>
+                <p>
+                  Por segurança, documentos e arquivos serão solicitados pela equipe após
+                  o agendamento. Não inclua senhas ou dados de acesso.
+                </p>
+              </div>
+              <div class="intake-review" id="intake-review"></div>
+            </div>
+
+            <div class="intake-controls">
+              <button class="btn btn-outline" id="intake-back" type="button" hidden>Voltar à etapa anterior</button>
+              <button class="btn" id="intake-next" type="button">Avançar</button>
+              <button class="btn" id="intake-submit" type="submit" hidden>Enviar triagem e abrir agenda</button>
+            </div>
+            <p class="form-note">
+              Os horários são exibidos somente após o envio da triagem. Isso permite que
+              a equipe receba o contexto do caso antes da reserva.
+            </p>
+            <p class="intake-feedback" id="intake-feedback" role="status"></p>
+          </form>
+        </div>
+      </section>
+
+      <section class="section section-alt schedule-section" id="agenda" hidden>
+        <div class="container">
+          <div class="google-schedule-layout">
+            <div class="google-schedule-intro reveal" style="--delay: 0.1s">
+              <span class="schedule-kicker">Agenda oficial Crispim &amp; Campos</span>
+              <h3>Escolha um horário disponível na agenda do escritório.</h3>
+              <p>
+                O agendamento é feito pelo Google Agenda, que mostra os horários reais
+                disponíveis e registra a confirmação automaticamente. A página abre em
+                ambiente seguro do Google para concluir a reserva.
+              </p>
+              <div class="google-actions">
+                <a class="btn" href="#" data-google-booking="geral" target="_blank" rel="noopener" aria-disabled="true">
+                  Ver horários disponíveis
+                </a>
+                <a class="btn btn-light-outline" href="#contato">Tirar dúvida antes</a>
+              </div>
+              <p class="google-config-note" id="google-config-note">
+                Conclua a triagem para liberar os horários disponíveis.
+              </p>
+            </div>
+            <div class="google-booking-grid">
+              <article class="google-booking-card reveal" style="--delay: 0.15s">
+                <span class="label">Como funciona</span>
+                <h3>Agenda do escritório</h3>
+                <div class="booking-steps">
+                  <div>
+                    <strong>01</strong>
+                    <span>Abra a agenda oficial.</span>
+                  </div>
+                  <div>
+                    <strong>02</strong>
+                    <span>Escolha data e horário disponíveis.</span>
+                  </div>
+                  <div>
+                    <strong>03</strong>
+                    <span>Preencha seus dados e confirme.</span>
+                  </div>
+                </div>
+                <a class="btn btn-outline" href="#" data-google-booking="geral" target="_blank" rel="noopener" aria-disabled="true">Ver horários</a>
+              </article>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -548,7 +746,6 @@
                   <select name="area">
                     <option value="Família e Sucessões">Família e Sucessões</option>
                     <option value="Imobiliário">Imobiliário</option>
-                    <option value="Gestão Trabalhista Preventiva">Gestão Trabalhista Preventiva</option>
                     <option value="Cível e Contratos">Cível e Contratos</option>
                     <option value="Penal">Penal</option>
                     <option value="Militar">Militar</option>
@@ -610,7 +807,30 @@
       const commentsList = document.getElementById("comments-list");
       const commentsForm = document.getElementById("comments-form");
       const commentFeedback = document.getElementById("comment-feedback");
+      const googleBookingLinks = document.querySelectorAll("[data-google-booking]");
+      const googleConfigNote = document.getElementById("google-config-note");
+      const agendaSection = document.getElementById("agenda");
+      const agendaNavLink = document.getElementById("agenda-nav-link");
+      const intakeForm = document.getElementById("intake-form");
+      const intakeSteps = document.querySelectorAll(".intake-step");
+      const intakeFlowSteps = document.querySelectorAll(".intake-flow > div");
+      const intakeProgressBar = document.getElementById("intake-progress-bar");
+      const intakeBack = document.getElementById("intake-back");
+      const intakeNext = document.getElementById("intake-next");
+      const intakeSubmit = document.getElementById("intake-submit");
+      const intakeStatus = document.getElementById("intake-status");
+      const intakeStatusText = document.getElementById("intake-status-text");
+      const intakeFeedback = document.getElementById("intake-feedback");
+      const intakeReview = document.getElementById("intake-review");
+      const processNumberField = document.getElementById("process-number-field");
       const MODERATION_EMAIL = "crispim.campos@advdf.com.br";
+      const INTAKE_WHATSAPP = "556199927375";
+      const INTAKE_STORAGE_KEY = "crispim-campos-intake-session-complete";
+      let currentIntakeStep = 1;
+      const GOOGLE_CALENDAR_BOOKING = {
+        // Cole aqui os links públicos gerados no Google Agenda > Agendamento de horários.
+        geral: "https://calendar.app.google/XLnvHeSoK1jomFRq8",
+      };
       const approvedComments = [
         {
           name: "Pai de cliente",
@@ -642,6 +862,173 @@
           message: item.message || item.comment || "",
           createdAt: item.createdAt || item.created_at || item.date || "",
         };
+      }
+
+      function initGoogleCalendarBooking() {
+        const hasAnyLink = Object.values(GOOGLE_CALENDAR_BOOKING).some(Boolean);
+        const intakeComplete = sessionStorage.getItem(INTAKE_STORAGE_KEY) === "true";
+
+        if (agendaSection) {
+          agendaSection.hidden = !intakeComplete;
+        }
+
+        if (agendaNavLink) {
+          agendaNavLink.hidden = !intakeComplete;
+        }
+
+        googleBookingLinks.forEach((link) => {
+          const bookingKey = link.dataset.googleBooking;
+          const bookingUrl = GOOGLE_CALENDAR_BOOKING[bookingKey] || GOOGLE_CALENDAR_BOOKING.geral;
+
+          if (!bookingUrl || !intakeComplete) {
+            link.setAttribute("aria-disabled", "true");
+            link.setAttribute("tabindex", "-1");
+            link.href = intakeComplete ? "#agenda" : "#triagem";
+            return;
+          }
+
+          link.href = bookingUrl;
+          link.removeAttribute("aria-disabled");
+          link.removeAttribute("tabindex");
+        });
+
+        if (googleConfigNote) {
+          googleConfigNote.textContent = !intakeComplete
+            ? "Conclua a triagem para liberar os horários disponíveis."
+            : hasAnyLink
+              ? "Triagem concluída. Você já pode escolher um horário disponível."
+              : "A agenda ficará ativa assim que o link público do Google Agenda for configurado.";
+          googleConfigNote.classList.toggle("active", hasAnyLink && intakeComplete);
+        }
+      }
+
+      function updateIntakeState() {
+        const intakeComplete = sessionStorage.getItem(INTAKE_STORAGE_KEY) === "true";
+
+        if (intakeStatus) {
+          intakeStatus.dataset.state = intakeComplete && currentIntakeStep === 3 ? "complete" : "pending";
+        }
+
+        if (intakeStatusText) {
+          intakeStatusText.textContent =
+            intakeComplete && currentIntakeStep === 3
+              ? "Triagem concluída"
+              : `Etapa ${currentIntakeStep} de 3`;
+        }
+
+        initGoogleCalendarBooking();
+      }
+
+      function getIntakeValue(name) {
+        return String(new FormData(intakeForm).get(name) || "").trim();
+      }
+
+      function validateIntakeStep(stepNumber) {
+        const step = document.querySelector(`.intake-step[data-step="${stepNumber}"]`);
+        if (!step) return true;
+
+        const requiredFields = [...step.querySelectorAll("[required]")];
+        const radioNames = new Set(
+          requiredFields.filter((field) => field.type === "radio").map((field) => field.name),
+        );
+
+        for (const field of requiredFields.filter((item) => item.type !== "radio")) {
+          if (!field.checkValidity()) {
+            field.reportValidity();
+            return false;
+          }
+        }
+
+        for (const name of radioNames) {
+          const selected = step.querySelector(`input[name="${name}"]:checked`);
+          if (!selected) {
+            intakeFeedback.textContent = "Selecione uma opção para continuar.";
+            intakeFeedback.classList.add("error");
+            step.querySelector(`input[name="${name}"]`)?.focus();
+            return false;
+          }
+        }
+
+        return true;
+      }
+
+      function renderIntakeReview() {
+        if (!intakeReview) return;
+        const process = getIntakeValue("temProcesso");
+        const items = [
+          ["Cliente", getIntakeValue("nome")],
+          ["Telefone", getIntakeValue("telefone")],
+          ["Conheceu pelo", getIntakeValue("origem")],
+          ["Melhor período", getIntakeValue("periodo")],
+          ["Assunto", getIntakeValue("assunto")],
+          ["Processo", process === "Sim" ? getIntakeValue("processo") || "Número não informado" : process],
+          ["Urgência", getIntakeValue("urgencia")],
+          ["Relato", getIntakeValue("motivo")],
+        ];
+
+        intakeReview.innerHTML = items
+          .map(
+            ([label, value]) => `
+              <div class="review-item">
+                <span>${escapeHtml(label)}</span>
+                <strong>${escapeHtml(value || "Não informado")}</strong>
+              </div>
+            `,
+          )
+          .join("");
+      }
+
+      function showIntakeStep(stepNumber) {
+        currentIntakeStep = Math.min(3, Math.max(1, stepNumber));
+        intakeSteps.forEach((step) => {
+          const active = Number(step.dataset.step) === currentIntakeStep;
+          step.hidden = !active;
+          step.classList.toggle("active", active);
+        });
+
+        intakeProgressBar.style.width = `${(currentIntakeStep / 3) * 100}%`;
+        intakeFlowSteps.forEach((item, index) => {
+          const flowStep = index + 1;
+          item.classList.toggle("active", flowStep === currentIntakeStep);
+          item.classList.toggle("complete", flowStep < currentIntakeStep);
+        });
+        intakeBack.hidden = currentIntakeStep === 1;
+        intakeNext.hidden = currentIntakeStep === 3;
+        intakeNext.textContent =
+          currentIntakeStep === 1
+            ? "Avançar para o caso"
+            : "Revisar informações";
+        intakeSubmit.hidden = currentIntakeStep !== 3;
+        intakeFeedback.textContent = "";
+        intakeFeedback.classList.remove("success", "error");
+
+        if (currentIntakeStep === 3) {
+          renderIntakeReview();
+        }
+
+        updateIntakeState();
+      }
+
+      function buildIntakeMessage() {
+        return [
+          "TRIAGEM INICIAL - SITE",
+          "",
+          `Nome: ${getIntakeValue("nome")}`,
+          `Telefone: ${getIntakeValue("telefone")}`,
+          `Como conheceu: ${getIntakeValue("origem")}`,
+          `Melhor período: ${getIntakeValue("periodo")}`,
+          `Assunto principal: ${getIntakeValue("assunto")}`,
+          "",
+          "Motivo da busca por orientação:",
+          getIntakeValue("motivo"),
+          "",
+          `Existe processo: ${getIntakeValue("temProcesso")}`,
+          `Número do processo: ${getIntakeValue("processo") || "Não informado"}`,
+          `Urgência: ${getIntakeValue("urgencia")}`,
+          `Detalhes da urgência: ${getIntakeValue("urgenciaDetalhe") || "Não informado"}`,
+          "",
+          "Documentos serão enviados posteriormente, se solicitados.",
+        ].join("\n");
       }
 
       function renderComments(comments) {
@@ -724,6 +1111,55 @@
         });
       }
 
+      intakeForm?.querySelectorAll('input[name="temProcesso"]').forEach((input) => {
+        input.addEventListener("change", () => {
+          const hasProcess = getIntakeValue("temProcesso") === "Sim";
+          processNumberField.hidden = !hasProcess;
+          processNumberField.querySelector("input").required = hasProcess;
+        });
+      });
+
+      intakeNext?.addEventListener("click", () => {
+        intakeFeedback.textContent = "";
+        intakeFeedback.classList.remove("success", "error");
+
+        if (validateIntakeStep(currentIntakeStep)) {
+          showIntakeStep(currentIntakeStep + 1);
+        }
+      });
+
+      intakeBack?.addEventListener("click", () => {
+        showIntakeStep(currentIntakeStep - 1);
+      });
+
+      intakeForm?.addEventListener("submit", (event) => {
+        event.preventDefault();
+        intakeFeedback.textContent = "";
+        intakeFeedback.classList.remove("success", "error");
+
+        if (!validateIntakeStep(3)) return;
+
+        sessionStorage.setItem(INTAKE_STORAGE_KEY, "true");
+        const message = buildIntakeMessage();
+        const whatsappUrl = `https://api.whatsapp.com/send?phone=${INTAKE_WHATSAPP}&text=${encodeURIComponent(message)}`;
+
+        window.open(whatsappUrl, "_blank", "noopener");
+        intakeFeedback.textContent =
+          "Triagem preparada no WhatsApp. A agenda foi liberada logo abaixo.";
+        intakeFeedback.classList.add("success");
+        updateIntakeState();
+
+        intakeFlowSteps.forEach((item) => {
+          item.classList.remove("active");
+          item.classList.add("complete");
+        });
+
+        window.setTimeout(() => {
+          document.getElementById("agenda")?.scrollIntoView({ behavior: "smooth" });
+        }, 500);
+      });
+
+      showIntakeStep(1);
       renderComments(approvedComments.map(normalizeComment));
     </script>
   </body>
