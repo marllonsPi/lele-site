@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Painel administrativo | Crispim &amp; Campos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Sora:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="admin-header">
+      <div class="shell header-inner">
+        <a href="../../"><img src="../../assets/logo-gold.png" alt="Crispim &amp; Campos Advogados" /></a>
+        <div>
+          <span id="admin-identity"></span>
+          <button id="logout-button" type="button" hidden>Sair</button>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="login-screen" id="login-screen">
+        <form class="login-card" id="admin-login-form">
+          <p class="eyebrow">Acesso interno</p>
+          <h1>Painel do escritório</h1>
+          <p>Entre com um usuário autorizado como administrador.</p>
+          <label>
+            <span>E-mail</span>
+            <input type="email" name="email" autocomplete="email" required />
+          </label>
+          <label>
+            <span>Senha</span>
+            <input type="password" name="password" autocomplete="current-password" required />
+          </label>
+          <button class="primary-button" type="submit">Entrar no painel</button>
+          <p class="feedback" id="login-feedback" role="status"></p>
+        </form>
+      </section>
+
+      <section class="admin-screen" id="admin-screen" hidden>
+        <div class="shell admin-heading">
+          <div>
+            <p class="eyebrow">Gestão de acompanhamento</p>
+            <h1>Casos dos clientes</h1>
+            <p>Atualize apenas informações revisadas e adequadas para o cliente.</p>
+          </div>
+          <button class="primary-button compact" id="new-case-button" type="button">Novo caso</button>
+        </div>
+
+        <div class="shell admin-layout">
+          <aside class="case-list-panel">
+            <div class="panel-heading">
+              <h2>Casos</h2>
+              <button id="refresh-button" type="button" aria-label="Atualizar lista">↻</button>
+            </div>
+            <label class="search-field">
+              <span>Buscar</span>
+              <input id="case-search" type="search" placeholder="Cliente, processo ou assunto" />
+            </label>
+            <div class="case-list" id="case-list"></div>
+          </aside>
+
+          <section class="editor-panel">
+            <div class="empty-state" id="empty-state">
+              <img src="../../assets/crest-gold.png" alt="" />
+              <h2>Selecione um caso</h2>
+              <p>Escolha um cliente na lista ou cadastre um novo acompanhamento.</p>
+            </div>
+
+            <div id="case-editor" hidden>
+              <div class="editor-heading">
+                <div>
+                  <p class="eyebrow">Ficha de acompanhamento</p>
+                  <h2 id="editor-title">Novo caso</h2>
+                </div>
+                <button class="danger-button" id="delete-case-button" type="button" hidden>Excluir caso</button>
+              </div>
+
+              <form id="case-form">
+                <input type="hidden" name="id" />
+                <div class="form-grid">
+                  <label>
+                    <span>Cliente *</span>
+                    <select name="client_id" id="client-select" required></select>
+                  </label>
+                  <label>
+                    <span>Área jurídica</span>
+                    <input name="area" placeholder="Ex.: Direito de Família" />
+                  </label>
+                  <label class="full">
+                    <span>Título do caso *</span>
+                    <input name="title" required placeholder="Nome claro para o acompanhamento" />
+                  </label>
+                  <label>
+                    <span>Número do processo</span>
+                    <input name="process_number" />
+                  </label>
+                  <label>
+                    <span>Data de início</span>
+                    <input name="started_at" type="date" />
+                  </label>
+                  <label>
+                    <span>Tribunal</span>
+                    <input name="tribunal" placeholder="Ex.: TJDFT" />
+                  </label>
+                  <label>
+                    <span>Vara / unidade</span>
+                    <input name="court_name" />
+                  </label>
+                  <label class="full">
+                    <span>Link de consulta pública</span>
+                    <input name="tribunal_url" type="url" placeholder="https://..." />
+                  </label>
+                  <label>
+                    <span>Status exibido ao cliente *</span>
+                    <input name="status_label" required placeholder="Ex.: Aguardando decisão" />
+                  </label>
+                  <label>
+                    <span>Estimativa orientativa</span>
+                    <input name="next_step_estimate" placeholder="Ex.: De 15 a 30 dias" />
+                  </label>
+                  <label class="full">
+                    <span>Explicação do status *</span>
+                    <textarea name="status_explanation" rows="4" required></textarea>
+                  </label>
+                  <label>
+                    <span>Próximo passo</span>
+                    <input name="next_step_title" />
+                  </label>
+                  <label>
+                    <span>Advogada responsável</span>
+                    <input name="responsible_name" />
+                  </label>
+                  <label class="full">
+                    <span>Explicação do próximo passo</span>
+                    <textarea name="next_step_description" rows="3"></textarea>
+                  </label>
+                  <label>
+                    <span>OAB da responsável</span>
+                    <input name="responsible_oab" />
+                  </label>
+                  <label class="check-field">
+                    <input name="client_action_required" type="checkbox" />
+                    <span>O cliente possui uma pendência</span>
+                  </label>
+                  <label class="full">
+                    <span>Orientação ou pendência do cliente</span>
+                    <textarea name="client_action_text" rows="2"></textarea>
+                  </label>
+                </div>
+                <div class="form-actions">
+                  <button class="primary-button compact" type="submit">Salvar caso</button>
+                  <p class="feedback" id="case-feedback" role="status"></p>
+                </div>
+              </form>
+
+              <section class="updates-section" id="updates-section" hidden>
+                <div class="updates-heading">
+                  <div>
+                    <p class="eyebrow">Linha do tempo</p>
+                    <h2>Movimentações explicadas</h2>
+                  </div>
+                  <button class="secondary-button" id="new-update-button" type="button">
+                    Adicionar atualização
+                  </button>
+                </div>
+                <form class="update-form" id="update-form" hidden>
+                  <input type="hidden" name="id" />
+                  <div class="form-grid">
+                    <label>
+                      <span>Data *</span>
+                      <input name="event_date" type="date" required />
+                    </label>
+                    <label class="check-field">
+                      <input name="is_highlight" type="checkbox" />
+                      <span>Destacar atualização</span>
+                    </label>
+                    <label class="full">
+                      <span>Título *</span>
+                      <input name="title" required />
+                    </label>
+                    <label class="full">
+                      <span>Explicação para o cliente *</span>
+                      <textarea name="description" rows="3" required></textarea>
+                    </label>
+                  </div>
+                  <div class="form-actions">
+                    <button class="primary-button compact" type="submit">Salvar atualização</button>
+                    <button class="text-button" id="cancel-update-button" type="button">Cancelar</button>
+                    <p class="feedback" id="update-feedback" role="status"></p>
+                  </div>
+                </form>
+                <div class="updates-list" id="updates-list"></div>
+              </section>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

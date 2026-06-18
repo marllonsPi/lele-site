@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Área do cliente | Crispim &amp; Campos</title>
+    <meta
+      name="description"
+      content="Ambiente demonstrativo para acompanhamento de processos da Crispim & Campos Advogados."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Sora:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="demo-ribbon" role="note">
+      <span>Ambiente de demonstração</span>
+      <strong>Nenhum dado real é exibido aqui</strong>
+    </div>
+
+    <header class="portal-header">
+      <div class="shell header-inner">
+        <a class="brand" href="../" aria-label="Voltar ao site Crispim e Campos">
+          <img src="../assets/logo-gold.png" alt="Crispim &amp; Campos Advogados" />
+        </a>
+        <div class="header-actions">
+          <span class="secure-label">
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M7 10V7a5 5 0 0 1 10 0v3m-11 0h12v10H6V10Z" />
+            </svg>
+            Ambiente reservado
+          </span>
+          <button class="text-button" id="logout-button" type="button" hidden>Sair</button>
+          <a class="back-link" href="../">Voltar ao site</a>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="login-view" id="login-view">
+        <div class="login-decoration" aria-hidden="true"></div>
+        <div class="shell login-grid">
+          <div class="welcome-copy">
+            <p class="eyebrow">Área do cliente</p>
+            <h1>Seu processo explicado com clareza.</h1>
+            <p class="welcome-lead">
+              Consulte as atualizações mais importantes, entenda o momento atual do caso
+              e saiba o que acontece a seguir.
+            </p>
+            <div class="promise-list">
+              <div>
+                <span>01</span>
+                <p><strong>Sem juridiquês</strong>Movimentações traduzidas para uma linguagem acessível.</p>
+              </div>
+              <div>
+                <span>02</span>
+                <p><strong>Visão objetiva</strong>Status, próximos passos e pendências em um só lugar.</p>
+              </div>
+              <div>
+                <span>03</span>
+                <p><strong>Contato próximo</strong>Fale com a equipe sempre que precisar de orientação.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="login-card">
+            <div class="login-card-heading">
+              <img src="../assets/crest-gold.png" alt="" />
+              <div>
+                <span>Acesso individual</span>
+                <h2>Acompanhe seu caso</h2>
+              </div>
+            </div>
+
+            <form id="login-form" novalidate>
+              <label class="field">
+                <span>Seu e-mail</span>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autocomplete="email"
+                  placeholder="nome@exemplo.com"
+                  required
+                />
+              </label>
+              <label class="field">
+                <span>Código de acesso</span>
+                <div class="password-field">
+                  <input
+                    id="access-code"
+                    name="accessCode"
+                    type="password"
+                    autocomplete="current-password"
+                    placeholder="Digite o código recebido"
+                    required
+                  />
+                  <button id="toggle-code" type="button" aria-label="Mostrar código">Mostrar</button>
+                </div>
+              </label>
+              <button class="primary-button" type="submit">Acessar acompanhamento</button>
+              <p class="form-feedback" id="form-feedback" role="status"></p>
+            </form>
+
+            <div class="demo-access">
+              <div>
+                <span class="demo-dot"></span>
+                <strong>Acesso para demonstração</strong>
+              </div>
+              <button id="fill-demo" type="button">Preencher e-mail de teste</button>
+              <dl>
+                <div><dt>E-mail</dt><dd>cliente@teste.com</dd></div>
+                <div><dt>Código</dt><dd>A senha criada no Supabase</dd></div>
+              </dl>
+            </div>
+
+            <p class="privacy-note">
+              Não compartilhe seu código. O escritório nunca solicitará senhas bancárias
+              ou códigos recebidos por SMS.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="dashboard-view" id="dashboard-view" hidden>
+        <div class="dashboard-hero">
+          <div class="shell">
+            <div class="dashboard-intro">
+              <div>
+                <p class="eyebrow">Acompanhamento jurídico</p>
+                <h1 id="client-greeting">Olá.</h1>
+                <p>Estas são as informações mais recentes do seu caso.</p>
+              </div>
+              <div class="updated-pill">
+                <span>Última atualização</span>
+                <strong id="case-updated-at">Carregando...</strong>
+              </div>
+            </div>
+
+            <article class="case-overview">
+              <div class="case-heading">
+                <div>
+                  <span class="case-type" id="case-area">Área jurídica</span>
+                  <h2 id="case-title">Carregando caso...</h2>
+                  <p id="case-number"></p>
+                </div>
+                <span class="status-badge"><i></i><span id="case-status">Carregando...</span></span>
+              </div>
+              <div class="case-summary">
+                <div class="summary-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path d="m5 12 4 4L19 6" />
+                  </svg>
+                </div>
+                <div>
+                  <span>O que isso significa?</span>
+                  <p id="case-explanation">Buscando as informações protegidas do caso.</p>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+
+        <div class="shell dashboard-content">
+          <div class="main-column">
+            <section class="content-card next-step-card">
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">Próximo passo</p>
+                  <h2>O que acontece agora</h2>
+                </div>
+                <span class="waiting-label">Aguardando o Judiciário</span>
+              </div>
+              <div class="next-step">
+                <span class="step-number">01</span>
+                <div>
+                  <h3 id="next-step-title">Carregando...</h3>
+                  <p id="next-step-description"></p>
+                  <span class="estimate" id="next-step-estimate"></span>
+                </div>
+              </div>
+              <p class="estimate-warning">
+                O prazo é uma estimativa baseada no andamento habitual e pode variar
+                conforme a rotina do juízo.
+              </p>
+            </section>
+
+            <section class="content-card">
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">Histórico</p>
+                  <h2>Linha do tempo do caso</h2>
+                </div>
+                <button class="outline-button" id="toggle-timeline" type="button">
+                  Mostrar histórico completo
+                </button>
+              </div>
+              <ol class="timeline" id="timeline"></ol>
+            </section>
+          </div>
+
+          <aside class="side-column">
+            <section class="side-card responsibility-card">
+              <span class="side-kicker">Sua situação agora</span>
+              <div class="responsibility-status">
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                  <path d="m5 12 4 4L19 6" />
+                </svg>
+                <div>
+                  <strong id="action-status">Carregando...</strong>
+                  <p id="action-text"></p>
+                </div>
+              </div>
+            </section>
+
+            <section class="side-card lawyer-card">
+              <span class="side-kicker">Responsável pelo caso</span>
+              <div class="lawyer-profile">
+                <img src="../fotos/lele.jpeg" alt="Letícia Crispim Mello" />
+                <div>
+                  <strong id="responsible-name">Carregando...</strong>
+                  <span id="responsible-oab"></span>
+                </div>
+              </div>
+              <a
+                class="whatsapp-button"
+                href="https://api.whatsapp.com/send?phone=556199927375&text=Ol%C3%A1%2C%20estou%20acessando%20a%20%C3%A1rea%20do%20cliente%20e%20gostaria%20de%20falar%20sobre%20meu%20caso."
+                target="_blank"
+                rel="noopener"
+              >
+                Falar com a equipe
+              </a>
+            </section>
+
+            <section class="side-card details-card">
+              <span class="side-kicker">Dados do processo</span>
+              <dl>
+                <div>
+                  <dt>Tribunal</dt>
+                  <dd id="case-tribunal"></dd>
+                </div>
+                <div>
+                  <dt>Vara</dt>
+                  <dd id="case-court"></dd>
+                </div>
+                <div>
+                  <dt>Início</dt>
+                  <dd id="case-started-at"></dd>
+                </div>
+              </dl>
+              <a
+                class="external-link"
+                href="#"
+                id="tribunal-link"
+                target="_blank"
+                rel="noopener"
+              >
+                Consultar no site do tribunal
+                <span aria-hidden="true">↗</span>
+              </a>
+            </section>
+
+            <p class="confidentiality-note">
+              As informações desta página são confidenciais e destinadas exclusivamente
+              ao cliente.
+            </p>
+          </aside>
+        </div>
+      </section>
+    </main>
+
+    <footer class="portal-footer">
+      <div class="shell">
+        <img src="../assets/logo-white.png" alt="Crispim &amp; Campos Advogados" />
+        <p>Clareza e cuidado em cada etapa.</p>
+      </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
