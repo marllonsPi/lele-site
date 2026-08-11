@@ -779,6 +779,25 @@ a {
 .team-oab {
   white-space: nowrap;
 }
+
+.team-areas {
+  color: var(--gold);
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.team-description,
+.team-qualification {
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+
+.team-qualification {
+  padding-top: 10px;
+  border-top: 1px solid rgba(199, 160, 75, 0.2);
+}
+
 .team-icon {
   width: 70px;
   height: 70px;
