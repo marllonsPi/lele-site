@@ -6,8 +6,8 @@ Crispim & Campos Advogados, escritório com base em Brasília/DF e atendimento p
 
 ## Equipe confirmada
 
-- Letícia Crispim Mello — OAB/DF n. 84089.
-- Lorraynny Mendonça Olegário Campos Cristalino — OAB/DF n. 74371.
+- Letícia Crispim Mello — sócia-fundadora, OAB/DF 84.089; Família e Sucessões, Imobiliário e Condominial, Trabalhista e Bancário; mais de 5 anos de atuação.
+- Lorraynny Mendonça Olegário Campos Cristalino — sócia-fundadora, OAB/DF 74.371; Famílias, Criminal e Militar; 7 anos no Direito.
 - Andressa Morais Magalhães — OAB/DF 83.736; Direito Previdenciário e Direito do Trabalho; pós-graduada em Direito Previdenciário.
 
 ## Posicionamento observado

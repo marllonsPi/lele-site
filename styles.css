@@ -780,6 +780,18 @@ a {
   white-space: nowrap;
 }
 
+.team-role {
+  width: fit-content;
+  padding: 5px 10px;
+  border: 1px solid rgba(199, 160, 75, 0.35);
+  border-radius: 999px;
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 .team-areas {
   color: var(--gold);
   font-weight: 600;
