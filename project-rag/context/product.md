@@ -24,3 +24,7 @@ Crispim & Campos Advogados, escritório com base em Brasília/DF e atendimento p
 - Não mudar nomes, OABs, contatos, áreas jurídicas ou afirmações reguladas sem confirmação.
 - Não inserir dados de clientes ou processos em exemplos.
 - Manter acessibilidade, responsividade e tom profissional em toda atualização.
+
+## Depoimentos aprovados
+
+- Raul: "Excelente advogadas! Muito atenciosas, transparente e educadas" (publicado no checkout em 2026-09-02).
