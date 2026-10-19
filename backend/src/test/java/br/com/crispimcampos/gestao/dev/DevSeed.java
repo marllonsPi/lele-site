@@ -11,6 +11,7 @@ import br.com.crispimcampos.gestao.agenda.PrazoService;
 import br.com.crispimcampos.gestao.agenda.TipoAgendamento;
 import br.com.crispimcampos.gestao.cadastros.CadastroService;
 import br.com.crispimcampos.gestao.atendimento.AtendimentoService;
+import br.com.crispimcampos.gestao.modelos.ModeloService;
 import br.com.crispimcampos.gestao.captura.DadosBrutos;
 import br.com.crispimcampos.gestao.captura.Fonte;
 import br.com.crispimcampos.gestao.captura.FiltroService;
@@ -58,10 +59,11 @@ public class DevSeed implements ApplicationRunner {
 	private final FiltroService filtros;
 	private final AtendimentoService atendimentos;
 	private final FinanceiroService financeiro;
+	private final ModeloService modelos;
 
 	DevSeed(UsuarioService usuarios, MatrizVisibilidadeService matriz, CadastroService cadastros, PrazoService prazos,
 			CompromissoService compromissos, ObservacaoService observacoes, PipelineCaptura pipeline, FiltroService filtros,
-			AtendimentoService atendimentos, FinanceiroService financeiro) {
+			AtendimentoService atendimentos, FinanceiroService financeiro, ModeloService modelos) {
 		this.usuarios = usuarios;
 		this.matriz = matriz;
 		this.cadastros = cadastros;
@@ -72,6 +74,7 @@ public class DevSeed implements ApplicationRunner {
 		this.filtros = filtros;
 		this.atendimentos = atendimentos;
 		this.financeiro = financeiro;
+		this.modelos = modelos;
 	}
 
 	@Override
@@ -159,6 +162,11 @@ public class DevSeed implements ApplicationRunner {
 		financeiro.pagarParcela(socia, financeiro.parcelas(socia, contrato).get(0).get("id") instanceof Number n ? n.longValue() : 0L, hoje.minusMonths(2), new java.math.BigDecimal("1000.00"));
 		financeiro.registrarDespesa(socia, maria.id(), pC.id(), "CUSTAS", "Custas iniciais", new java.math.BigDecimal("350.00"), hoje.minusMonths(2), true);
 		financeiro.registrarHonorarioVariavel(socia, maria.id(), pC.id(), "EXITO", "Exito de 10% sobre o valor recebido", new java.math.BigDecimal("1500.00"));
+		// Biblioteca de modelos (arquivos minimos ficticios)
+		byte[] pdf = "%PDF-1.4\n% modelo ficticio de teste\n".getBytes();
+		modelos.criar(socia, "CON", "Civel", "Contestacao padrao - cobranca", "contestacao-cobranca.pdf", pdf);
+		modelos.criar(socia, "INI", "Trabalhista", "Peticao inicial - horas extras", "inicial-horas-extras.pdf", pdf);
+		modelos.criar(socia, "REC", "Civel", "Apelacao civel", "apelacao-civel.pdf", pdf);
 		log.info("Dados ficticios de desenvolvimento criados. Senha de todos os usuarios: {}", SENHA);
 	}
 

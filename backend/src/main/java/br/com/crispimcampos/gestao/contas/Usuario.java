@@ -44,6 +44,12 @@ public class Usuario {
 	@Column(name = "criado_em", nullable = false, insertable = false, updatable = false)
 	private Instant criadoEm;
 
+	@Column(name = "totp_secret")
+	private String totpSecret;
+
+	@Column(name = "totp_ativo", nullable = false)
+	private boolean totpAtivo;
+
 	protected Usuario() {
 	}
 
@@ -108,5 +114,31 @@ public class Usuario {
 			throw new IllegalStateException("Somente estagiario tem supervisor");
 		}
 		this.supervisor = supervisor;
+	}
+
+	String getTotpSecret() {
+		return totpSecret;
+	}
+
+	boolean isTotpAtivo() {
+		return totpAtivo;
+	}
+
+	/** Gera um segredo novo e deixa o 2FA inativo ate a confirmacao com um codigo valido. */
+	void iniciarDoisFatores(String segredo) {
+		this.totpSecret = segredo;
+		this.totpAtivo = false;
+	}
+
+	void ativarDoisFatores() {
+		if (totpSecret == null) {
+			throw new IllegalStateException("Inicie o cadastro do segundo fator primeiro");
+		}
+		this.totpAtivo = true;
+	}
+
+	void desativarDoisFatores() {
+		this.totpSecret = null;
+		this.totpAtivo = false;
 	}
 }

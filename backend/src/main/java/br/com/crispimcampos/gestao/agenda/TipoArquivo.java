@@ -4,7 +4,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /** Tipos de peca aceitos: extensao conhecida E assinatura (primeiros bytes) coerente com ela. */
-final class TipoArquivo {
+public final class TipoArquivo {
 
 	private static final byte[] PDF = {'%', 'P', 'D', 'F'};
 	private static final byte[] ZIP = {'P', 'K', 3, 4};
@@ -21,12 +21,12 @@ final class TipoArquivo {
 	private TipoArquivo() {
 	}
 
-	static String extensao(String nome) {
+	public static String extensao(String nome) {
 		int i = nome.lastIndexOf('.');
 		return i < 0 ? "" : nome.substring(i + 1).toLowerCase(Locale.ROOT);
 	}
 
-	static boolean aceito(String nome, byte[] conteudo) {
+	public static boolean aceito(String nome, byte[] conteudo) {
 		byte[] assinatura = ACEITOS.get(extensao(nome));
 		if (assinatura == null || conteudo.length < assinatura.length) {
 			return false;

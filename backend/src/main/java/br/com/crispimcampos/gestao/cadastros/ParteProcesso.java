@@ -36,6 +36,10 @@ class ParteProcesso {
 		this.papel = papel;
 	}
 
+	void anonimizar(String nomeNovo) {
+		this.nome = nomeNovo;
+	}
+
 	Long getId() { return id; }
 	String getNome() { return nome; }
 	PapelParte getPapel() { return papel; }

@@ -1,4 +1,4 @@
-package br.com.crispimcampos.gestao.agenda;
+package br.com.crispimcampos.gestao.seguranca;
 
 import java.time.Clock;
 import java.time.ZoneId;

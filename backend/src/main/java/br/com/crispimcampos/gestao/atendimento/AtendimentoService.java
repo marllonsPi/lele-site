@@ -153,6 +153,12 @@ public class AtendimentoService {
 		return jdbc.queryForObject("select * from andamento where id = ?", AND, id);
 	}
 
+	/** LGPD: apaga o texto livre dos atendimentos do cliente, mantendo data, canal e atendente (registro de que houve contato). */
+	@Transactional
+	public int anonimizarResumos(Long clienteId) {
+		return jdbc.update("update atendimento set resumo = '[removido por anonimizacao]' where cliente_id = ?", clienteId);
+	}
+
 	/** Uso interno (relatorio ao cliente): andamentos do processo no periodo, sem filtro de visibilidade. */
 	@Transactional(readOnly = true)
 	public List<AndamentoDto> andamentosDoProcesso(Long processoId, java.time.LocalDate de, java.time.LocalDate ate) {

@@ -8,7 +8,12 @@ import br.com.crispimcampos.gestao.acesso.Visibilidade;
 import br.com.crispimcampos.gestao.agenda.AgendaService;
 import br.com.crispimcampos.gestao.alertas.AlertaService;
 import br.com.crispimcampos.gestao.atendimento.AtendimentoService;
+import br.com.crispimcampos.gestao.contas.DoisFatoresService;
+import br.com.crispimcampos.gestao.contas.Totp;
 import br.com.crispimcampos.gestao.financeiro.FinanceiroService;
+import br.com.crispimcampos.gestao.lgpd.LgpdService;
+import br.com.crispimcampos.gestao.modelos.ModeloService;
+import br.com.crispimcampos.gestao.cadastros.CadastroService;
 import br.com.crispimcampos.gestao.relatorios.ConteudoCliente;
 import br.com.crispimcampos.gestao.relatorios.RelatorioClienteService;
 import br.com.crispimcampos.gestao.relatorios.RelatoriosInternosService;
@@ -96,7 +101,7 @@ class PostgresRealTest {
 	@Test
 	void migracoesAplicadasEMapeamentoValido() {
 		Integer aplicadas = jdbc.queryForObject("select count(*) from flyway_schema_history where success", Integer.class);
-		assertThat(aplicadas).isEqualTo(12);
+		assertThat(aplicadas).isEqualTo(14);
 	}
 
 	@Test
@@ -142,6 +147,12 @@ class PostgresRealTest {
 	AtendimentoService atendimentos;
 	@Autowired
 	FinanceiroService financeiro;
+	@Autowired
+	ModeloService modelos;
+	@Autowired
+	DoisFatoresService doisFatores;
+	@Autowired
+	LgpdService lgpd;
 	@Autowired
 	RelatorioClienteService relatorios;
 	@Autowired
@@ -442,5 +453,75 @@ class PostgresRealTest {
 		assertThat(new String(internos.pdf(socia, RelatoriosInternosService.Tipo.PENDENTES, null, null, null, null), 0, 5)).isEqualTo("%PDF-");
 		assertThat(internos.enviarAsSocias(socia, RelatoriosInternosService.Tipo.PENDENTES, null, null, null, null)).isEqualTo(2);
 		assertThatThrownBy(() -> internos.enviarAsSocias(wendell, RelatoriosInternosService.Tipo.PENDENTES, null, null, null, null)).isInstanceOf(SecurityException.class);
+	}
+
+	@Test
+	void bibliotecaDeModelosPorTipoEAreaComPermissoes() throws Exception {
+		UsuarioLogado socia = como("Socia A");
+		assertThat(modelos.listar("CON", null)).hasSize(1);
+		assertThat(modelos.listar(null, "civel")).hasSize(2);
+		assertThat(modelos.listar("INI", "Civel")).isEmpty();
+		assertThat(modelos.areas()).contains("Civel", "Trabalhista");
+		var m = modelos.listar("REC", null).get(0);
+		assertThat(modelos.baixar(m.id()).arquivo().exists()).isTrue();
+		var novo = modelos.criar(socia, "MAN", "Civel", "Manifestacao simples", "man.pdf", "%PDF-1.4 x".getBytes());
+		assertThat(modelos.listar("MAN", null)).extracting("id").contains(novo.id());
+		modelos.desativar(socia, novo.id());
+		assertThat(modelos.listar("MAN", null)).extracting("id").doesNotContain(novo.id());
+		assertThatThrownBy(() -> modelos.criar(como("Advogada C"), "MAN", "Civel", "x", "x.pdf", "%PDF-1.4".getBytes())).isInstanceOf(SecurityException.class);
+		assertThatThrownBy(() -> modelos.criar(socia, "CTR", "Civel", "x", "x.pdf", "%PDF-1.4".getBytes())).isInstanceOf(IllegalArgumentException.class);
+		assertThatThrownBy(() -> modelos.criar(socia, "MAN", "Civel", "x", "virus.exe", "MZ".getBytes())).isInstanceOf(IllegalArgumentException.class);
+		assertThatThrownBy(() -> jdbc.update("insert into modelo_peca (tipo, area_direito, titulo, nome_original, tamanho, caminho, criado_por) values ('XXX','a','b','c',1,'k',1)"))
+				.hasMessageContaining("ck_modelo_tipo");
+	}
+
+	@Test
+	void doisFatoresSoValemDepoisDeConfirmadosEExigemCodigoParaDesativar() {
+		UsuarioLogado u = como("Advogado D");
+		assertThat(doisFatores.exigeCodigo(u.email())).isFalse();
+		var cadastro = doisFatores.iniciar(u.id());
+		assertThat(doisFatores.exigeCodigo(u.email())).as("so exige depois de confirmar").isFalse();
+		assertThatThrownBy(() -> doisFatores.confirmar(u.id(), "000000")).isInstanceOf(IllegalArgumentException.class);
+		doisFatores.confirmar(u.id(), Totp.codigoAtual(cadastro.segredo(), java.time.Instant.now()));
+		assertThat(doisFatores.exigeCodigo(u.email())).isTrue();
+		assertThat(doisFatores.codigoValido(u.email(), Totp.codigoAtual(cadastro.segredo(), java.time.Instant.now()))).isTrue();
+		assertThat(doisFatores.codigoValido(u.email(), "000000")).isFalse();
+		assertThatThrownBy(() -> doisFatores.desativar(u.id(), "000000")).isInstanceOf(IllegalArgumentException.class);
+		assertThatThrownBy(() -> doisFatores.iniciar(u.id())).isInstanceOf(IllegalStateException.class);
+		doisFatores.desativar(u.id(), Totp.codigoAtual(cadastro.segredo(), java.time.Instant.now()));
+		assertThat(doisFatores.exigeCodigo(u.email())).isFalse();
+		assertThatThrownBy(() -> jdbc.update("update usuario set totp_ativo = true, totp_secret = null where id = ?", u.id())).hasMessageContaining("ck_usuario_totp");
+	}
+
+	@Test
+	@org.junit.jupiter.api.Order(Integer.MAX_VALUE)
+	void lgpdExportaEAnonimizaSoSemProcessoAtivo() {
+		UsuarioLogado socia = como("Socia A");
+		var cliente = cadastros.criarCliente(socia.id(), "Ana Ficticia LGPD", "390.533.447-05", "ana@exemplo.test", "(61) 90000-9999", "Rua Teste 9", "obs privada");
+		var processo = cadastros.criarProcesso(socia.id(), "0000007" + br.com.crispimcampos.gestao.cadastros.NumeroCnj.calcularDv("0000007", "20258070001") + "20258070001",
+				"TJDFT", "Vara", "Classe", "Ativo", null, cliente.id(), como("Advogada C").id());
+		atendimentos.registrarAvulso(socia, cliente.id(), processo.id(), "TELEFONE", null, "Conversa com dado sensivel da Ana.", null);
+
+		var export = lgpd.exportar(socia, cliente.id());
+		assertThat(export).containsKeys("cliente", "processos", "atendimentos", "relatoriosEnviados");
+		assertThat(export.get("cliente").toString()).contains("Ana Ficticia LGPD");
+		assertThatThrownBy(() -> lgpd.exportar(como("Advogada C"), cliente.id())).isInstanceOf(SecurityException.class);
+		assertThatThrownBy(() -> lgpd.anonimizar(como("Assistente E"), cliente.id())).isInstanceOf(SecurityException.class);
+
+		assertThatThrownBy(() -> lgpd.anonimizar(socia, cliente.id())).hasMessageContaining("Desative os processos");
+		cadastros.desativarProcesso(socia.id(), processo.id());
+		lgpd.anonimizar(socia, cliente.id());
+
+		var depois = cadastros.buscarCliente(socia, cliente.id());
+		assertThat(depois.nome()).startsWith("Cliente anonimizado");
+		assertThat(depois.documento()).isNull();
+		assertThat(depois.email()).isNull();
+		assertThat(depois.telefone()).isNull();
+		assertThat(depois.endereco()).isNull();
+		assertThat(depois.observacoes()).isNull();
+		assertThat(depois.ativo()).isFalse();
+		assertThat(jdbc.queryForObject("select resumo from atendimento where cliente_id = ?", String.class, cliente.id())).isEqualTo("[removido por anonimizacao]");
+		assertThat(jdbc.queryForObject("select nome from parte_processo where processo_id = ? and papel = 'CLIENTE'", String.class, processo.id())).startsWith("Cliente anonimizado");
+		assertThat(jdbc.queryForObject("select count(*) from log_auditoria where acao in ('LGPD_EXPORTACAO','LGPD_ANONIMIZACAO')", Integer.class)).isEqualTo(2);
 	}
 }

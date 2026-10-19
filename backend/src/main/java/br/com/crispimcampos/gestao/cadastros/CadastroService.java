@@ -171,6 +171,27 @@ public class CadastroService {
 		return new ProcessoResumo(p.getId(), p.getAdvogadoId(), p.getCliente().getId(), p.getTribunal(), p.isAtivo());
 	}
 
+	/**
+	 * LGPD: remove os dados pessoais do cliente e desativa o cadastro. Os processos (retencao legal) precisam estar desativados;
+	 * a parte "cliente" deles deixa de carregar o nome.
+	 */
+	@Transactional
+	public void anonimizarCliente(Long atorId, Long clienteId) {
+		Cliente c = obterCliente(clienteId);
+		if (processos.findAll().stream().anyMatch(p -> p.getCliente().getId().equals(clienteId) && p.isAtivo())) {
+			throw new RegraDeCadastroException("Desative os processos do cliente antes de anonimizar", false);
+		}
+		c.atualizar("Cliente anonimizado #" + clienteId, null, null, null, null, null);
+		c.desativar();
+		for (Processo p : processos.findAll()) {
+			if (p.getCliente().getId().equals(clienteId)) {
+				partes.findByProcessoIdOrderByIdAsc(p.getId()).stream().filter(x -> x.getPapel() == PapelParte.CLIENTE)
+						.forEach(x -> x.anonimizar("Cliente anonimizado #" + clienteId));
+			}
+		}
+		auditoria.registrar(atorId, "CLIENTE_ANONIMIZADO", "cliente", String.valueOf(clienteId), null);
+	}
+
 	/** Cliente visivel ao usuario (socia: todos; demais: quem ve algum processo do cliente). */
 	@Transactional(readOnly = true)
 	public boolean clienteVisivel(UsuarioLogado usuario, Long clienteId) {

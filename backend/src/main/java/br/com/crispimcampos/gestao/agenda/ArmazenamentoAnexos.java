@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 
 /** Disco local protegido: nome gravado e um UUID (nunca o nome enviado), fora de qualquer pasta publica. */
 @Component
-class ArmazenamentoAnexos {
+public class ArmazenamentoAnexos {
 
 	private static final Pattern CAMINHO = Pattern.compile("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}");
 
@@ -23,7 +23,7 @@ class ArmazenamentoAnexos {
 		this.raiz = Path.of(dir).toAbsolutePath().normalize();
 	}
 
-	String salvar(byte[] conteudo) {
+	public String salvar(byte[] conteudo) {
 		String nome = UUID.randomUUID().toString();
 		try {
 			Files.createDirectories(raiz);
@@ -34,7 +34,7 @@ class ArmazenamentoAnexos {
 		return nome;
 	}
 
-	Resource abrir(String caminho) {
+	public Resource abrir(String caminho) {
 		if (!CAMINHO.matcher(caminho).matches()) {
 			throw new IllegalArgumentException("Caminho de anexo invalido");
 		}
