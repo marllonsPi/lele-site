@@ -1,0 +1,42 @@
+# Ambiente local/producao simples. Uso: cp .env.example .env (preencher) && docker compose up -d --build
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: gestao
+      POSTGRES_USER: gestao
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD no .env}
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gestao -d gestao"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ../backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/gestao
+      DB_USER: gestao
+      DB_PASSWORD: ${DB_PASSWORD}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      BOOTSTRAP_SOCIA_NOME: ${BOOTSTRAP_SOCIA_NOME:-}
+      BOOTSTRAP_SOCIA_EMAIL: ${BOOTSTRAP_SOCIA_EMAIL:-}
+      BOOTSTRAP_SOCIA_SENHA: ${BOOTSTRAP_SOCIA_SENHA:-}
+
+  web:
+    build: ../frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${WEB_PORT:-8080}:80"
+
+volumes:
+  dbdata:
