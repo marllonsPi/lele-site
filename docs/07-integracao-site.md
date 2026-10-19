@@ -1,6 +1,6 @@
 # Integracao Site + Sistema
 
-Decisao da usuaria (2026-10-19): site institucional (`lele-site-main/`) e sistema de gestao passam a ser um unico produto, num unico repositorio. Este documento mapeia o que existe no site e como encaixa; o que e proposta esta marcado `Proposta` e depende de resposta em `docs/05-pendencias.md`.
+Decisao da usuaria (2026-10-19): site institucional (`site/`) e sistema de gestao passam a ser um unico produto, num unico repositorio. Este documento mapeia o que existe no site e como encaixa; o que e proposta esta marcado `Proposta` e depende de resposta em `docs/05-pendencias.md`.
 
 ## O que existe no site (fato, conferido no codigo)
 | Parte | Conteudo | Observacao |
@@ -17,7 +17,7 @@ Decisao da usuaria (2026-10-19): site institucional (`lele-site-main/`) e sistem
 - Login de cliente nao existe no sistema (so equipe). Cliente enxergar o proprio caso e requisito novo: precisa entrar na spec e respeitar o invariante 6 (nada interno ao cliente) e o 9 (LGPD).
 
 ## Proposta de arquitetura unificada
-1. Um repositorio; `lele-site-main/` passa a ser `site/` (renomear so no commit de integracao, preservando conteudo).
+1. Um repositorio; `site/` passa a ser `site/` (renomear so no commit de integracao, preservando conteudo).
 2. Mesmo `docker compose`: nginx serve o site estatico em `/` e o app Vue em `/app`; `/api` segue para o backend. Dominio publico unico.
 3. Triagem: alem do WhatsApp, enviar a triagem ao backend como "contato/lead" (novo modulo `captacao`, com consentimento LGPD), que alimenta Atendimento (item 13 da spec). Mantem WhatsApp como canal.
 4. Area do cliente: portal proprio no sistema (login de cliente, so leitura do proprio processo, lista branca de campos como o relatorio ao cliente) substitui `testeLogin`/Supabase; migracao dos dados so com autorizacao.

@@ -3,7 +3,7 @@
 Memoria do projeto para qualquer IA. Fonte da verdade funcional: `docs/00-especificacao.md`. Ordem de confianca: codigo atual > este arquivo e `docs/` > RAG global (`/home/p_991274/ai`, card `systems/crispim-campos.md`) > conhecimento geral.
 
 ## Pasta do ambiente Sistema
-Esta pasta (`crispim-campos`) e o ambiente "Sistema" do escritorio. Alem do sistema (`backend/`, `frontend/`, `docs/`), contem o site institucional do mesmo escritorio em `lele-site-main/` ("lele-site"), que tem RAG propria: ler `lele-site-main/AGENTS.md` para qualquer tarefa do site. Decisao 2026-10-19: site e sistema sao um produto so (ver `docs/07-integracao-site.md`), mas as stacks seguem distintas (site estatico, sistema Java/Vue): nao aplicar stack/regras de um ao outro ate a integracao ser feita.
+Esta pasta (`crispim-campos`) e o ambiente "Sistema" do escritorio. Alem do sistema (`backend/`, `frontend/`, `docs/`), contem o site institucional do mesmo escritorio em `site/` ("lele-site"), que tem RAG propria: ler `site/AGENTS.md` para qualquer tarefa do site. Decisao 2026-10-19: site e sistema sao um produto so (ver `docs/07-integracao-site.md`), mas as stacks seguem distintas (site estatico, sistema Java/Vue): nao aplicar stack/regras de um ao outro ate a integracao ser feita.
 
 ## Carregar so o necessario
 | Tarefa | Ler |
@@ -14,7 +14,7 @@ Esta pasta (`crispim-campos`) e o ambiente "Sistema" do escritorio. Alem do sist
 | Banco | `docs/02-modelo-de-dados.md` (e as migracoes reais quando existirem) |
 | O que falta decidir | `docs/05-pendencias.md` |
 | Como construir/revisar/testar | `docs/06-padroes-engenharia.md` |
-| Site, portal do cliente, integracao | `docs/07-integracao-site.md`, `lele-site-main/AGENTS.md` |
+| Site, portal do cliente, integracao | `docs/07-integracao-site.md`, `site/AGENTS.md` |
 | O que fazer a seguir | `docs/04-roadmap.md`, `estado.md` |
 
 ## Arquivos
