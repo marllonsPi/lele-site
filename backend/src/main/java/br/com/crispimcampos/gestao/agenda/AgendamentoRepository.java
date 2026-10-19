@@ -29,4 +29,10 @@ interface AgendamentoRepository extends JpaRepository<Agendamento, Long> {
 	@Query("select a from Agendamento a where a.tipo in :tipos and a.inicioEm >= :de and a.inicioEm < :ate")
 	List<Agendamento> findCompromissosIniciandoEntre(@Param("tipos") Collection<TipoAgendamento> tipos,
 			@Param("de") Instant de, @Param("ate") Instant ate);
+
+	/** Itens de titulares visiveis em certos estados (conferencia, painel). */
+	List<Agendamento> findByTitularIdInAndStatusIn(Collection<Long> titulares, Collection<StatusAgendamento> status);
+
+	/** Itens de estagiarios (supervisor): estagiarios sao identificados pelo responsavel. */
+	List<Agendamento> findByResponsavelIdInAndStatus(Collection<Long> responsaveis, StatusAgendamento status);
 }

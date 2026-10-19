@@ -50,18 +50,20 @@ public class PrazoService {
 	@Transactional(readOnly = true)
 	public List<PrazoDto> listar(UsuarioLogado usuario) {
 		if (usuario.perfil() == Perfil.ESTAGIARIO) {
-			return agendamentos.findByResponsavelIdOrderByPrazoInternoAscIdAsc(usuario.id()).stream().map(PrazoDto::de).toList();
+			return agendamentos.findByResponsavelIdOrderByPrazoInternoAscIdAsc(usuario.id()).stream()
+					.filter(a -> a.getTipo().ehPrazo()).map(PrazoDto::de).toList();
 		}
 		Set<Long> titulares = visibilidade.titularesVisiveis(usuario, Escopo.AGENDAMENTO);
 		if (titulares.isEmpty()) {
 			return List.of();
 		}
-		return agendamentos.findByTitularIdInOrderByPrazoInternoAscIdAsc(titulares).stream().map(PrazoDto::de).toList();
+		return agendamentos.findByTitularIdInOrderByPrazoInternoAscIdAsc(titulares).stream()
+				.filter(a -> a.getTipo().ehPrazo()).map(PrazoDto::de).toList();
 	}
 
 	@Transactional(readOnly = true)
 	public PrazoDto buscar(UsuarioLogado usuario, Long id) {
-		return PrazoDto.de(regras.obterVisivel(usuario, id));
+		return PrazoDto.de(obterPrazo(usuario, id));
 	}
 
 	@Transactional
@@ -92,7 +94,7 @@ public class PrazoService {
 	@Transactional
 	public PrazoDto corrigir(UsuarioLogado ator, Long id, String descricao, Long responsavelId, boolean urgente,
 			LocalDate inicio, LocalDate fatal) {
-		Agendamento a = regras.obterVisivel(ator, id);
+		Agendamento a = obterPrazo(ator, id);
 		if (!ator.id().equals(a.getLancadoPor()) && ator.perfil() != Perfil.SOCIA) {
 			throw proibido("Somente quem lancou o prazo (ou uma socia) pode corrigi-lo");
 		}
@@ -111,7 +113,7 @@ public class PrazoService {
 		if (ator.perfil() == Perfil.ESTAGIARIO) {
 			throw proibido("Estagiario nao confirma prazos");
 		}
-		Agendamento a = regras.obterVisivel(ator, id);
+		Agendamento a = obterPrazo(ator, id);
 		if (ator.id().equals(a.getLancadoPor())) {
 			throw proibido("Quem lancou o prazo nao pode confirma-lo");
 		}
@@ -124,6 +126,15 @@ public class PrazoService {
 	}
 
 	// ---- internos
+
+	/** Audiencias e atendimentos nao sao prazos: nesta API respondem como inexistentes. */
+	private Agendamento obterPrazo(UsuarioLogado usuario, Long id) {
+		Agendamento a = regras.obterVisivel(usuario, id);
+		if (!a.getTipo().ehPrazo()) {
+			throw new AgendaNaoEncontradaException("Prazo nao encontrado");
+		}
+		return a;
+	}
 
 	private LocalDate calcularInterno(ProcessoResumo processo, LocalDate inicio, LocalDate fatal) {
 		if (inicio == null || fatal == null) {

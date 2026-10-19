@@ -55,6 +55,21 @@ public class AgendaService {
 				.sorted(ORDEM).toList();
 	}
 
+	/**
+	 * Todos os itens em aberto dos titulares visiveis, de qualquer responsavel e sem corte de 30 dias (base do
+	 * painel das socias). Estagiario e demais perfis sem titulares recebem lista vazia.
+	 */
+	@Transactional(readOnly = true)
+	public List<AgendaItemDto> todosAbertos(UsuarioLogado ator) {
+		Set<Long> titulares = visibilidade.titularesVisiveis(ator, Escopo.AGENDAMENTO);
+		if (titulares.isEmpty()) {
+			return List.of();
+		}
+		LocalDate hoje = LocalDate.now(relogio);
+		return agendamentos.findByTitularIdInAndStatusIn(titulares, ABERTOS).stream()
+				.map(a -> AgendaItemDto.de(a, hoje, relogio.getZone())).sorted(ORDEM).toList();
+	}
+
 	/** Por dia; no dia, compromissos com hora primeiro e em ordem de horario; depois urgentes. */
 	static final Comparator<AgendaItemDto> ORDEM = Comparator.comparing(AgendaItemDto::data)
 			.thenComparing(AgendaItemDto::hora, Comparator.nullsLast(Comparator.naturalOrder()))

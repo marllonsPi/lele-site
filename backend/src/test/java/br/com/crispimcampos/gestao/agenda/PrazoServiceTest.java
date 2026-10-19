@@ -223,4 +223,18 @@ class PrazoServiceTest {
 		Agendamento a = aguardando(LUANA);
 		assertThatThrownBy(() -> a.conferirPrazo(LUANA, relogio.instant())).isInstanceOf(IllegalStateException.class);
 	}
+
+	@Test
+	void audienciaNaoApareceNemEAcessivelComoPrazo() {
+		Agendamento aud = Agendamento.marcarCompromisso(10L, ANDRESSA, TipoAgendamento.AUD, null, ANDRESSA, LETICIA, false,
+				Instant.parse("2026-10-21T13:00:00Z"), 60, Modalidade.ONLINE, "x", null, null);
+		ReflectionTestUtils.setField(aud, "id", 98L);
+		when(repo.findById(98L)).thenReturn(Optional.of(aud));
+		veAgendamentoDeAndressa(leticia);
+		when(visibilidade.titularesVisiveis(leticia, Escopo.AGENDAMENTO)).thenReturn(Set.of(ANDRESSA));
+		when(repo.findByTitularIdInOrderByPrazoInternoAscIdAsc(Set.of(ANDRESSA))).thenReturn(List.of(aud));
+		assertThat(servico.listar(leticia)).isEmpty();
+		assertThatThrownBy(() -> servico.buscar(leticia, 98L)).isInstanceOf(AgendaNaoEncontradaException.class);
+		assertThatThrownBy(() -> servico.conferir(leticia, 98L)).isInstanceOf(AgendaNaoEncontradaException.class);
+	}
 }

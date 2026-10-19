@@ -82,6 +82,12 @@ class Agendamento {
 	@Column(name = "advogado_atendente_id")
 	private Long advogadoAtendenteId;
 
+	@Column(name = "finalizado_por")
+	private Long finalizadoPor;
+
+	@Column(name = "finalizado_em")
+	private Instant finalizadoEm;
+
 	protected Agendamento() {
 	}
 
@@ -156,6 +162,43 @@ class Agendamento {
 		this.status = StatusAgendamento.PENDENTE;
 	}
 
+	/**
+	 * Responsavel conclui o trabalho (item 10). Exige prazo ja conferido (status PENDENTE) ou devolvido. Estagiario passa
+	 * antes pelo supervisor; os demais seguem direto para a conferencia das socias.
+	 */
+	void finalizar(Long por, boolean porEstagiario, Instant quando) {
+		if (status != StatusAgendamento.PENDENTE && status != StatusAgendamento.DEVOLVIDO) {
+			throw new IllegalStateException("So e possivel finalizar item pendente ou devolvido");
+		}
+		this.finalizadoPor = por;
+		this.finalizadoEm = quando;
+		this.status = porEstagiario ? StatusAgendamento.EM_CONFERENCIA_SUPERVISOR : StatusAgendamento.EM_CONFERENCIA_SOCIA;
+	}
+
+	void aprovarPeloSupervisor() {
+		if (status != StatusAgendamento.EM_CONFERENCIA_SUPERVISOR) {
+			throw new IllegalStateException("O item nao aguarda o supervisor");
+		}
+		this.status = StatusAgendamento.EM_CONFERENCIA_SOCIA;
+	}
+
+	void conferirPelaSocia() {
+		if (status != StatusAgendamento.EM_CONFERENCIA_SOCIA) {
+			throw new IllegalStateException("O item nao aguarda conferencia das socias");
+		}
+		this.status = StatusAgendamento.CONFERIDO;
+	}
+
+	/** Volta ao responsavel (supervisor ou socia devolve); some da conferencia e reaparece na agenda dele. */
+	void devolver() {
+		if (status != StatusAgendamento.EM_CONFERENCIA_SUPERVISOR && status != StatusAgendamento.EM_CONFERENCIA_SOCIA) {
+			throw new IllegalStateException("O item nao esta em conferencia");
+		}
+		this.status = StatusAgendamento.DEVOLVIDO;
+	}
+
+	Long getFinalizadoPor() { return finalizadoPor; }
+	Instant getFinalizadoEm() { return finalizadoEm; }
 	Long getId() { return id; }
 	Long getProcessoId() { return processoId; }
 	Long getTitularId() { return titularId; }
