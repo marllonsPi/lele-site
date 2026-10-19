@@ -65,7 +65,11 @@ public class CapturaService {
 			int lidos = 0;
 			int novos = 0;
 			List<String> erros = new ArrayList<>();
-			for (OabMonitorada oab : oabs) {
+			List<Long> proprios = fonte.titularesProprios();
+			// fonte propria: um "monitorado" sem OAB por titular conectado; senao, um por OAB ativa
+			List<OabMonitorada> alvos = proprios == null ? oabs
+					: proprios.stream().map(t -> new OabMonitorada(t, null, null)).toList();
+			for (OabMonitorada oab : alvos) {
 				try {
 					var r = pipeline.processar(oab.titularId(), fonte.buscar(oab, de, ate));
 					lidos += r.lidos();

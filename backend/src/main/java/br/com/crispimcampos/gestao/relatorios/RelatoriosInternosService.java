@@ -142,8 +142,8 @@ public class RelatoriosInternosService {
 		byte[] arquivo = pdf.renderizar(HtmlRelatorios.interno(timbres.timbre(), dados));
 		int enviados = 0;
 		for (UsuarioDto u : usuarios.listar()) {
-			if (u.ativo() && u.perfil() == Perfil.SOCIA) {
-				email.get(0).enviarComAnexo(u.email(), dados.titulo(), "Segue em anexo o relatorio interno: " + dados.titulo() + ".",
+			if (u.ativo() && u.perfil() == Perfil.SOCIA && u.destinoAlertas() != null) {
+				email.get(0).enviarComAnexo(u.destinoAlertas(), dados.titulo(), "Segue em anexo o relatorio interno: " + dados.titulo() + ".",
 						"relatorio-" + tipo.name().toLowerCase() + ".pdf", arquivo);
 				enviados++;
 			}

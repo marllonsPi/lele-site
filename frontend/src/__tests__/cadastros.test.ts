@@ -42,6 +42,12 @@ const m = vi.hoisted(() => ({
   desativarFeriado: vi.fn(),
 }))
 vi.mock('../api/cadastros', async (original) => ({ ...(await original<typeof import('../api/cadastros')>()), ...m }))
+vi.mock('../api/publicacoes', async (original) => ({
+  ...(await original<typeof import('../api/publicacoes')>()),
+  listarFiltros: vi.fn(async () => []),
+  criarFiltro: vi.fn(),
+  desativarFiltro: vi.fn(),
+}))
 vi.mock('vue-router', async (original) => ({ ...(await original<typeof import('vue-router')>()), useRoute: () => ({ query: {} }) }))
 
 const cliente = (p: Partial<Cliente> = {}): Cliente => ({
@@ -52,7 +58,8 @@ const processo = (p: Partial<Processo> = {}): Processo => ({
   situacao: null, valorCausa: null, clienteId: 1, clienteNome: 'Maria Cliente', advogadoId: 3, ativo: true, partes: [{ id: 1, nome: 'Fulano', papel: 'CONTRARIA' }], ...p,
 })
 const usuario = (p: Partial<Usuario> = {}): Usuario => ({
-  id: 1, nome: 'Sócia A', email: 'a@t.test', perfil: 'SOCIA', ativo: true, supervisorId: null, oabs: [], ...p,
+  id: 1, nome: 'Sócia A', email: 'a@t.test', perfil: 'SOCIA', ativo: true, supervisorId: null, oabs: [], mestre: false, telefone: null, whatsapp: null, cargo: null,
+  emailAlertas: null, alertasEmail: true, assinatura: null, ...p,
 })
 
 const SOCIA = { id: 1, nome: 'Sócia A', email: 'a@t.test', perfil: 'SOCIA' as const }
@@ -155,7 +162,7 @@ describe('UsuariosView', () => {
   it('estagiario exige supervisor e envia senha inicial', async () => {
     m.criarUsuario.mockResolvedValue(usuario())
     const w = await montar(UsuariosView)
-    await botao(w, 'Novo usuário').trigger('click')
+    await botao(w, 'Nova conta').trigger('click')
     const f = w.find('form.formulario')
     expect(f.text()).not.toContain('Supervisor')
     await f.find('input').setValue('Estag Novo')
@@ -174,13 +181,13 @@ describe('UsuariosView', () => {
   it('cadastra OAB em maiusculas', async () => {
     m.adicionarOab.mockResolvedValue({})
     const w = await montar(UsuariosView)
-    await w.findAll('button').filter((b) => b.text() === 'OAB')[0]!.trigger('click')
+    await w.findAll('button').filter((b) => b.text() === 'OABs')[0]!.trigger('click')
     const f = w.find('article form')
     await f.find('input').setValue('12345')
     await f.findAll('input')[1]!.setValue('df')
     await f.trigger('submit')
     await flushPromises()
-    expect(m.adicionarOab).toHaveBeenCalledWith(1, '12345', 'DF', false)
+    expect(m.adicionarOab).toHaveBeenCalledWith(3, '12345', 'DF', false)
   })
 })
 

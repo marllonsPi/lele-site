@@ -50,7 +50,7 @@ Lacunas da spec e decisoes abertas. Nao decidir por analogia: perguntar. Ao reso
 33. Itens vencidos ha mais de 30 dias saem da agenda individual (continuam nos dados); ver pendencia 2 sobre onde passam a aparecer.
 
 ## Fases 5 a 11 (2026-10-19)
-34. Conectores do Domicilio Judicial Eletronico e do e-mail push (IMAP/OAuth por advogado): dependem de acesso/credenciais (spike da pendencia 12). Hoje entram por `POST /api/captura/importar`. O DJEN ja tem conector (API publica verificada).
+34. Domicilio Judicial Eletronico: depende de acesso/credenciais (spike da pendencia 12); hoje entra por `POST /api/captura/importar`. DJEN tem conector. E-mail: conector `GmailFonte` por OAuth (docs/13) implementado; faltam o projeto no Google Cloud (usuaria), validar a consulta/parser com e-mails push reais, escolher modo (teste com reconexao semanal x Workspace interno x producao nao verificada) e a tela de conexao no frontend.
 35. WhatsApp: sem provedor definido (pendencia 13); relatorio ao cliente por WhatsApp/impressao e so registrado (o escritorio entrega o PDF). Alertas so por e-mail.
 36. Socia pode conferir o que ela mesma finalizou. Exigir outra socia? E devolucao: pode a socia que devolveu receber de volta para conferir de novo?
 37. 2FA existe e e opcional; definir se e obrigatorio para socias (pendencia 14) e se o segredo TOTP deve ser criptografado em repouso.

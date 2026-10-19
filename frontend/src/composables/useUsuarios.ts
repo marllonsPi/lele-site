@@ -14,8 +14,8 @@ const usuarios = ref<UsuarioBasico[]>([])
 let carregado = false
 
 /**
- * Nomes para exibir. Hoje a API so lista usuarios para socias (GET /api/usuarios);
- * os demais perfis veem o proprio nome e "Usuario #id" para os outros.
+ * Nomes da equipe para exibir (GET /api/usuarios/nomes, aberto a todos os perfis). Se a chamada falhar,
+ * mostra so o proprio nome e "Usuario #id" para os outros.
  */
 async function carregar(forcar = false): Promise<void> {
   if (carregado && !forcar) {
@@ -23,7 +23,7 @@ async function carregar(forcar = false): Promise<void> {
   }
   const { eu } = useSessao()
   try {
-    usuarios.value = await api<UsuarioBasico[]>('GET', '/api/usuarios')
+    usuarios.value = await api<UsuarioBasico[]>('GET', '/api/usuarios/nomes')
   } catch {
     usuarios.value = eu.value ? [{ id: eu.value.id, nome: eu.value.nome, perfil: eu.value.perfil, ativo: true }] : []
   }

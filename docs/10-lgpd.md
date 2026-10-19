@@ -12,6 +12,7 @@ Escopo: o que o sistema ja faz e o que ainda depende de decisao. Fonte funcional
 | Relatorios enviados ao cliente (copia em PDF) | `relatorio_cliente` | Socias e advogado que gerou |
 | Financeiro | `contrato_honorarios`, `parcela`, `despesa`, `honorario_variavel` | SOMENTE socias, com auditoria de consulta |
 | Anexos e modelos | `STORAGE_DIR` | Visibilidade do dono (agendamento/processo) |
+| Conexao Google (refresh token cifrado, e-mail da conta) | `conexao_google` | So o proprio usuario ve/desconecta; token nunca sai da API |
 | Usuarios, OABs, segredo TOTP | `usuario`, `oab` | Socias gerenciam; segredo so do proprio |
 
 ## Controles implementados
@@ -22,6 +23,8 @@ Escopo: o que o sistema ja faz e o que ainda depende de decisao. Fonte funcional
 - **Relatorio ao cliente** so com campos da lista branca e so apos aprovacao (CHECK no banco).
 - **Anexos**: extensao + assinatura do arquivo, 20 MB, nome em disco opaco (UUID), download sempre como binario.
 - **Sem dado real em testes/fixtures/logs**: o seed e fictício; mensagens de alerta nao trazem nome de cliente nem texto de publicacao; falha de login nao grava o e-mail.
+
+- **Conexao Google** (docs/13): sem senha do Google; escopo so de leitura do Gmail; refresh token AES-256-GCM com chave fora do banco; desconexao pela propria pessoa revoga no Google; so mensagens que casam com a consulta de intimacoes sao lidas e guardadas.
 
 ## Direitos do titular
 - `GET /api/lgpd/clientes/{id}/exportar`: cadastro, processos, atendimentos e metadados dos relatorios (so socias, auditado).

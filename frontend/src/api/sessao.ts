@@ -7,6 +7,8 @@ export interface Eu {
   nome: string
   email: string
   perfil: Perfil
+  /** Acesso mestre: sempre socia, com poderes de administracao do sistema. */
+  mestre?: boolean
 }
 
 export const ROTULO_PERFIL: Record<Perfil, string> = {

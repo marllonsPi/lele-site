@@ -52,6 +52,10 @@ function temPerfil(...perfis: Perfil[]): boolean {
   return eu.value !== null && perfis.includes(eu.value.perfil)
 }
 
+function ehMestre(): boolean {
+  return eu.value?.mestre === true
+}
+
 /** So para testes: volta ao estado inicial. */
 function reiniciar(): void {
   eu.value = null
@@ -59,5 +63,5 @@ function reiniciar(): void {
 }
 
 export function useSessao() {
-  return { eu: readonly(eu), carregada: readonly(carregada), carregar, entrar, sair, temPerfil, reiniciar }
+  return { eu: readonly(eu), carregada: readonly(carregada), carregar, entrar, sair, temPerfil, ehMestre, reiniciar }
 }

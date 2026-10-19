@@ -50,6 +50,23 @@ public class Usuario {
 	@Column(name = "totp_ativo", nullable = false)
 	private boolean totpAtivo;
 
+	@Column(nullable = false)
+	private boolean mestre;
+
+	private String telefone;
+
+	private String whatsapp;
+
+	private String cargo;
+
+	@Column(name = "email_alertas")
+	private String emailAlertas;
+
+	@Column(name = "alertas_email", nullable = false)
+	private boolean alertasEmail = true;
+
+	private String assinatura;
+
 	protected Usuario() {
 	}
 
@@ -103,6 +120,55 @@ public class Usuario {
 
 	public void trocarSenha(String novoHash) {
 		this.senhaHash = novoHash;
+	}
+
+	public boolean isMestre() {
+		return mestre;
+	}
+
+	void definirMestre(boolean mestre) {
+		if (mestre && perfil != Perfil.SOCIA) {
+			throw new IllegalStateException("Somente socia pode ter acesso mestre");
+		}
+		this.mestre = mestre;
+	}
+
+	public String getTelefone() {
+		return telefone;
+	}
+
+	public String getWhatsapp() {
+		return whatsapp;
+	}
+
+	public String getCargo() {
+		return cargo;
+	}
+
+	public String getEmailAlertas() {
+		return emailAlertas;
+	}
+
+	public boolean isAlertasEmail() {
+		return alertasEmail;
+	}
+
+	public String getAssinatura() {
+		return assinatura;
+	}
+
+	/** Dados de contato e atuacao da conta; texto vazio vira ausente. */
+	void atualizarPerfilProfissional(DadosProfissionais d) {
+		this.telefone = limpo(d.telefone());
+		this.whatsapp = limpo(d.whatsapp());
+		this.cargo = limpo(d.cargo());
+		this.emailAlertas = d.emailAlertas() == null || d.emailAlertas().isBlank() ? null : d.emailAlertas().trim().toLowerCase();
+		this.alertasEmail = d.alertasEmail() == null || d.alertasEmail();
+		this.assinatura = limpo(d.assinatura());
+	}
+
+	private static String limpo(String valor) {
+		return valor == null || valor.isBlank() ? null : valor.trim();
 	}
 
 	public Usuario getSupervisor() {

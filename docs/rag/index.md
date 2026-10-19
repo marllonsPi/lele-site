@@ -16,6 +16,7 @@ Esta pasta (`crispim-campos`) e o ambiente "Sistema" do escritorio. Alem do sist
 | Como construir/revisar/testar | `docs/06-padroes-engenharia.md` |
 | Site, portal do cliente, integracao | `docs/07-integracao-site.md`, `site/AGENTS.md` |
 | Deploy na VM Oracle | `docs/08-infra-oracle.md`, `docs/09-plano-deploy-oracle.md` |
+| Conexao Google / captura por e-mail | `docs/13-conexao-google.md` |
 | O que fazer a seguir | `docs/04-roadmap.md`, `estado.md` |
 
 ## Arquivos

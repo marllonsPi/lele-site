@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** Cria a primeira socia a partir de variaveis de ambiente, apenas com a base vazia. */
 @Component
+@org.springframework.core.annotation.Order(1)
 class BootstrapSocia implements ApplicationRunner {
 
 	private static final Logger log = LoggerFactory.getLogger(BootstrapSocia.class);

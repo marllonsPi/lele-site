@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { nextTick, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import logo from '../assets/logo-white.png'
 import { useSessao } from '../composables/useSessao'
 
 const { entrar } = useSessao()
@@ -54,8 +55,10 @@ function voltar() {
 </script>
 
 <template>
-  <main class="login" id="conteudo">
-    <h1>Crispim &amp; Campos Advocacia</h1>
+  <main class="tela-login" id="conteudo">
+   <div class="login">
+    <img :src="logo" alt="Crispim &amp; Campos Advocacia" class="logo-login" />
+    <h1>Sistema de gestão do escritório</h1>
     <form @submit.prevent="enviar">
       <template v-if="!pedeCodigo">
         <label>
@@ -88,5 +91,6 @@ function voltar() {
       </button>
       <button v-if="pedeCodigo" type="button" class="botao-secundario" @click="voltar">Voltar</button>
     </form>
+   </div>
   </main>
 </template>

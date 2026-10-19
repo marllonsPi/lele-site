@@ -3,32 +3,51 @@ import type { Perfil } from '../api/sessao'
 export interface ItemMenu {
   rota: string
   rotulo: string
+  /** Secao do menu lateral. */
+  grupo: string
   /** Vazio = todos os perfis. A UI so esconde; o servidor decide. */
   perfis?: Perfil[]
+  /** So o acesso mestre. */
+  mestre?: boolean
 }
 
 /** Menu principal; cada parte do frontend acrescenta suas telas aqui. */
 export const ITENS_MENU: ItemMenu[] = [
-  { rota: '/', rotulo: 'Início' },
-  { rota: '/painel', rotulo: 'Painel', perfis: ['SOCIA'] },
-  { rota: '/agenda', rotulo: 'Agenda' },
-  { rota: '/prazos', rotulo: 'Prazos' },
+  { rota: '/', rotulo: 'Início', grupo: 'Dia a dia' },
+  { rota: '/painel', rotulo: 'Painel', grupo: 'Dia a dia', perfis: ['SOCIA'] },
+  { rota: '/agenda', rotulo: 'Agenda', grupo: 'Dia a dia' },
+  { rota: '/prazos', rotulo: 'Prazos', grupo: 'Dia a dia' },
   // supervisores sao advogados; o servidor decide o que cada um ve na fila
-  { rota: '/conferencia', rotulo: 'Conferência', perfis: ['SOCIA', 'ADVOGADO'] },
-  { rota: '/publicacoes', rotulo: 'Publicações' },
-  { rota: '/atendimento', rotulo: 'Atendimento' },
-  { rota: '/clientes', rotulo: 'Clientes' },
-  { rota: '/processos', rotulo: 'Processos' },
-  { rota: '/relatorios', rotulo: 'Relatórios' },
-  { rota: '/modelos', rotulo: 'Modelos' },
-  { rota: '/financeiro', rotulo: 'Financeiro', perfis: ['SOCIA'] },
-  { rota: '/calendario', rotulo: 'Calendário' },
-  { rota: '/captura', rotulo: 'Captura', perfis: ['SOCIA'] },
-  { rota: '/usuarios', rotulo: 'Usuários', perfis: ['SOCIA'] },
-  { rota: '/visibilidade', rotulo: 'Visibilidade', perfis: ['SOCIA'] },
-  { rota: '/seguranca', rotulo: 'Segurança' },
+  { rota: '/conferencia', rotulo: 'Conferência', grupo: 'Dia a dia', perfis: ['SOCIA', 'ADVOGADO'] },
+  { rota: '/publicacoes', rotulo: 'Publicações', grupo: 'Dia a dia' },
+  { rota: '/atendimento', rotulo: 'Atendimento', grupo: 'Dia a dia' },
+  { rota: '/clientes', rotulo: 'Clientes', grupo: 'Cadastros' },
+  { rota: '/processos', rotulo: 'Processos', grupo: 'Cadastros' },
+  { rota: '/modelos', rotulo: 'Modelos', grupo: 'Cadastros' },
+  { rota: '/calendario', rotulo: 'Calendário', grupo: 'Cadastros' },
+  { rota: '/relatorios', rotulo: 'Relatórios', grupo: 'Gestão' },
+  { rota: '/financeiro', rotulo: 'Financeiro', grupo: 'Gestão', perfis: ['SOCIA'] },
+  { rota: '/captura', rotulo: 'Captura', grupo: 'Gestão', perfis: ['SOCIA'] },
+  { rota: '/usuarios', rotulo: 'Contas e OABs', grupo: 'Administração', perfis: ['SOCIA'] },
+  { rota: '/visibilidade', rotulo: 'Visibilidade', grupo: 'Administração', perfis: ['SOCIA'] },
+  { rota: '/sistema', rotulo: 'Sistema', grupo: 'Administração', perfis: ['SOCIA'], mestre: true },
+  { rota: '/seguranca', rotulo: 'Minha conta', grupo: 'Conta' },
 ]
 
-export function itensPara(perfil: Perfil): ItemMenu[] {
-  return ITENS_MENU.filter((i) => !i.perfis || i.perfis.includes(perfil))
+export function itensPara(perfil: Perfil, mestre = false): ItemMenu[] {
+  return ITENS_MENU.filter((i) => (!i.perfis || i.perfis.includes(perfil)) && (!i.mestre || mestre))
+}
+
+/** Agrupa mantendo a ordem do menu. */
+export function porGrupo(itens: ItemMenu[]): { grupo: string; itens: ItemMenu[] }[] {
+  const saida: { grupo: string; itens: ItemMenu[] }[] = []
+  for (const i of itens) {
+    const g = saida.find((x) => x.grupo === i.grupo)
+    if (g) {
+      g.itens.push(i)
+    } else {
+      saida.push({ grupo: i.grupo, itens: [i] })
+    }
+  }
+  return saida
 }

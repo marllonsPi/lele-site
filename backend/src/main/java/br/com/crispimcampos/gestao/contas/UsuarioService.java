@@ -45,15 +45,30 @@ public class UsuarioService {
 
 	@Transactional
 	public UsuarioDto criar(Long atorId, String nome, String email, String senha, Perfil perfil, Long supervisorId) {
+		return criar(atorId, nome, email, senha, perfil, supervisorId, DadosProfissionais.vazio(), false);
+	}
+
+	@Transactional
+	public UsuarioDto criar(Long atorId, String nome, String email, String senha, Perfil perfil, Long supervisorId,
+			DadosProfissionais profissionais, boolean mestre) {
 		validarSenha(senha);
+		if (mestre) {
+			exigirMestre(atorId, "Somente o acesso mestre cria outro acesso mestre");
+			if (perfil != Perfil.SOCIA) {
+				throw regra("O acesso mestre deve ter o perfil de socia");
+			}
+		}
 		String emailNormalizado = email.trim().toLowerCase();
 		if (usuarios.findByEmail(emailNormalizado).isPresent()) {
 			throw conflito("Ja existe usuario com este e-mail");
 		}
 		Usuario u = new Usuario(nome.trim(), emailNormalizado, encoder.encode(senha), perfil);
 		definirSupervisor(u, perfil, supervisorId);
+		u.atualizarPerfilProfissional(profissionais == null ? DadosProfissionais.vazio() : profissionais);
+		u.definirMestre(mestre);
 		u = usuarios.save(u);
-		auditoria.registrar(atorId, "USUARIO_CRIADO", "usuario", String.valueOf(u.getId()), "perfil=" + perfil);
+		auditoria.registrar(atorId, "USUARIO_CRIADO", "usuario", String.valueOf(u.getId()),
+				"perfil=" + perfil + (mestre ? " mestre" : ""));
 		eventos.publishEvent(new UsuarioCriado(u.getId(), perfil));
 		return paraDto(u);
 	}
@@ -61,6 +76,30 @@ public class UsuarioService {
 	@Transactional
 	public UsuarioDto atualizar(Long atorId, Long id, String nome, String email, Perfil perfil, Long supervisorId) {
 		Usuario u = obter(id);
+		return atualizar(atorId, id, nome, email, perfil, supervisorId, null, u.isMestre());
+	}
+
+	/**
+	 * Atualiza a conta inteira. {@code profissionais} nulo preserva os dados de contato; {@code mestre} so muda por
+	 * quem ja e mestre (nunca no proprio acesso).
+	 */
+	@Transactional
+	public UsuarioDto atualizar(Long atorId, Long id, String nome, String email, Perfil perfil, Long supervisorId,
+			DadosProfissionais profissionais, boolean mestre) {
+		Usuario u = obter(id);
+		protegerMestre(atorId, u);
+		if (mestre != u.isMestre()) {
+			exigirMestre(atorId, "Somente o acesso mestre concede ou retira o acesso mestre");
+			if (id.equals(atorId)) {
+				throw regra("Voce nao pode retirar o seu proprio acesso mestre");
+			}
+			if (!mestre && u.isAtivo() && usuarios.countByMestreTrueAndAtivoTrue() <= 1) {
+				throw regra("Deve haver ao menos um acesso mestre ativo");
+			}
+		}
+		if ((mestre || u.isMestre()) && perfil != Perfil.SOCIA) {
+			throw regra("O acesso mestre deve ter o perfil de socia");
+		}
 		String emailNormalizado = email.trim().toLowerCase();
 		usuarios.findByEmail(emailNormalizado).filter(outro -> !outro.getId().equals(id)).ifPresent(outro -> {
 			throw conflito("Ja existe usuario com este e-mail");
@@ -81,18 +120,27 @@ public class UsuarioService {
 		}
 		u.atualizar(nome.trim(), emailNormalizado, perfil);
 		definirSupervisor(u, perfil, supervisorId);
-		auditoria.registrar(atorId, "USUARIO_ATUALIZADO", "usuario", String.valueOf(id), "perfil=" + perfil);
+		if (profissionais != null) {
+			u.atualizarPerfilProfissional(profissionais);
+		}
+		u.definirMestre(mestre);
+		auditoria.registrar(atorId, "USUARIO_ATUALIZADO", "usuario", String.valueOf(id),
+				"perfil=" + perfil + (mestre ? " mestre" : ""));
 		return paraDto(u);
 	}
 
 	@Transactional
 	public void desativar(Long atorId, Long id) {
 		Usuario u = obter(id);
+		protegerMestre(atorId, u);
 		if (id.equals(atorId)) {
 			throw regra("Voce nao pode desativar o proprio usuario");
 		}
 		if (u.getPerfil() == Perfil.SOCIA && usuarios.countByPerfilAndAtivoTrue(Perfil.SOCIA) <= 1) {
 			throw regra("Deve haver ao menos uma socia ativa");
+		}
+		if (u.isMestre() && usuarios.countByMestreTrueAndAtivoTrue() <= 1) {
+			throw regra("Deve haver ao menos um acesso mestre ativo");
 		}
 		if (!usuarios.findBySupervisorIdAndAtivoTrue(id).isEmpty()) {
 			throw regra("Usuario supervisiona estagiarios ativos; reatribua o supervisor antes");
@@ -103,20 +151,25 @@ public class UsuarioService {
 
 	@Transactional
 	public void reativar(Long atorId, Long id) {
-		obter(id).reativar();
+		Usuario u = obter(id);
+		protegerMestre(atorId, u);
+		u.reativar();
 		auditoria.registrar(atorId, "USUARIO_REATIVADO", "usuario", String.valueOf(id), null);
 	}
 
 	@Transactional
 	public void redefinirSenha(Long atorId, Long id, String novaSenha) {
 		validarSenha(novaSenha);
-		obter(id).trocarSenha(encoder.encode(novaSenha));
+		Usuario u = obter(id);
+		protegerMestre(atorId, u);
+		u.trocarSenha(encoder.encode(novaSenha));
 		auditoria.registrar(atorId, "SENHA_REDEFINIDA", "usuario", String.valueOf(id), null);
 	}
 
 	@Transactional
 	public OabDto adicionarOab(Long atorId, Long usuarioId, String numero, String uf, boolean principal) {
 		Usuario u = obter(usuarioId);
+		protegerMestre(atorId, u);
 		if (!PERFIS_COM_OAB.contains(u.getPerfil())) {
 			throw regra("Somente socias e advogados possuem OAB");
 		}
@@ -144,6 +197,7 @@ public class UsuarioService {
 	@Transactional
 	public void desativarOab(Long atorId, Long oabId) {
 		Oab o = obterOab(oabId);
+		protegerMestre(atorId, o.getUsuario());
 		o.desativar();
 		auditoria.registrar(atorId, "OAB_DESATIVADA", "oab", String.valueOf(oabId), null);
 	}
@@ -151,6 +205,7 @@ public class UsuarioService {
 	@Transactional
 	public void reativarOab(Long atorId, Long oabId) {
 		Oab o = obterOab(oabId);
+		protegerMestre(atorId, o.getUsuario());
 		o.ativar();
 		auditoria.registrar(atorId, "OAB_REATIVADA", "oab", String.valueOf(oabId), null);
 		eventos.publishEvent(new OabAtivada(o.getId(), o.getUsuario().getId(), o.getNumero(), o.getUf()));
@@ -159,6 +214,7 @@ public class UsuarioService {
 	@Transactional
 	public void tornarPrincipal(Long atorId, Long oabId) {
 		Oab o = obterOab(oabId);
+		protegerMestre(atorId, o.getUsuario());
 		if (!o.isAtiva()) {
 			throw regra("Reative a OAB antes de torna-la principal");
 		}
@@ -185,6 +241,44 @@ public class UsuarioService {
 		u.vincularSupervisor(sup);
 	}
 
+	/** Conta mestre so e alterada por um mestre (ou por ela mesma, nos dados que a socia ja pode mexer). */
+	private void protegerMestre(Long atorId, Usuario alvo) {
+		if (alvo.isMestre() && (atorId == null || !atorId.equals(alvo.getId()))) {
+			exigirMestre(atorId, "Esta conta tem acesso mestre e so pode ser alterada por outro acesso mestre");
+		}
+	}
+
+	private void exigirMestre(Long atorId, String mensagem) {
+		// atorId nulo e o proprio sistema (bootstrap, seed de teste): nao ha ator humano a restringir
+		if (atorId != null && !usuarios.findById(atorId).map(Usuario::isMestre).orElse(false)) {
+			throw regra(mensagem);
+		}
+	}
+
+	/** O proprio usuario atualiza o seu contato e preferencias (nunca perfil, e-mail de login ou acesso mestre). */
+	@Transactional
+	public UsuarioDto atualizarMeuPerfil(Long id, DadosProfissionais dados) {
+		Usuario u = obter(id);
+		u.atualizarPerfilProfissional(dados);
+		auditoria.registrar(id, "PERFIL_PROPRIO_ATUALIZADO", "usuario", String.valueOf(id), null);
+		return paraDto(u);
+	}
+
+	/** Troca da propria senha exigindo a senha atual. */
+	@Transactional
+	public void trocarMinhaSenha(Long id, String senhaAtual, String novaSenha) {
+		Usuario u = obter(id);
+		if (senhaAtual == null || !encoder.matches(senhaAtual, u.getSenhaHash())) {
+			throw regra("Senha atual incorreta");
+		}
+		validarSenha(novaSenha);
+		if (encoder.matches(novaSenha, u.getSenhaHash())) {
+			throw regra("A nova senha deve ser diferente da atual");
+		}
+		u.trocarSenha(encoder.encode(novaSenha));
+		auditoria.registrar(id, "SENHA_PROPRIA_ALTERADA", "usuario", String.valueOf(id), null);
+	}
+
 	private void validarSenha(String senha) {
 		if (senha == null || senha.length() < SENHA_MINIMA) {
 			throw regra("A senha deve ter ao menos " + SENHA_MINIMA + " caracteres");
@@ -202,7 +296,8 @@ public class UsuarioService {
 	private UsuarioDto paraDto(Usuario u) {
 		List<OabDto> lista = oabs.findByUsuarioIdOrderByPrincipalDescIdAsc(u.getId()).stream().map(OabDto::de).toList();
 		return new UsuarioDto(u.getId(), u.getNome(), u.getEmail(), u.getPerfil(), u.isAtivo(),
-				u.getSupervisor() == null ? null : u.getSupervisor().getId(), lista);
+				u.getSupervisor() == null ? null : u.getSupervisor().getId(), lista, u.isMestre(), u.getTelefone(),
+				u.getWhatsapp(), u.getCargo(), u.getEmailAlertas(), u.isAlertasEmail(), u.getAssinatura());
 	}
 
 	private static RegraDeContaException regra(String m) {

@@ -10,5 +10,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
 	long countByPerfilAndAtivoTrue(Perfil perfil);
 
+	long countByMestreTrueAndAtivoTrue();
+
 	List<Usuario> findBySupervisorIdAndAtivoTrue(Long supervisorId);
 }

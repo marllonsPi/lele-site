@@ -7,16 +7,23 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 /** Identidade na sessao: dados minimos, sem entidade JPA. */
-public record UsuarioLogado(Long id, String nome, String email, String senhaHash, Perfil perfil, boolean ativo)
-		implements UserDetails {
+public record UsuarioLogado(Long id, String nome, String email, String senhaHash, Perfil perfil, boolean ativo,
+		boolean mestre) implements UserDetails {
 
-	public static UsuarioLogado de(Usuario u) {
-		return new UsuarioLogado(u.getId(), u.getNome(), u.getEmail(), u.getSenhaHash(), u.getPerfil(), u.isAtivo());
+	public UsuarioLogado(Long id, String nome, String email, String senhaHash, Perfil perfil, boolean ativo) {
+		this(id, nome, email, senhaHash, perfil, ativo, false);
 	}
 
+	public static UsuarioLogado de(Usuario u) {
+		return new UsuarioLogado(u.getId(), u.getNome(), u.getEmail(), u.getSenhaHash(), u.getPerfil(), u.isAtivo(),
+				u.isMestre());
+	}
+
+	/** O mestre e sempre socia (CHECK no banco), entao herda tudo que a socia pode e ganha ROLE_MESTRE. */
 	@Override
 	public Collection<? extends GrantedAuthority> getAuthorities() {
-		return List.of(new SimpleGrantedAuthority(perfil.papel()));
+		return mestre ? List.of(new SimpleGrantedAuthority(perfil.papel()), new SimpleGrantedAuthority("ROLE_MESTRE"))
+				: List.of(new SimpleGrantedAuthority(perfil.papel()));
 	}
 
 	@Override

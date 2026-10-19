@@ -26,11 +26,12 @@ import org.springframework.web.bind.annotation.RestController;
 class UsuarioController {
 
 	record NovoUsuario(@NotBlank @Size(max = 200) String nome, @NotBlank @Email @Size(max = 254) String email,
-			@NotBlank String senha, @NotNull Perfil perfil, Long supervisorId) {
+			@NotBlank String senha, @NotNull Perfil perfil, Long supervisorId, @Valid DadosProfissionais profissionais,
+			Boolean mestre) {
 	}
 
 	record EdicaoUsuario(@NotBlank @Size(max = 200) String nome, @NotBlank @Email @Size(max = 254) String email,
-			@NotNull Perfil perfil, Long supervisorId) {
+			@NotNull Perfil perfil, Long supervisorId, @Valid DadosProfissionais profissionais, Boolean mestre) {
 	}
 
 	record NovaSenha(@NotBlank String senha) {
@@ -59,13 +60,15 @@ class UsuarioController {
 	@PostMapping("/api/usuarios")
 	@ResponseStatus(HttpStatus.CREATED)
 	UsuarioDto criar(@AuthenticationPrincipal UsuarioLogado ator, @Valid @RequestBody NovoUsuario c) {
-		return servico.criar(ator.id(), c.nome(), c.email(), c.senha(), c.perfil(), c.supervisorId());
+		return servico.criar(ator.id(), c.nome(), c.email(), c.senha(), c.perfil(), c.supervisorId(), c.profissionais(),
+				Boolean.TRUE.equals(c.mestre()));
 	}
 
 	@PutMapping("/api/usuarios/{id}")
 	UsuarioDto atualizar(@AuthenticationPrincipal UsuarioLogado ator, @PathVariable Long id,
 			@Valid @RequestBody EdicaoUsuario c) {
-		return servico.atualizar(ator.id(), id, c.nome(), c.email(), c.perfil(), c.supervisorId());
+		boolean mestre = c.mestre() != null ? c.mestre() : servico.buscar(id).mestre();
+		return servico.atualizar(ator.id(), id, c.nome(), c.email(), c.perfil(), c.supervisorId(), c.profissionais(), mestre);
 	}
 
 	@PostMapping("/api/usuarios/{id}/desativar")

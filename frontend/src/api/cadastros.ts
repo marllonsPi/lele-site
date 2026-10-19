@@ -63,12 +63,30 @@ export interface Usuario {
   ativo: boolean
   supervisorId: number | null
   oabs: Oab[]
+  mestre: boolean
+  telefone: string | null
+  whatsapp: string | null
+  cargo: string | null
+  emailAlertas: string | null
+  alertasEmail: boolean
+  assinatura: string | null
+}
+/** Contato e atuacao da conta; texto vazio e gravado como ausente. */
+export interface DadosProfissionais {
+  telefone: string | null
+  whatsapp: string | null
+  cargo: string | null
+  emailAlertas: string | null
+  alertasEmail: boolean
+  assinatura: string | null
 }
 export interface DadosUsuario {
   nome: string
   email: string
   perfil: Perfil
   supervisorId: number | null
+  profissionais?: DadosProfissionais
+  mestre?: boolean
 }
 
 export type Escopo = 'PUBLICACAO' | 'AGENDAMENTO' | 'PROCESSO'
@@ -124,6 +142,8 @@ export const redefinirSenha = (id: number, senha: string) => api('PUT', `/api/us
 export const adicionarOab = (id: number, numero: string, uf: string, principal: boolean) =>
   api<Oab>('POST', `/api/usuarios/${id}/oabs`, { json: { numero, uf, principal } })
 export const desativarOab = (oabId: number) => api('DELETE', `/api/oabs/${oabId}`)
+export const reativarOab = (oabId: number) => api('POST', `/api/oabs/${oabId}/reativar`)
+export const tornarOabPrincipal = (oabId: number) => api('POST', `/api/oabs/${oabId}/principal`)
 
 export const listarVisibilidade = () => api<ParVisibilidade[]>('GET', '/api/visibilidade')
 export const definirVisibilidade = (observadorId: number, regras: ParVisibilidade[]) =>

@@ -104,7 +104,7 @@ class PostgresRealTest {
 	@Test
 	void migracoesAplicadasEMapeamentoValido() {
 		Integer aplicadas = jdbc.queryForObject("select count(*) from flyway_schema_history where success", Integer.class);
-		assertThat(aplicadas).isEqualTo(16);
+		assertThat(aplicadas).isEqualTo(18);
 	}
 
 	@Test
@@ -536,10 +536,10 @@ class PostgresRealTest {
 	@Test
 	void execucaoDaCapturaRegistraErroDaFonteSemDerrubarOResto() {
 		var r = captura.executar(como("Socia A").id(), LocalDate.now().minusDays(1), LocalDate.now());
-		assertThat(r).hasSize(1);
-		assertThat(r.get(0).fonte()).isEqualTo("DJEN");
-		assertThat(r.get(0).resultado()).isEqualTo("ERRO");
-		assertThat(r.get(0).erro()).isNotBlank();
+		var djen = r.stream().filter(e -> "DJEN".equals(e.fonte())).toList();
+		assertThat(djen).hasSize(1);
+		assertThat(djen.get(0).resultado()).isEqualTo("ERRO");
+		assertThat(djen.get(0).erro()).isNotBlank();
 		assertThat(captura.execucoes()).isNotEmpty();
 	}
 

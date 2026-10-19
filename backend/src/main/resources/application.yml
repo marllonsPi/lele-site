@@ -48,6 +48,20 @@ app:
       nome: ${BOOTSTRAP_SOCIA_NOME:}
       email: ${BOOTSTRAP_SOCIA_EMAIL:}
       senha: ${BOOTSTRAP_SOCIA_SENHA:}
+    # Acesso mestre: criado (ou promovido, se o e-mail ja existir) a cada partida. Pode sair do ambiente depois.
+    mestre:
+      nome: ${BOOTSTRAP_MESTRE_NOME:}
+      email: ${BOOTSTRAP_MESTRE_EMAIL:}
+      senha: ${BOOTSTRAP_MESTRE_SENHA:}
 
 # Pasta dos anexos (fora de qualquer pasta publica; deve ser volume persistente e entrar no backup).
 app.storage.dir: ${STORAGE_DIR:./storage}
+
+# Conexao OAuth 2.0 com a conta Google de cada pessoa (captura de intimacoes por e-mail). Desligada se algum faltar.
+# GOOGLE_TOKEN_KEY: 32 bytes em base64 (openssl rand -base64 32), fora do banco e do Git.
+app.google:
+  client-id: ${GOOGLE_CLIENT_ID:}
+  client-secret: ${GOOGLE_CLIENT_SECRET:}
+  redirect-uri: ${GOOGLE_REDIRECT_URI:}
+  token-key: ${GOOGLE_TOKEN_KEY:}
+  gmail.query: ${GOOGLE_GMAIL_QUERY:from:jus.br}

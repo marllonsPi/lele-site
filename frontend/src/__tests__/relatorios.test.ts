@@ -28,6 +28,11 @@ const m = vi.hoisted(() => ({
   listarClientes: vi.fn(),
 }))
 vi.mock('../api/relatorios', async (o) => ({ ...(await o<typeof import('../api/relatorios')>()), ...m }))
+vi.mock('../api/sistema', () => ({
+  carregarMeuPerfil: vi.fn(async () => ({ alertasEmail: true })),
+  salvarMeuPerfil: vi.fn(),
+  trocarMinhaSenha: vi.fn(),
+}))
 vi.mock('../api/cadastros', async (o) => ({ ...(await o<typeof import('../api/cadastros')>()), listarClientes: m.listarClientes }))
 
 const SOCIA: Eu = { id: 1, nome: 'Sócia A', email: 'a@t.test', perfil: 'SOCIA' }
@@ -194,8 +199,8 @@ describe('SegurancaView (2FA)', () => {
     await botao(w, 'Ativar').trigger('click')
     await flushPromises()
     expect(w.text()).toContain('JBSWY3DPEHPK3PXP')
-    await w.find('input').setValue('123456')
-    await w.find('form').trigger('submit')
+    await w.find('.form-2fa input').setValue('123456')
+    await w.find('.form-2fa').trigger('submit')
     await flushPromises()
     expect(m.confirmarDoisFatores).toHaveBeenCalledWith('123456')
     expect(w.text()).toContain('está ativa')
@@ -205,8 +210,8 @@ describe('SegurancaView (2FA)', () => {
     m.statusDoisFatores.mockResolvedValue({ ativo: true })
     m.desativarDoisFatores.mockRejectedValue(new ApiError(422, 'Codigo invalido'))
     const w = await montar(SegurancaView)
-    await w.find('input').setValue('000000')
-    await w.find('form').trigger('submit')
+    await w.find('.form-2fa input').setValue('000000')
+    await w.find('.form-2fa').trigger('submit')
     await flushPromises()
     expect(m.desativarDoisFatores).toHaveBeenCalledWith('000000')
     expect(w.find('[role=alert]').text()).toBe('Codigo invalido')

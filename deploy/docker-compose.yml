@@ -30,6 +30,9 @@ services:
       BOOTSTRAP_SOCIA_NOME: ${BOOTSTRAP_SOCIA_NOME:-}
       BOOTSTRAP_SOCIA_EMAIL: ${BOOTSTRAP_SOCIA_EMAIL:-}
       BOOTSTRAP_SOCIA_SENHA: ${BOOTSTRAP_SOCIA_SENHA:-}
+      BOOTSTRAP_MESTRE_NOME: ${BOOTSTRAP_MESTRE_NOME:-}
+      BOOTSTRAP_MESTRE_EMAIL: ${BOOTSTRAP_MESTRE_EMAIL:-}
+      BOOTSTRAP_MESTRE_SENHA: ${BOOTSTRAP_MESTRE_SENHA:-}
       # Anexos e modelos de pecas: volume proprio (entra no backup)
       STORAGE_DIR: /data/storage
       # Rotinas diarias: desligadas ate o e-mail e as OABs estarem configurados

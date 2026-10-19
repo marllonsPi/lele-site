@@ -62,9 +62,10 @@ public class AlertaService {
 		List<NovaNotificacao> novas = GeradorAlertas.gerar(agenda.abertosParaAlertas(), hoje, socias,
 				id -> numeros.computeIfAbsent(id, cadastros::numeroFormatado));
 		Set<Long> idsAtivos = ativos.stream().map(UsuarioDto::id).collect(Collectors.toSet());
+		Set<Long> semAlertaPorEmail = ativos.stream().filter(u -> !u.alertasEmail()).map(UsuarioDto::id).collect(Collectors.toSet());
 		int geradas = 0;
 		for (NovaNotificacao n : novas) {
-			if (!idsAtivos.contains(n.destinatarioId())) {
+			if (!idsAtivos.contains(n.destinatarioId()) || semAlertaPorEmail.contains(n.destinatarioId())) {
 				continue;
 			}
 			geradas += jdbc.update("insert into notificacao (tipo, escopo_id, destinatario_id, canal, data_ref, assunto, corpo) "
@@ -77,7 +78,12 @@ public class AlertaService {
 	}
 
 	private Resultado despachar(LocalDate hoje, List<UsuarioDto> ativos, int geradas) {
-		Map<Long, String> emails = ativos.stream().collect(Collectors.toMap(UsuarioDto::id, UsuarioDto::email));
+		Map<Long, String> emails = new HashMap<>();
+		ativos.forEach(u -> {
+			if (u.destinoAlertas() != null) { // quem desligou os alertas por e-mail nao recebe
+				emails.put(u.id(), u.destinoAlertas());
+			}
+		});
 		var pendentes = jdbc.queryForList("select id, destinatario_id, assunto, corpo, tentativas from notificacao "
 				+ "where canal = 'EMAIL' and status in ('PENDENTE') and data_ref >= ? and tentativas < ? order by id",
 				java.sql.Date.valueOf(hoje.minusDays(DIAS_ENVIO)), MAXIMO_TENTATIVAS);
