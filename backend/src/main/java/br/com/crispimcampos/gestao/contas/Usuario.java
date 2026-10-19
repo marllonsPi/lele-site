@@ -82,6 +82,23 @@ public class Usuario {
 		this.ativo = false;
 	}
 
+	public void reativar() {
+		this.ativo = true;
+	}
+
+	public void atualizar(String nome, String email, Perfil perfil) {
+		this.nome = nome;
+		this.email = email.trim().toLowerCase();
+		this.perfil = perfil;
+		if (perfil != Perfil.ESTAGIARIO) {
+			this.supervisor = null;
+		}
+	}
+
+	public void trocarSenha(String novoHash) {
+		this.senhaHash = novoHash;
+	}
+
 	public Usuario getSupervisor() {
 		return supervisor;
 	}

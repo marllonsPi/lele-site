@@ -1,6 +1,8 @@
 package br.com.crispimcampos.gestao.contas;
 
 import jakarta.persistence.Column;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -25,6 +27,7 @@ public class Oab {
 	@Column(nullable = false)
 	private String numero;
 
+	@JdbcTypeCode(SqlTypes.CHAR)
 	@Column(nullable = false, length = 2, columnDefinition = "char(2)")
 	private String uf;
 
@@ -66,5 +69,18 @@ public class Oab {
 
 	public boolean isAtiva() {
 		return ativa;
+	}
+
+	void ativar() {
+		this.ativa = true;
+	}
+
+	void desativar() {
+		this.ativa = false;
+		this.principal = false;
+	}
+
+	void definirPrincipal(boolean principal) {
+		this.principal = principal;
 	}
 }

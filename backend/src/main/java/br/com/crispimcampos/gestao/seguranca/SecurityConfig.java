@@ -1,5 +1,7 @@
 package br.com.crispimcampos.gestao.seguranca;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -11,7 +13,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -21,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @Configuration
 @EnableMethodSecurity
-class SecurityConfig {
+public class SecurityConfig {
 
 	@Bean
 	PasswordEncoder passwordEncoder() {
@@ -29,9 +32,17 @@ class SecurityConfig {
 	}
 
 	@Bean
-	SecurityFilterChain filtros(HttpSecurity http) throws Exception {
+	CsrfTokenRepository csrfTokenRepository() {
+		return CookieCsrfTokenRepository.withHttpOnlyFalse();
+	}
+
+	@Bean
+	SecurityFilterChain filtros(HttpSecurity http, CsrfTokenRepository csrfTokenRepository) throws Exception {
 		http
-				.csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
+				// A SPA devolve o valor bruto do cookie no cabecalho; o handler padrao (Xor) exigiria o token mascarado.
+				.csrf(csrf -> csrf
+						.csrfTokenRepository(csrfTokenRepository)
+						.csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
 				.authorizeHttpRequests(a -> a
 						.requestMatchers("/actuator/health/**", "/api/csrf").permitAll()
 						.anyRequest().authenticated())
@@ -51,12 +62,20 @@ class SecurityConfig {
 	}
 
 	@RestController
-	static class CsrfController {
+	static class CsrfEndpoint {
+
+		private final CsrfTokenRepository repositorio;
+
+		CsrfEndpoint(CsrfTokenRepository repositorio) {
+			this.repositorio = repositorio;
+		}
 
 		/** A SPA le o token (cookie XSRF-TOKEN) e o devolve no cabecalho X-XSRF-TOKEN. */
 		@GetMapping("/api/csrf")
-		void csrf(CsrfToken token) {
-			token.getToken();
+		void csrf(HttpServletRequest request, HttpServletResponse response) {
+			if (repositorio.loadToken(request) == null) {
+				repositorio.saveToken(repositorio.generateToken(request), request, response);
+			}
 		}
 	}
 }
