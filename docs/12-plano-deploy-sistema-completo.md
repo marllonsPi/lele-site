@@ -114,3 +114,9 @@ Objetivo: trocar SO o backend pela versao completa (V2 a V15). `web`, `caddy` e 
 - **Copia fora da VM**: timer de usuario nesta maquina (`~/.config/systemd/user/crispim-backups.timer`, diario 09:00, `Persistent=true`) executa `deploy/oci/puxar-backups.sh` (rsync pela chave `crispim_ed25519`, sem apagar nada local). Primeira copia feita: 8 arquivos em `~/backups-crispim`. Se a maquina ficar desligada, a copia espera ela ligar.
 - **Passphrase**: ainda precisa ser guardada pela usuaria (`deploy/oci/guardar-passphrase.sh` + gerenciador de senhas); sem ela os backups nao abrem.
 - **Rotinas diarias: continuam DESLIGADAS** (`APP_CAPTURA_AGENDADA`/`APP_ALERTAS_AGENDADO`): faltam SMTP (Fase E), equipe/OABs reais e o 2FA da socia (D1).
+
+## Fase E - SMTP (preparada em 2026-10-19; NAO aplicada)
+- Provedor escolhido pela usuaria: Google (Gmail, `smtp.gmail.com:587` STARTTLS). Exige conta com verificacao em duas etapas e **senha de app** (16 letras); limite de envio do Gmail e suficiente para alertas. O remetente e a propria conta Gmail.
+- Arquivos: `deploy/docker-compose.smtp.yml` (override; so ele declara `SPRING_MAIL_*`, o compose base continua sem), `deploy/oci/configurar-smtp.sh` (pede conta e senha de app ocultas, grava `SMTP_*` no `.env` da VM com copia `.env.antes-smtp`, recria so o backend) e `deploy/oci/testar-email.sh` (login como socia e envio do relatorio `AGENDA_DIA` as socias).
+- ATENCAO: depois da configuracao, todo `up` do backend deve incluir `-f docker-compose.yml -f docker-compose.smtp.yml`, senao o SMTP e desligado. Rollback: `cp .env.antes-smtp .env` e recriar o backend sem o override.
+- `APP_ALERTAS_AGENDADO`/`APP_CAPTURA_AGENDADA` seguem `false`.

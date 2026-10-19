@@ -1,0 +1,14 @@
+# Override de SMTP (Fase E). So entra no comando depois de configurar o provedor (a presenca de SPRING_MAIL_HOST liga o envio):
+#   docker compose -p crispim --profile https -f docker-compose.yml -f docker-compose.smtp.yml up -d --no-deps backend
+# Valores vem do .env da VM (SMTP_HOST, SMTP_PORT, SMTP_USUARIO, SMTP_SENHA, SMTP_REMETENTE), gravados por deploy/oci/configurar-smtp.sh.
+services:
+  backend:
+    environment:
+      SPRING_MAIL_HOST: ${SMTP_HOST:?}
+      SPRING_MAIL_PORT: ${SMTP_PORT:-587}
+      SPRING_MAIL_USERNAME: ${SMTP_USUARIO:?}
+      SPRING_MAIL_PASSWORD: ${SMTP_SENHA:?}
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: "true"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: "true"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_REQUIRED: "true"
+      APP_ALERTAS_REMETENTE: ${SMTP_REMETENTE:?}
