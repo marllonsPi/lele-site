@@ -1,0 +1,6 @@
+package br.com.crispimcampos.gestao.agenda;
+
+public enum StatusAgendamento {
+	AGUARDANDO_CONFERENCIA_PRAZO, PENDENTE, FINALIZADO, EM_CONFERENCIA_SUPERVISOR, EM_CONFERENCIA_SOCIA, CONFERIDO,
+	DEVOLVIDO
+}

@@ -17,3 +17,6 @@ Contexto: a matriz depende de pessoas, mas o sistema nao pode ter nomes fixos (i
 
 ## 2026-10-19 - Titular do processo e visibilidade de cliente
 Titular do processo para a visibilidade e o advogado responsavel (`advogado_id`, escopo PROCESSO). Recurso fora da visibilidade responde 404 (nao revela existencia, evita IDOR). Cliente nao tem titular: socias veem todos; os demais so veem clientes com ao menos um processo visivel. Escrita de cadastros restrita a socias ate a usuaria decidir a pendencia 4.
+
+## 2026-10-19 - Prazos: fatal informado, calendario que recusa lacuna
+Pendencia 1 em aberto: o prazo fatal e informado por quem lanca; so o interno e calculado (fatal menos 3 dias uteis no calendario do tribunal do processo). O calculo recusa periodo sem nenhum feriado nacional cadastrado, para nunca produzir prazo interno errado em silencio. Dupla conferencia vale no dominio, no servico e no banco (CHECK); conferente precisa enxergar o agendamento (escopo AGENDAMENTO) e nao ser estagiario. Atribuicao: socia a qualquer usuario ativo; assistente a si ou estagiario; advogado a si (invariante 7). Feriado e suspensao compartilham a tabela `feriado` (campo `tipo`).

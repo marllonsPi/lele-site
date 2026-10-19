@@ -161,6 +161,16 @@ public class CadastroService {
 		return paraDto(p);
 	}
 
+	/**
+	 * Uso interno entre modulos (ex.: agenda): devolve titular e tribunal sem aplicar visibilidade.
+	 * Quem chama e responsavel por checar a visibilidade do usuario sobre o titular no escopo do seu dado.
+	 */
+	@Transactional(readOnly = true)
+	public ProcessoResumo resumo(Long processoId) {
+		Processo p = obterProcesso(processoId);
+		return new ProcessoResumo(p.getId(), p.getAdvogadoId(), p.getTribunal(), p.isAtivo());
+	}
+
 	// ---- internos
 
 	private boolean temProcessoVisivel(UsuarioLogado usuario, Long clienteId) {

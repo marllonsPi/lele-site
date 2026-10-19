@@ -15,7 +15,7 @@ Status: proposta, 2026-10-19. Nomes de tabela/campo definitivos nascem na primei
 - `ParteProcesso` (V3, existe): processo, nome, papel (CLIENTE | CONTRARIA | OUTRO); a parte CLIENTE e criada junto com o processo.
 
 ## Agenda
-- `Agendamento`: processo (obrigatorio, exceto ATD so com cliente), tipo (CTR|INI|CON|MAN|AUD|REC|ATD), responsavel, criado_por, urgente, status (PENDENTE | AGUARDANDO_CONFERENCIA_PRAZO | FINALIZADO | EM_CONFERENCIA_SOCIA | CONFERIDO | DEVOLVIDO | EM_CONFERENCIA_SUPERVISOR), origem (publicacao opcional).
+- `Agendamento` (V5, parcial: so prazos; `titular_id` = advogado do processo no lancamento, base da visibilidade; CHECK `conferido_por <> lancado_por`): processo (obrigatorio, exceto ATD so com cliente), tipo (CTR|INI|CON|MAN|AUD|REC|ATD), responsavel, criado_por, urgente, status (PENDENTE | AGUARDANDO_CONFERENCIA_PRAZO | FINALIZADO | EM_CONFERENCIA_SOCIA | CONFERIDO | DEVOLVIDO | EM_CONFERENCIA_SUPERVISOR), origem (publicacao opcional).
 - Campos de prazo (CTR/INI/CON/MAN/REC): `inicio_prazo`, `prazo_interno`, `prazo_fatal`, `lancado_por`, `conferido_por`, `conferido_em`.
 - Campos de AUD/ATD: `inicio_em`, `duracao_min`, `modalidade`, `local_ou_link`; ATD: `cliente`, `advogado_atendente`.
 - `ObservacaoAgendamento`: agendamento, autor, texto, momento (historico imutavel).
@@ -24,7 +24,7 @@ Status: proposta, 2026-10-19. Nomes de tabela/campo definitivos nascem na primei
 - `ModeloPeca`: tipo (INI|CON|MAN|REC), area do direito, titulo, arquivo.
 
 ## Calendario
-- `Feriado`/`Suspensao`: escopo (NACIONAL | ESTADO | MUNICIPIO | TRIBUNAL), referencia (UF, cidade ou tribunal), data inicial, data final, descricao, editavel.
+- `Feriado` (V4, existe; um registro serve a feriado e suspensao, campo `tipo`): escopo (NACIONAL | ESTADO | MUNICIPIO | TRIBUNAL), referencia (UF, cidade ou tribunal), data inicial, data final, descricao, editavel.
 
 ## Captura
 - `PublicacaoBruta`: fonte (DJEN | DOMICILIO | EMAIL), id_externo, numero_processo, conteudo, hash, recebido_em, oab/usuario.

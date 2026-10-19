@@ -36,3 +36,8 @@ Lacunas da spec e decisoes abertas. Nao decidir por analogia: perguntar. Ao reso
 ## Fase 2 (2026-10-19)
 24. Hoje so socias criam/editam cliente e processo (pendencia 4 segue aberta para advogados e Luana). Luana ve processos pela matriz, mas nao os cadastra.
 25. CPF/CNPJ guardado em texto puro no banco; decidir criptografia em repouso (arquitetura 9, LGPD).
+
+## Fase 3 (2026-10-19)
+26. Seed do calendario cobre so feriados nacionais 2026-2027 (datas fixas + Sexta-feira Santa) e a suspensao de 20/12 a 20/01; faltam feriados locais, recessos e suspensoes de tribunais (pendencia 11). Fora desses anos o calculo recusa (de proposito).
+27. Processo ainda nao guarda UF/municipio: feriados ESTADO/MUNICIPIO so valem quando o contexto os informar; hoje o calendario do prazo usa o tribunal.
+28. Estagiario lanca prazo so em tarefa distribuida (Fase 5); hoje nao lanca. Advogado lanca prazo apenas atribuido a si mesmo.
