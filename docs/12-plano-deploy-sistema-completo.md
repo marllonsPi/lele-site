@@ -46,3 +46,9 @@ Fases C e D sao aditivas: `docker compose -p crispim down` (sem `-v`), banco/vol
 - **Banco em V1**: Flyway com so a versao 1; tabelas `usuario`, `oab`, `log_auditoria`; **1 usuario** (a primeira socia) e 5 registros de auditoria. O backend em producao e a versao antiga (so login).
 - `.env` (modo 600) tem DB_PASSWORD, COOKIE_SECURE, WEB_PORT, JAVA_OPTS, DOMINIO e DOMINIO_APEX; nao tem as variaveis novas (todas tem padrao seguro).
 - Consequencias para o deploy: (1) o sistema ja esta publico, entao o deploy atualiza algo exposto: a janela de troca do backend deixa `/api` fora por ~1-2 min (startup lento com 1 CPU e 15 migracoes); (2) ha dado real minimo (a conta da socia): backup antes e obrigatorio; (3) memoria apertada: construir backend e web em sequencia usando o swap, e acompanhar `free -h` e `docker stats` depois.
+
+## Resultado da Fase B (2026-10-19, backup; unica escrita na VM foi criar os arquivos abaixo)
+- `~/backups/crispim/gestao-pre-v15-20261019-195833.sql.gz.enc` (pg_dump do banco em V1, 2.240 bytes) e `~/backups/crispim/env-20261019-195833.enc` (copia do `.env`), ambos AES-256-CBC com PBKDF2, modo 600, pasta 700. Passphrase gerada na VM em `~/.crispim-backup.pass` (modo 600).
+- Verificado sem imprimir dados: descriptografa e descompacta; 4 tabelas (`flyway_schema_history`, `log_auditoria`, `oab`, `usuario`); 1 linha em `usuario` e 5 em `log_auditoria`; dump termina corretamente.
+- SHA-256: dump `2c02d3ff1f1c0a60...476b`, env `b98de6970b1b31d9...2128`.
+- NAO feito: copia fora da VM e teste de restauracao. A passphrase esta na mesma VM dos arquivos; enquanto nao houver copia externa, o backup nao protege contra perda da VM.
