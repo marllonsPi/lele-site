@@ -52,3 +52,35 @@ Fases C e D sao aditivas: `docker compose -p crispim down` (sem `-v`), banco/vol
 - Verificado sem imprimir dados: descriptografa e descompacta; 4 tabelas (`flyway_schema_history`, `log_auditoria`, `oab`, `usuario`); 1 linha em `usuario` e 5 em `log_auditoria`; dump termina corretamente.
 - SHA-256: dump `2c02d3ff1f1c0a60...476b`, env `b98de6970b1b31d9...2128`.
 - NAO feito: copia fora da VM e teste de restauracao. A passphrase esta na mesma VM dos arquivos; enquanto nao houver copia externa, o backup nao protege contra perda da VM.
+
+## Fase C - passo a passo detalhado (PARA APROVACAO; nada foi executado)
+Objetivo: trocar SO o backend pela versao completa (V2 a V15). `web`, `caddy` e `db` nao sao recriados; nao se cria usuario, nao se edita `.env`, nao se ligam rotinas diarias.
+
+**C0. Local, antes de enviar (preparacao)**
+1. Acrescentar `ENV MAVEN_OPTS="-Xmx350m"` ao estagio de build do `backend/Dockerfile` (a VM tem ~275 MiB livres; limita o Maven) e commitar.
+2. Gerar o pacote: tar de `backend/ frontend/ deploy/ docs/ site/ README.md CLAUDE.md .github/` com `--exclude=.git --exclude=node_modules --exclude=target --exclude=dist --exclude=deploy/.env --exclude=site/testeLogin --exclude=site/project-rag --exclude=backend/storage` (~1 MB). Conferir a lista de arquivos e que nao ha `.env`, chave ou dado real.
+3. Calcular SHA-256 do pacote.
+
+**C1. VM, somente leitura (decide se o `web` precisa de rebuild)**
+4. Comparar o SHA-256 dos arquivos de `frontend/`, `site/` (publico), `deploy/nginx.conf` e `deploy/web.Dockerfile` entre o pacote e `~/crispim-campos`. Se iguais, o `web` NAO e reconstruido (menos RAM, sem risco para o site). Se diferentes, volto a voce.
+5. `free -h`, `docker stats --no-stream`, `df -h`: so prossigo com >= 200 MiB disponiveis (RAM+swap livre) e >= 10 GB de disco.
+
+**C2. VM, escritas (aditivas)**
+6. Enviar o pacote por `scp` para `~/` e conferir o SHA-256 la.
+7. Marcar a imagem atual para rollback: `docker tag crispim-backend:latest crispim-backend:antes-v15` (so um rotulo).
+8. Preservar o codigo antigo: `mv ~/crispim-campos/backend ~/crispim-campos/backend.antes-v15`. Necessario porque um arquivo antigo deixado para tras pode conflitar com o novo (ex.: `RelogioConfig` mudou de pacote e daria Clock duplicado).
+9. Extrair o pacote sobre `~/crispim-campos` (sobrepoe; `deploy/.env` fica intacto por nao estar no pacote). Conferir que `.env` continua modo 600 e com as mesmas 6 variaveis.
+
+**C3. VM, construir sem trocar nada em execucao**
+10. `docker compose -p crispim build backend` (so o backend; o container em execucao continua servindo). Em paralelo, a cada ~30 s: `free -h` e `docker stats`. Estimativa: 8 a 15 min (swap). Criterio de ABORTO: `db` ou `backend` em execucao reiniciar/ser morto pelo OOM, ou RAM+swap livres < 100 MiB; nesse caso interrompo o build e reporto (nada foi trocado).
+
+**C4. VM, troca (janela de ~1 a 2 min sem `/api`; o site estatico segue no ar)**
+11. `docker compose -p crispim --profile https up -d --no-deps backend` (cria o volume `storage`, recria so o backend; Flyway aplica V2..V15 no inicio; inicializacao ~70 a 120 s).
+12. Esperar `Started GestaoApplication` (limite 5 min). Verificar: `flyway_schema_history` com versoes 1..15 todas `success`; `/actuator/health` UP; `GET /api/me` 401; site `/` e `/app/` 200; `docker stats` e `free -h` depois.
+
+**C5. Criterios de sucesso / rollback**
+- Sucesso: health UP, Flyway 1..15 ok, 1 usuario preservado, site e HTTPS inalterados, RAM estavel.
+- Falha antes de iniciar (Flyway aplica cada migracao em transacao): o banco fica na ultima versao boa. Rollback do codigo: `docker tag crispim-backend:antes-v15 crispim-backend:latest` + `up -d --no-deps backend`. O codigo antigo continua compativel com o esquema novo (so houve acrescimos; Hibernate valida apenas o que mapeia).
+- Falha grave de dados: restaurar o backup da Fase B (`deploy/restore.md`). OBSERVACAO: esse backup ainda nao teve a restauracao testada; o risco e baixo (banco com 1 usuario, esquema so aditivo), mas e o motivo de manter o teste como recomendado.
+
+**Fora desta fase:** criar usuarios, ativar 2FA da socia, rotinas diarias, SMTP, copia/rotina de backup (Fases D a F). Na D, recomendo ativar o 2FA da conta da socia, pois a API completa passa a ficar publica atras apenas de senha.
