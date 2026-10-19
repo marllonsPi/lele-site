@@ -265,6 +265,7 @@ button:disabled {
 
   .menu {
     display: flex;
+    flex-wrap: wrap;
     flex: 1;
     flex-basis: auto;
     flex-direction: row;
@@ -426,6 +427,10 @@ button:disabled {
 }
 
 /* Listas, tabelas e extras das telas de cadastro */
+.cartao.destaque {
+  border-left-color: var(--cor-foco);
+}
+
 .cartao.inativo {
   opacity: 0.7;
 }
@@ -480,4 +485,18 @@ td {
 td input[type='checkbox'] {
   width: 1.3rem;
   height: 1.3rem;
+}
+
+.conteudo-bruto {
+  max-height: 20rem;
+  padding: var(--espaco-2);
+  overflow: auto;
+  white-space: pre-wrap;
+  background: var(--cor-fundo);
+  border-radius: var(--raio);
+}
+
+.perigo {
+  font-weight: 700;
+  color: var(--cor-erro);
 }

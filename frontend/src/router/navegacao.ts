@@ -13,6 +13,9 @@ export const ITENS_MENU: ItemMenu[] = [
   { rota: '/agenda', rotulo: 'Agenda' },
   { rota: '/prazos', rotulo: 'Prazos' },
   // supervisores sao advogados; o servidor decide o que cada um ve na fila
+  { rota: '/painel', rotulo: 'Painel', perfis: ['SOCIA'] },
+  { rota: '/publicacoes', rotulo: 'Publicações' },
+  { rota: '/captura', rotulo: 'Captura', perfis: ['SOCIA'] },
   { rota: '/clientes', rotulo: 'Clientes' },
   { rota: '/processos', rotulo: 'Processos' },
   { rota: '/calendario', rotulo: 'Calendário' },
