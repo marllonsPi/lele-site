@@ -23,3 +23,9 @@ Primeiro boot real contra Postgres 16 (VM) falhou: `Schema validation: wrong col
 - Teste de seguranca: o post-processor `csrf()` do Spring Security Test troca o repositorio de token do filtro compartilhado e vaza para testes seguintes do mesmo contexto; use o fluxo real (GET /api/csrf, cookie + cabecalho `X-XSRF-TOKEN`).
 - `/api/csrf` nao pode depender do token adiado: o endpoint le/gera e grava o cookie ele mesmo (`SecurityConfig.CsrfEndpoint`). O nome nao termina em `Controller` porque a regra ArchUnit proibe controller de tocar `*Repository`.
 - Ambiente local varia: nesta maquina nao ha `/usr/lib/jvm`; o JDK 21 usado foi o da extensao Java do VS Code (`~/.vscode/extensions/redhat.java-*/jre/...`). Sem Node e sem Docker.
+
+- Rodar o sistema de verdade acha o que teste de unidade nao acha: o Postgres real revelou `VARCHAR(10)` menor que o valor padrao `EM_ANDAMENTO`, auditoria gravada dentro de transacao `readOnly` e `/api/prazos` listando audiencias. Antes de dar por pronto, subir o contexto num Postgres (zonky embutido ou Testcontainers) e exercitar o fluxo.
+- Jackson 3: `null`/ausente em campo `boolean` primitivo vira 400. A API trata ausente como false (propriedade em `application.yml`) e ha teste.
+- `getServletPath()` e vazio no MockMvc: filtros de caminho devem usar `getRequestURI()`.
+- `pkill -f`/`ps | grep` com padrao que aparece no proprio comando mata o shell; encerrar processos pelas portas (`ss -ltnp`).
+- `readOnly = true` nao pode envolver `AuditoriaService.registrar` (INSERT): consulta auditada nao e readOnly.

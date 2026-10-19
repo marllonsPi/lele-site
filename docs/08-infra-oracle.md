@@ -28,3 +28,9 @@ Fontes (lidas em 2026-10-19): RAG central `marllonsPi/ai` e RAG local `marllonsP
 4. Estrategia de HTTPS (item 2 acima) e quem controla o DNS.
 5. A usuaria precisa disponibilizar a chave SSH nesta maquina (ou executar os comandos ela mesma) e autorizar acesso a VM; nada sera executado na VM sem esse OK.
 6. Entrega do codigo na VM: tar via SSH (padrao do Divas Nete) ou clone Git do repo do sistema (precisa credencial na VM).
+
+## Atualizacao 2026-10-19 (decisao e execucao)
+- A VM do Divas Nete (`Bot`) tem 1 GB de RAM: nao comporta o sistema. Decisao: VM propria do Crispim & Campos.
+- Criada `crispim-micro` (E2.1.Micro, 1 GB, IP <IP_DA_VM>, chave `crispim_ed25519`), no lugar da `AppCidadao` (encerrada a pedido da usuaria; volume de boot mantido). A1 (12 GB) segue em retry no Cloud Shell.
+- Rede: mesma VCN/subnet do Divas Nete; abrir apenas 80/443 de entrada na Security List (nao mexer em 8080/ngrok).
+- Console OCI no painel do app: o assistente de criacao e instavel em painel estreito; o Cloud Shell nao recebe texto digitado pela automacao (colar pelo usuario).

@@ -8,6 +8,7 @@ import br.com.crispimcampos.gestao.acesso.Visibilidade;
 import br.com.crispimcampos.gestao.agenda.AgendaService;
 import br.com.crispimcampos.gestao.alertas.AlertaService;
 import br.com.crispimcampos.gestao.atendimento.AtendimentoService;
+import br.com.crispimcampos.gestao.captura.CapturaService;
 import br.com.crispimcampos.gestao.contas.DoisFatoresService;
 import br.com.crispimcampos.gestao.contas.Totp;
 import br.com.crispimcampos.gestao.financeiro.FinanceiroService;
@@ -71,6 +72,8 @@ class PostgresRealTest {
 		r.add("spring.datasource.username", () -> "postgres");
 		r.add("spring.datasource.password", () -> "postgres");
 		r.add("STORAGE_DIR", () -> "target/teste-storage");
+		// o DJEN real nunca e consultado nos testes
+		r.add("app.captura.djen.url", () -> "http://127.0.0.1:9");
 	}
 
 	@AfterAll
@@ -101,7 +104,7 @@ class PostgresRealTest {
 	@Test
 	void migracoesAplicadasEMapeamentoValido() {
 		Integer aplicadas = jdbc.queryForObject("select count(*) from flyway_schema_history where success", Integer.class);
-		assertThat(aplicadas).isEqualTo(14);
+		assertThat(aplicadas).isEqualTo(15);
 	}
 
 	@Test
@@ -147,6 +150,10 @@ class PostgresRealTest {
 	AtendimentoService atendimentos;
 	@Autowired
 	FinanceiroService financeiro;
+	@Autowired
+	CapturaService captura;
+	@Autowired
+	tools.jackson.databind.json.JsonMapper json;
 	@Autowired
 	ModeloService modelos;
 	@Autowired
@@ -523,5 +530,27 @@ class PostgresRealTest {
 		assertThat(jdbc.queryForObject("select resumo from atendimento where cliente_id = ?", String.class, cliente.id())).isEqualTo("[removido por anonimizacao]");
 		assertThat(jdbc.queryForObject("select nome from parte_processo where processo_id = ? and papel = 'CLIENTE'", String.class, processo.id())).startsWith("Cliente anonimizado");
 		assertThat(jdbc.queryForObject("select count(*) from log_auditoria where acao in ('LGPD_EXPORTACAO','LGPD_ANONIMIZACAO')", Integer.class)).isEqualTo(2);
+	}
+
+	/** Reproduz o defeito achado ao rodar o sistema: registrar o inicio da execucao estourava a coluna VARCHAR(10). */
+	@Test
+	void execucaoDaCapturaRegistraErroDaFonteSemDerrubarOResto() {
+		var r = captura.executar(como("Socia A").id(), LocalDate.now().minusDays(1), LocalDate.now());
+		assertThat(r).hasSize(1);
+		assertThat(r.get(0).fonte()).isEqualTo("DJEN");
+		assertThat(r.get(0).resultado()).isEqualTo("ERRO");
+		assertThat(r.get(0).erro()).isNotBlank();
+		assertThat(captura.execucoes()).isNotEmpty();
+	}
+
+	record Entrada(Long a, boolean b, Boolean c) {
+	}
+
+	@Test
+	void jsonSemBooleanoValeFalseNaApi() {
+		var e = json.readValue("{\"a\":1}", Entrada.class);
+		assertThat(e.a()).isEqualTo(1L);
+		assertThat(e.b()).isFalse();
+		assertThat(e.c()).isNull();
 	}
 }

@@ -11,189 +11,316 @@
           --verm:#3b1f1f; --amar:#3b3418; --verde:#1c3324; } }
   * { box-sizing: border-box; }
   body { margin:0; font:15px/1.45 system-ui,sans-serif; background:var(--bg); color:var(--ink); }
-  header { padding:12px 16px; background:var(--card); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:2; }
-  h1 { font-size:16px; margin:0 0 8px; color:var(--gold); }
-  .aviso { font-size:12px; color:var(--mut); }
+  header { padding:10px 16px; background:var(--card); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:2; }
+  h1 { font-size:15px; margin:0 0 6px; color:var(--gold); }
+  .aviso,.tag { font-size:12px; color:var(--mut); }
   .row { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
-  button { font:inherit; padding:6px 10px; border:1px solid var(--line); background:var(--card); color:var(--ink); border-radius:6px; cursor:pointer; }
+  button { font:inherit; padding:5px 9px; border:1px solid var(--line); background:var(--card); color:var(--ink); border-radius:6px; cursor:pointer; }
   button:hover { border-color:var(--gold); }
   button.on { background:var(--gold); color:#fff; border-color:var(--gold); }
-  main { padding:12px 16px 40px; max-width:1100px; margin:0 auto; }
-  .card { background:var(--card); border:1px solid var(--line); border-left:6px solid var(--line); border-radius:8px; padding:10px 12px; margin:8px 0; }
+  button.mini { padding:2px 7px; font-size:12px; margin:2px 2px 0 0; }
+  main { padding:12px 16px 40px; max-width:1150px; margin:0 auto; }
+  .card { background:var(--card); border:1px solid var(--line); border-left:6px solid var(--line); border-radius:8px; padding:9px 12px; margin:8px 0; }
   .card.VERMELHO { background:var(--verm); border-left-color:var(--vermb); }
   .card.AMARELO { background:var(--amar); border-left-color:var(--amarb); }
   .card.VERDE { background:var(--verde); border-left-color:var(--verdeb); }
   .dot { display:inline-block; width:12px; height:12px; border-radius:50%; margin-right:6px; vertical-align:-1px; border:1px solid #0003; }
   .urg { color:#d93025; font-weight:700; }
-  .tag { font-size:12px; color:var(--mut); }
-  table { border-collapse:collapse; width:100%; background:var(--card); }
-  th,td { border:1px solid var(--line); padding:5px 8px; text-align:left; font-size:13px; vertical-align:top; }
+  table { border-collapse:collapse; width:100%; background:var(--card); margin:6px 0; }
+  th,td { border:1px solid var(--line); padding:4px 7px; text-align:left; font-size:13px; vertical-align:top; }
   th { background:var(--bg); }
-  input,select,textarea { font:inherit; padding:5px 7px; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--ink); }
-  textarea { width:100%; min-height:90px; font-family:ui-monospace,monospace; font-size:13px; }
+  input,select,textarea { font:inherit; padding:4px 6px; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--ink); }
+  textarea { width:100%; min-height:80px; font-family:ui-monospace,monospace; font-size:13px; }
   pre { background:var(--card); border:1px solid var(--line); padding:10px; border-radius:8px; overflow:auto; max-height:420px; font-size:12px; }
   .ok { color:var(--verdeb); } .err { color:var(--vermb); }
   fieldset { border:1px solid var(--line); border-radius:8px; margin:10px 0; }
   legend { color:var(--gold); }
   label { display:inline-flex; flex-direction:column; font-size:12px; color:var(--mut); margin:3px 8px 3px 0; }
+  h3 { color:var(--gold); margin:14px 0 4px; font-size:14px; }
+  .badge { font-size:11px; padding:1px 6px; border-radius:10px; background:var(--bg); border:1px solid var(--line); margin-right:3px; }
 </style>
 </head>
 <body>
 <header>
   <h1>Console de testes (somente desenvolvimento, dados fictícios)</h1>
   <div class="row" id="logins"></div>
-  <div class="aviso" id="quem">Não autenticado. Escolha um usuário acima (senha de todos: <b>senha-de-teste-123</b>).</div>
-  <div class="row" id="abas" style="margin-top:8px"></div>
+  <div class="aviso" id="quem">Não autenticado. Escolha um usuário (senha de todos: <b>senha-de-teste-123</b>).</div>
+  <div class="row" id="abas" style="margin-top:6px"></div>
 </header>
 <main id="conteudo"></main>
 
 <script>
-const USUARIOS = [
-  ['Sócia A','socia.a@teste.local'], ['Sócia B','socia.b@teste.local'], ['Advogada C','advogada.c@teste.local'],
-  ['Advogado D','advogado.d@teste.local'], ['Assistente E','assistente.e@teste.local']];
+const USUARIOS = [['Sócia A','socia.a@teste.local'],['Sócia B','socia.b@teste.local'],['Advogada C','advogada.c@teste.local'],
+  ['Advogado D','advogado.d@teste.local'],['Assistente E','assistente.e@teste.local'],['Estagiário F','estagiario.f@teste.local']];
 const SENHA = 'senha-de-teste-123';
 const COR_TIPO = {CTR:'#111',INI:'#e75480',CON:'#f28c28',MAN:'#888',AUD:'#7b3fbf',REC:'#7a4a21',ATD:'#1a73e8'};
+const ABAS = ['agenda','prazos','conferencia','painel','publicacoes','processos','clientes','atendimento','financeiro','relatorios','alertas','modelos','usuarios','visibilidade','calendario','seguranca','console'];
 let eu = null, aba = 'agenda', nomes = {};
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const nome = id => id == null ? '-' : (nomes[id] || '#' + id);
 const dot = t => `<span class="dot" style="background:${COR_TIPO[t]||'#ccc'}" title="${t}"></span>`;
+const hoje = (d=0) => new Date(Date.now() + d*864e5).toISOString().slice(0,10);
+const moeda = v => Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const cookie = n => (document.cookie.split('; ').find(c => c.startsWith(n + '=')) || '').split('=')[1];
+const erro = r => `<p class="err">HTTP ${r.status}: ${esc(r.dados && r.dados.detail || JSON.stringify(r.dados))}</p>`;
+const tabela = (cols, linhas) => `<table><tr>${cols.map(c => `<th>${esc(c)}</th>`).join('')}</tr>${linhas.map(l => `<tr>${l.map(c => `<td>${c}</td>`).join('')}</tr>`).join('') || `<tr><td colspan="${cols.length}">Nada aqui.</td></tr>`}</table>`;
+const btn = (act, id, txt) => `<button class="mini" data-act="${act}" data-id="${id}">${txt}</button>`;
 
-function cookie(n) { return (document.cookie.split('; ').find(c => c.startsWith(n + '=')) || '').split('=')[1]; }
 async function api(metodo, caminho, corpo, form) {
   const h = {};
   if (metodo !== 'GET') { if (!cookie('XSRF-TOKEN')) await fetch('/api/csrf'); h['X-XSRF-TOKEN'] = cookie('XSRF-TOKEN'); }
   let body;
-  if (form) { body = form; } else if (corpo !== undefined && corpo !== null && corpo !== '') { h['Content-Type'] = 'application/json'; body = typeof corpo === 'string' ? corpo : JSON.stringify(corpo); }
+  if (form) body = form; else if (corpo !== undefined && corpo !== null && corpo !== '') { h['Content-Type'] = 'application/json'; body = typeof corpo === 'string' ? corpo : JSON.stringify(corpo); }
   const r = await fetch(caminho, {method: metodo, headers: h, body, credentials: 'same-origin'});
   const txt = await r.text();
   let dados = txt; try { dados = txt ? JSON.parse(txt) : null; } catch (e) {}
-  return {status: r.status, ok: r.ok, dados};
+  return {status: r.status, ok: r.ok, dados, headers: r.headers};
+}
+
+// ---- TOTP de teste (RFC 6238) com WebCrypto, so para o console
+async function totp(segredoB32) {
+  const A = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'; let bits = '', bytes = [];
+  for (const c of segredoB32.replace(/=/g,'').toUpperCase()) bits += A.indexOf(c).toString(2).padStart(5,'0');
+  for (let i = 0; i + 8 <= bits.length; i += 8) bytes.push(parseInt(bits.slice(i, i+8), 2));
+  const chave = await crypto.subtle.importKey('raw', new Uint8Array(bytes), {name:'HMAC', hash:'SHA-1'}, false, ['sign']);
+  const passo = Math.floor(Date.now() / 30000), buf = new ArrayBuffer(8); new DataView(buf).setUint32(4, passo);
+  const h = new Uint8Array(await crypto.subtle.sign('HMAC', chave, buf)), o = h[19] & 15;
+  const n = ((h[o] & 0x7f) << 24) | (h[o+1] << 16) | (h[o+2] << 8) | h[o+3];
+  return String(n % 1000000).padStart(6, '0');
 }
 
 async function entrar(email) {
+  await fetch('/api/csrf');
   await fetch('/api/logout', {method: 'POST', headers: {'X-XSRF-TOKEN': cookie('XSRF-TOKEN') || ''}}).catch(() => {});
   await fetch('/api/csrf');
-  const f = new URLSearchParams({email, senha: SENHA});
-  const r = await fetch('/api/login', {method: 'POST', headers: {'X-XSRF-TOKEN': cookie('XSRF-TOKEN'), 'Content-Type': 'application/x-www-form-urlencoded'}, body: f});
-  if (!r.ok) { $('#quem').innerHTML = '<span class="err">Falha no login (' + r.status + ')</span>'; return; }
+  const tentar = codigo => fetch('/api/login', {method: 'POST', headers: {'X-XSRF-TOKEN': cookie('XSRF-TOKEN'), 'Content-Type': 'application/x-www-form-urlencoded'},
+    body: new URLSearchParams(codigo ? {email, senha: SENHA, codigo} : {email, senha: SENHA})});
+  let r = await tentar();
+  if (r.status === 401 && r.headers.get('X-2FA-Obrigatorio')) {
+    const c = prompt('Este usuário tem 2FA ativo. Informe o código de 6 dígitos (ou use a aba "seguranca" para gerar um):');
+    if (c) r = await tentar(c);
+  }
+  if (!r.ok) { $('#quem').innerHTML = `<span class="err">Falha no login (HTTP ${r.status}${r.status === 429 ? ': muitas tentativas, aguarde' : ''})</span>`; return; }
   await fetch('/api/csrf');
-  const me = await api('GET', '/api/me'); eu = me.dados;
-  nomes = {}; nomes[eu.id] = eu.nome;
-  const us = await api('GET', '/api/usuarios');
-  if (us.ok) us.dados.forEach(u => nomes[u.id] = u.nome); else USUARIOS.forEach(() => {});
+  eu = (await api('GET', '/api/me')).dados;
+  nomes = {}; USUARIOS.forEach(() => {}); nomes[eu.id] = eu.nome;
+  const us = await api('GET', '/api/usuarios'); if (us.ok) us.dados.forEach(u => nomes[u.id] = u.nome);
+  else if (!Object.keys(window.__nomes || {}).length) {}
   $('#quem').innerHTML = `Logado como <b>${esc(eu.nome)}</b> (${eu.perfil}, id ${eu.id})`;
   document.querySelectorAll('#logins button').forEach(b => b.classList.toggle('on', b.dataset.email === email));
   desenhar();
 }
 
-function montarTopo() {
+function topo() {
   $('#logins').innerHTML = USUARIOS.map(([n, e]) => `<button data-email="${e}">${n}</button>`).join('');
   $('#logins').onclick = ev => { if (ev.target.dataset.email) entrar(ev.target.dataset.email); };
-  const abas = ['agenda','prazos','processos','clientes','usuarios','visibilidade','calendario','console'];
-  $('#abas').innerHTML = abas.map(a => `<button data-aba="${a}">${a}</button>`).join('');
+  $('#abas').innerHTML = ABAS.map(a => `<button data-aba="${a}">${a}</button>`).join('');
   $('#abas').onclick = ev => { if (ev.target.dataset.aba) { aba = ev.target.dataset.aba; desenhar(); } };
 }
 
 async function desenhar() {
   document.querySelectorAll('#abas button').forEach(b => b.classList.toggle('on', b.dataset.aba === aba));
-  const c = $('#conteudo');
+  const c = $('#conteudo'); c.onclick = null;
   if (!eu) { c.innerHTML = '<p>Entre com um dos usuários acima para testar.</p>'; return; }
   c.innerHTML = 'Carregando...';
-  await VISTAS[aba](c);
+  try { await VISTAS[aba](c); } catch (e) { c.innerHTML = `<p class="err">Erro na tela: ${esc(e.message)}</p>`; }
 }
 
-function erro(r) { return `<p class="err">HTTP ${r.status}: ${esc(r.dados && r.dados.detail || JSON.stringify(r.dados))}</p>`; }
+// ---- acoes de botoes (delegacao)
+const AC = {
+  async finalizar(id, b) { const resumo = b.dataset.tipo === 'ATD' ? prompt('Resumo do atendimento:', 'Atendimento realizado.') : undefined;
+    return api('POST', `/api/agendamentos/${id}/finalizar`, resumo ? {resumo} : undefined); },
+  async obs(id) { const t = prompt('Observação:'); return t ? api('POST', `/api/agendamentos/${id}/observacoes`, {texto: t}) : null; },
+  async conferirPrazo(id) { return api('POST', `/api/prazos/${id}/conferir`); },
+  async aprovarSup(id) { return api('POST', `/api/agendamentos/${id}/aprovar-supervisor`); },
+  async devolverSup(id) { const m = prompt('Motivo da devolução:'); return m ? api('POST', `/api/agendamentos/${id}/devolver-supervisor`, {motivo: m}) : null; },
+  async conferirSocia(id) { return api('POST', `/api/agendamentos/${id}/conferir-socia`); },
+  async devolver(id) { const m = prompt('Motivo da devolução:'); return m ? api('POST', `/api/agendamentos/${id}/devolver`, {motivo: m}) : null; },
+  async classificar(id) { const resp = prompt('ID do responsável (ex.: 3 = Advogada C):', '3'); if (!resp) return null;
+    return api('POST', `/api/publicacoes/${id}/classificar`, {tipo:'CON', responsavelId:+resp, inicioPrazo:hoje(-1), prazoFatal:hoje(8), descricao:'Classificado pelo console'}); },
+  async descartar(id) { const m = prompt('Motivo do descarte:'); return m ? api('POST', `/api/publicacoes/${id}/descartar`, {motivo: m}) : null; },
+  async repassar(id) { return api('POST', `/api/andamentos/${id}/repassar`, {via: 'EMAIL'}); },
+  async aprovarRel(id) { return api('POST', `/api/relatorios/clientes/${id}/aprovar`); },
+  async enviarRel(id) { return api('POST', `/api/relatorios/clientes/${id}/enviar`, {canal: 'EMAIL'}); },
+  async salvarRel(id) { const r = await api('GET', `/api/relatorios/clientes/${id}`); const c = r.dados.conteudo; c.comentarios = $('#comrel').value; return api('PUT', `/api/relatorios/clientes/${id}`, c); },
+  async pdfRel(id) { window.open(`/api/relatorios/clientes/${id}/pdf`); return null; },
+  async desativarModelo(id) { return api('DELETE', `/api/modelos/${id}`); },
+  async pagarParcela(id) { return api('POST', `/api/financeiro/parcelas/${id}/pagar`, {data: hoje(), valor: +prompt('Valor pago:', '1000')}); },
+};
+function acoes(c) {
+  c.onclick = async ev => {
+    const b = ev.target.closest('button[data-act]'); if (!b) return;
+    const r = await AC[b.dataset.act](b.dataset.id, b);
+    if (r && !r.ok) alert('HTTP ' + r.status + ': ' + (r.dados && r.dados.detail || JSON.stringify(r.dados)));
+    if (r !== undefined) desenhar();
+  };
+}
 
 const VISTAS = {
   async agenda(c) {
-    let alvo = '';
-    const r = await api('GET', '/api/agenda' + alvo);
-    if (!r.ok) return c.innerHTML = erro(r);
+    const r = await api('GET', '/api/agenda'); if (!r.ok) return c.innerHTML = erro(r); acoes(c);
     const sel = eu.perfil === 'SOCIA' ? `<label>Ver agenda de<select id="alvo"><option value="">(a minha)</option>${Object.entries(nomes).map(([i,n]) => `<option value="${i}">${esc(n)}</option>`).join('')}</select></label>` : '';
     c.innerHTML = sel + '<p class="tag">Fundo/borda = status (vermelho vencido ≤30 dias, amarelo hoje, verde amanhã). Bolinha = tipo. Compromissos com hora em ordem de horário.</p><div id="itens"></div>';
     const pintar = lista => $('#itens').innerHTML = lista.length ? lista.map(i => `
       <div class="card ${i.statusVisual}">
-        ${dot(i.tipo)}<b>${i.tipo}</b> ${i.urgente ? '<span class="urg">⚠ URGENTE</span>' : ''}
-        ${esc(i.descricao || '')} <span class="tag">· ${i.data}${i.hora ? ' ' + i.hora.slice(0,5) : ''}${i.duracaoMin ? ' (' + i.duracaoMin + ' min)' : ''}
-        · resp.: ${esc(nome(i.responsavelId))} · criado por: ${esc(nome(i.criadoPor))}</span>
+        ${dot(i.tipo)}<b>${i.tipo}</b> ${i.urgente ? '<span class="urg">⚠ URGENTE</span>' : ''} ${esc(i.descricao || '')}
+        <span class="tag">· ${i.data}${i.hora ? ' ' + i.hora.slice(0,5) : ''}${i.duracaoMin ? ' (' + i.duracaoMin + ' min)' : ''} · resp.: ${esc(nome(i.responsavelId))} · criado por: ${esc(nome(i.criadoPor))} · ${i.status}</span>
         ${i.alertaAudiencia ? '<div class="tag">🔔 audiência em até 10 dias</div>' : ''}
-        ${i.aguardandoConferenciaPrazo ? '<div class="tag">⏳ aguardando conferência do prazo' + (i.prazoFatal ? ' · fatal ' + i.prazoFatal : '') + '</div>' : ''}
+        ${i.aguardandoConferenciaPrazo ? '<div class="tag">⏳ aguardando conferência do prazo (fatal ' + i.prazoFatal + ')</div>' : ''}
         ${i.modalidade ? `<div class="tag">${i.modalidade} ${esc(i.localOuLink || '')}</div>` : ''}
+        <div>${i.status === 'AGUARDANDO_CONFERENCIA_PRAZO' ? '' : `<button class="mini" data-act="finalizar" data-id="${i.id}" data-tipo="${i.tipo}">Finalizar</button>`}<button class="mini" data-act="obs" data-id="${i.id}">+ Observação</button></div>
       </div>`).join('') : '<p>Nada na agenda.</p>';
     pintar(r.dados);
     if ($('#alvo')) $('#alvo').onchange = async e => { const x = await api('GET', '/api/agenda' + (e.target.value ? '?usuarioId=' + e.target.value : '')); x.ok ? pintar(x.dados) : $('#itens').innerHTML = erro(x); };
   },
   async prazos(c) {
-    const r = await api('GET', '/api/prazos');
-    if (!r.ok) return c.innerHTML = erro(r);
-    c.innerHTML = `<p class="tag">Quem lançou não confirma; estagiário nunca confirma.</p>
-      <table><tr><th>id</th><th>tipo</th><th>descrição</th><th>início</th><th>interno</th><th>fatal</th><th>status</th><th>lançou</th><th>conferiu</th><th></th></tr>
-      ${r.dados.map(p => `<tr><td>${p.id}</td><td>${dot(p.tipo)}${p.tipo}</td><td>${esc(p.descricao || '')}</td><td>${p.inicioPrazo}</td><td><b>${p.prazoInterno}</b></td><td>${p.prazoFatal}</td>
-        <td>${p.status}</td><td>${esc(nome(p.lancadoPor))}</td><td>${esc(nome(p.conferidoPor))}</td>
-        <td>${p.status === 'AGUARDANDO_CONFERENCIA_PRAZO' ? `<button data-conf="${p.id}">Conferir</button>` : ''}</td></tr>`).join('')}</table>
-      <fieldset><legend>Lançar prazo</legend>
-        <label>processoId<input id="lp" size="4" value="1"></label>
-        <label>tipo<select id="lt"><option>CTR</option><option>INI</option><option selected>CON</option><option>MAN</option><option>REC</option></select></label>
-        <label>responsável id<input id="lr" size="4" value="${eu.id}"></label>
-        <label>início<input id="li" type="date"></label><label>fatal<input id="lf" type="date"></label>
-        <label>descrição<input id="ld"></label><label>urgente<input id="lu" type="checkbox"></label>
-        <button id="lancar">Lançar</button> <span id="lmsg"></span></fieldset>`;
-    const hoje = new Date(), f = d => d.toISOString().slice(0,10);
-    $('#li').value = f(new Date(hoje.getTime() - 5*864e5)); $('#lf').value = f(new Date(hoje.getTime() + 10*864e5));
-    c.onclick = async ev => {
-      if (ev.target.dataset.conf) { const x = await api('POST', '/api/prazos/' + ev.target.dataset.conf + '/conferir'); if (!x.ok) alert('HTTP ' + x.status + ': ' + (x.dados.detail || '')); desenhar(); }
-      if (ev.target.id === 'lancar') {
-        const x = await api('POST', '/api/prazos', {processoId: +$('#lp').value, tipo: $('#lt').value, descricao: $('#ld').value, responsavelId: +$('#lr').value, urgente: $('#lu').checked, inicioPrazo: $('#li').value, prazoFatal: $('#lf').value});
-        $('#lmsg').innerHTML = x.ok ? `<span class="ok">Criado: interno ${x.dados.prazoInterno}</span>` : `<span class="err">HTTP ${x.status}: ${esc(x.dados.detail || '')}</span>`;
-        if (x.ok) setTimeout(desenhar, 900);
-      }
-    };
+    const r = await api('GET', '/api/prazos'); if (!r.ok) return c.innerHTML = erro(r); acoes(c);
+    c.innerHTML = `<p class="tag">Quem lançou não confirma; estagiário nunca confirma.</p>` + tabela(['id','tipo','descrição','início','interno','fatal','status','lançou','conferiu',''],
+      r.dados.map(p => [p.id, dot(p.tipo)+p.tipo, esc(p.descricao||''), p.inicioPrazo, `<b>${p.prazoInterno}</b>`, p.prazoFatal, p.status, esc(nome(p.lancadoPor)), esc(nome(p.conferidoPor)),
+        p.status === 'AGUARDANDO_CONFERENCIA_PRAZO' ? btn('conferirPrazo', p.id, 'Conferir') : ''])) +
+      `<fieldset><legend>Lançar prazo</legend><label>processoId<input id="lp" size="4" value="1"></label><label>tipo<select id="lt"><option>CTR</option><option>INI</option><option selected>CON</option><option>MAN</option><option>REC</option></select></label>
+      <label>responsável id<input id="lr" size="4" value="${eu.id}"></label><label>início<input id="li" type="date" value="${hoje(-5)}"></label><label>fatal<input id="lf" type="date" value="${hoje(10)}"></label>
+      <label>descrição<input id="ld"></label><button id="lancar">Lançar</button> <span id="lmsg"></span></fieldset>`;
+    $('#lancar').onclick = async () => { const x = await api('POST', '/api/prazos', {processoId:+$('#lp').value, tipo:$('#lt').value, descricao:$('#ld').value, responsavelId:+$('#lr').value, inicioPrazo:$('#li').value, prazoFatal:$('#lf').value});
+      $('#lmsg').innerHTML = x.ok ? `<span class="ok">Criado: interno ${x.dados.prazoInterno}</span>` : `<span class="err">HTTP ${x.status}: ${esc(x.dados.detail||'')}</span>`; if (x.ok) setTimeout(desenhar, 900); };
+  },
+  async conferencia(c) {
+    const r = await api('GET', '/api/conferencias/pendentes'); if (!r.ok) return c.innerHTML = erro(r); acoes(c);
+    c.innerHTML = '<p class="tag">Fila de conferência: sócias veem o que aguarda sócias; supervisores veem o que aguarda eles (estagiário → supervisor → sócia).</p>' +
+      tabela(['id','tipo','descrição','responsável','status','ações'], r.dados.map(i => [i.id, dot(i.tipo)+i.tipo, esc(i.descricao||''), esc(nome(i.responsavelId)), i.status,
+        i.status === 'EM_CONFERENCIA_SUPERVISOR' ? btn('aprovarSup', i.id, 'Aprovar (supervisor)') + btn('devolverSup', i.id, 'Devolver') : btn('conferirSocia', i.id, 'Conferido') + btn('devolver', i.id, 'Devolvido')]));
+  },
+  async painel(c) {
+    const r = await api('GET', '/api/painel'); if (!r.ok) return c.innerHTML = erro(r) + '<p class="tag">Painel exclusivo das sócias.</p>';
+    const d = r.dados, it = l => tabela(['data','tipo','descrição','resp.','criado por','status'], l.map(i => [i.data + (i.hora ? ' ' + i.hora.slice(0,5) : ''), dot(i.tipo)+i.tipo, esc(i.descricao||''), esc(nome(i.responsavelId)), esc(nome(i.criadoPor)), i.status]));
+    c.innerHTML = `<p>Fila "A classificar": <b>${d.aClassificar}</b> publicação(ões)</p><h3>Carga por pessoa</h3>` +
+      tabela(['pessoa','abertos','vencidos','urgentes'], d.porPessoa.map(p => [esc(nome(p.usuarioId)), p.abertos, p.vencidos, p.urgentes])) +
+      `<h3>Atrasos</h3>${it(d.atrasos)}<h3>Prazos da semana</h3>${it(d.prazosDaSemana)}<h3>Audiências e atendimentos próximos (14 dias)</h3>${it(d.compromissosProximos)}
+       <h3>Aguardando conferência das sócias</h3>${it(d.aguardandoConferenciaSocia)}<h3>Prazos aguardando conferência da contagem</h3>${it(d.aguardandoConferenciaPrazo)}`;
+  },
+  async publicacoes(c) {
+    const r = await api('GET', '/api/publicacoes'); if (!r.ok) return c.innerHTML = erro(r); acoes(c);
+    c.innerHTML = '<p class="tag">Fila "A classificar" (só sócias classificam). Veja o cruzamento entre fontes e a sugestão de cadastro.</p>' +
+      tabela(['id','processo','titular','data','tribunal','fontes','estado','resumo','ações'], r.dados.map(p => [p.id, p.numeroFormatado || esc(p.numeroProcesso), esc(nome(p.titularId)), p.dataPublicacao, esc(p.tribunal||''),
+        p.fontes.map(f => `<span class="badge">${f}</span>`).join('') + (p.somenteEmUmaFonte ? '<br><span class="tag">⚠ só em uma fonte</span>' : ''),
+        p.estado + (p.sugerirCadastro ? '<br><span class="tag">sugerir cadastro do processo</span>' : p.processoId ? '<br><span class="tag">vinculada ao processo ' + p.processoId + '</span>' : ''),
+        esc((p.resumo||'').slice(0,120)), p.estado === 'A_CLASSIFICAR' && eu.perfil === 'SOCIA' ? btn('classificar', p.id, 'Classificar') + btn('descartar', p.id, 'Descartar') : '']));
+    if (eu.perfil === 'SOCIA') {
+      const ex = await api('GET', '/api/captura/execucoes'), ig = await api('GET', '/api/captura/ignorados'), fl = await api('GET', '/api/captura/filtros');
+      c.innerHTML += `<h3>Itens ignorados por filtro (log)</h3>` + tabela(['quando','fonte','tribunal','motivo'], (ig.dados||[]).map(i => [i.momento, i.fonte, esc(i.tribunal||''), esc(i.motivo)])) +
+        `<h3>Filtros de captura</h3>` + tabela(['id','usuário','fonte','prefixo','exceções','ativo'], (fl.dados||[]).map(f => [f.id, esc(nome(f.usuarioId)), f.fonte, f.tribunalPrefixo, f.excecoes||'', f.ativo])) +
+        `<h3>Execuções da captura</h3><p class="tag">Em modo dev o DJEN real fica desligado (evita consultar com OABs fictícias); a execução registra ERRO de propósito. Use o console de API: POST /api/captura/importar para simular e-mail/Domicílio.</p>` +
+        tabela(['id','fonte','resultado','lidos','novos','erro'], (ex.dados||[]).map(e => [e.id, e.fonte, e.resultado, e.itensLidos, e.itensNovos, esc(e.erro||'')])) +
+        `<button id="execcap">Executar captura agora</button>`;
+      $('#execcap').onclick = async () => { await api('POST', '/api/captura/executar'); desenhar(); };
+    }
   },
   async processos(c) {
     const r = await api('GET', '/api/processos'); if (!r.ok) return c.innerHTML = erro(r);
-    c.innerHTML = `<p class="tag">Só aparece o que a matriz de visibilidade permite a este usuário.</p><table><tr><th>id</th><th>número</th><th>tribunal</th><th>cliente</th><th>responsável</th><th>partes</th></tr>
-      ${r.dados.map(p => `<tr><td>${p.id}</td><td>${p.numeroFormatado}</td><td>${esc(p.tribunal)}</td><td>${esc(p.clienteNome)}</td><td>${esc(nome(p.advogadoId))}</td><td>${p.partes.map(x => esc(x.nome) + ' (' + x.papel + ')').join('<br>')}</td></tr>`).join('')}</table>`;
+    c.innerHTML = '<p class="tag">Só aparece o que a matriz de visibilidade permite a este usuário.</p>' + tabela(['id','número','tribunal','cliente','responsável','partes'],
+      r.dados.map(p => [p.id, p.numeroFormatado, esc(p.tribunal), esc(p.clienteNome), esc(nome(p.advogadoId)), p.partes.map(x => esc(x.nome) + ' (' + x.papel + ')').join('<br>')]));
   },
   async clientes(c) {
     const r = await api('GET', '/api/clientes'); if (!r.ok) return c.innerHTML = erro(r);
-    c.innerHTML = `<table><tr><th>id</th><th>nome</th><th>documento</th><th>contato</th></tr>${r.dados.map(x => `<tr><td>${x.id}</td><td>${esc(x.nome)}</td><td>${x.documento || ''}</td><td>${esc(x.email || '')} ${esc(x.telefone || '')}</td></tr>`).join('')}</table>`;
+    c.innerHTML = tabela(['id','nome','documento','contato','ativo'], r.dados.map(x => [x.id, esc(x.nome), x.documento||'', esc((x.email||'') + ' ' + (x.telefone||'')), x.ativo])) +
+      (eu.perfil === 'SOCIA' ? '<p class="tag">LGPD (sócias): GET /api/lgpd/clientes/{id}/exportar e POST /api/lgpd/clientes/{id}/anonimizar, pela aba console.</p>' : '');
+  },
+  async atendimento(c) {
+    const a = await api('GET', '/api/atendimentos'), p = await api('GET', '/api/andamentos/pendentes'); if (!a.ok) return c.innerHTML = erro(a); acoes(c);
+    c.innerHTML = '<h3>Atendimentos</h3>' + tabela(['id','cliente','quando','canal','atendente','origem','resumo'], a.dados.map(x => [x.id, x.clienteId, x.momento.slice(0,16).replace('T',' '), x.canal, esc(nome(x.atendenteId)), x.origem, esc(x.resumo)])) +
+      '<h3>Andamentos pendentes de repasse ao cliente</h3>' + tabela(['id','processo','data','descrição','origem',''], (p.dados||[]).map(x => [x.id, x.processoId, x.data, esc(x.descricao), x.origem, btn('repassar', x.id, 'Marcar repassado')])) +
+      `<fieldset><legend>Registrar atendimento avulso</legend><label>clienteId<input id="ac" size="4" value="1"></label><label>canal<select id="ak"><option>TELEFONE</option><option>WHATSAPP</option><option>EMAIL</option><option>PRESENCIAL</option><option>ONLINE</option><option>OUTRO</option></select></label>
+       <label>resumo<input id="ar" size="40" value="Contato do cliente."></label><button id="avul">Registrar</button> <span id="amsg"></span></fieldset>`;
+    $('#avul').onclick = async () => { const x = await api('POST', '/api/atendimentos', {clienteId:+$('#ac').value, canal:$('#ak').value, resumo:$('#ar').value}); $('#amsg').innerHTML = x.ok ? '<span class="ok">Registrado</span>' : `<span class="err">${esc(x.dados.detail||x.status)}</span>`; if (x.ok) setTimeout(desenhar, 700); };
+  },
+  async financeiro(c) {
+    if (eu.perfil !== 'SOCIA') { const r = await api('GET', '/api/financeiro/clientes/1/resumo'); return c.innerHTML = erro(r) + '<p class="tag">O financeiro é restrito às sócias (teste: tente como outro perfil).</p>'; }
+    acoes(c);
+    c.innerHTML = `<label>Cliente (id)<input id="fc" size="4" value="1"></label> <button id="fv">Ver resumo</button><div id="fres"></div>`;
+    const ver = async () => { const id = $('#fc').value, r = await api('GET', `/api/financeiro/clientes/${id}/resumo`); if (!r.ok) return $('#fres').innerHTML = erro(r);
+      const d = r.dados, ct = await api('GET', `/api/financeiro/contratos?clienteId=${id}`); let parc = '';
+      for (const k of ct.dados || []) { const p = await api('GET', `/api/financeiro/contratos/${k.id}/parcelas`); parc += `<h3>Contrato ${k.id}: ${esc(k.descricao)} (${moeda(k.valor_total)})</h3>` + tabela(['nº','vencimento','valor','situação','pago',''], p.dados.map(x => [x.numero, x.vencimento, moeda(x.valor), x.situacao, x.pago_em || '', x.situacao === 'PAGA' ? '' : btn('pagarParcela', x.id, 'Pagar')])); }
+      $('#fres').innerHTML = tabela(['item','valor'], [['Honorários contratados', moeda(d.contratado)],['Parcelas pagas', moeda(d.parcelasPagas)],['Parcelas a vencer', moeda(d.parcelasAVencer)],['Parcelas em atraso (' + d.quantidadeEmAtraso + ')', moeda(d.parcelasEmAtraso)],
+        ['Custas e despesas', moeda(d.custasEDespesas)],['Reembolsável', moeda(d.reembolsavel)],['Êxito previsto/recebido', moeda(d.exitoPrevisto) + ' / ' + moeda(d.exitoRecebido)],['Sucumbência prevista/recebida', moeda(d.sucumbenciaPrevista) + ' / ' + moeda(d.sucumbenciaRecebida)]]) + parc; };
+    $('#fv').onclick = ver; ver();
+  },
+  async relatorios(c) {
+    acoes(c);
+    c.innerHTML = `<h3>Relatórios internos (PDF)</h3><div class="row"><select id="rt">${['AGENDA_DIA','PENDENTES','VENCIDOS','FINALIZADOS','ATENDIMENTOS','AGENDA_USUARIO','FINANCEIRO_CLIENTE'].map(t => `<option>${t}</option>`).join('')}</select>
+      <label>de<input type="date" id="rd"></label><label>até<input type="date" id="ra"></label><label>usuário id<input id="ru" size="3"></label><label>cliente id<input id="rc" size="3"></label>
+      <button id="rver">Ver</button><button id="rpdf">Abrir PDF</button><button id="renv">Enviar às sócias</button></div><div id="rsaida"></div>
+      <h3>Relatório resumido ao cliente (rascunho → revisão → aprovação → envio)</h3>
+      <div class="row"><label>cliente id<input id="rcl" size="3" value="1"></label><label><input type="checkbox" id="rfin" style="width:auto"> incluir financeiro (sócias)</label><button id="rnovo">Gerar rascunho</button></div>
+      <div id="rcli"></div>`;
+    const qs = () => { const q = new URLSearchParams(); [['de','rd'],['ate','ra'],['usuarioId','ru'],['clienteId','rc']].forEach(([k,i]) => { if ($('#'+i).value) q.set(k, $('#'+i).value); }); return q.toString(); };
+    $('#rver').onclick = async () => { const r = await api('GET', `/api/relatorios/internos/${$('#rt').value}?${qs()}`); $('#rsaida').innerHTML = r.ok ? `<p class="tag">${esc(r.dados.titulo)} — ${esc(r.dados.subtitulo)}</p>` + tabela(r.dados.colunas, r.dados.linhas.map(l => l.map(esc))) : erro(r); };
+    $('#rpdf').onclick = () => window.open(`/api/relatorios/internos/${$('#rt').value}/pdf?${qs()}`);
+    $('#renv').onclick = async () => { const r = await api('POST', `/api/relatorios/internos/${$('#rt').value}/enviar?${qs()}`); $('#rsaida').innerHTML = r.ok ? `<p class="ok">Enviado a ${r.dados.enviados} sócia(s) (e-mail simulado no log).</p>` : erro(r); };
+    const mostrar = rel => { const cont = rel.conteudo;
+      $('#rcli').innerHTML = `<p>Relatório <b>#${rel.id}</b> — estado: <b>${rel.estado}</b> — período: ${rel.periodoInicio || 'todo o histórico'} a ${rel.periodoFim}${rel.canal ? ' — enviado por ' + rel.canal : ''}</p>` +
+        cont.processos.map(p => `<h3>Processo ${esc(p.numero)} — ${esc(p.tribunal)} — ${esc(p.situacao || '')}</h3><p class="tag">Partes: ${esc(p.partes.join('; '))}</p>` +
+          '<b>Movimentações</b>' + tabela(['data','texto'], p.movimentacoes.map(i => [i.data, esc(i.texto)])) + '<b>O que o escritório fez</b>' + tabela(['data','texto'], p.feitos.map(i => [i.data, esc(i.texto)])) + '<b>Próximos passos</b>' + tabela(['data','texto'], p.proximosPassos.map(i => [i.data, esc(i.texto)]))).join('') +
+        (cont.financeiro ? `<p>Financeiro: pagas ${moeda(cont.financeiro.parcelasPagas)} · a vencer ${moeda(cont.financeiro.parcelasAVencer)}</p>` : '') +
+        `<label style="width:100%">Comentários do advogado<textarea id="comrel">${esc(cont.comentarios || '')}</textarea></label>
+         <div>${['RASCUNHO','EM_REVISAO'].includes(rel.estado) ? btn('salvarRel', rel.id, 'Salvar edição') + btn('aprovarRel', rel.id, 'Aprovar') : ''}
+         ${['APROVADO','ENVIADO'].includes(rel.estado) ? btn('pdfRel', rel.id, 'Abrir PDF') : '<span class="tag">PDF só depois de aprovado</span>'}
+         ${rel.estado === 'APROVADO' ? btn('enviarRel', rel.id, 'Enviar por e-mail') : ''}</div>`; };
+    $('#rnovo').onclick = async () => { const r = await api('POST', '/api/relatorios/clientes', {clienteId:+$('#rcl').value, incluirFinanceiro:$('#rfin').checked}); r.ok ? (window.__rel = r.dados.id, mostrar(r.dados)) : $('#rcli').innerHTML = erro(r); };
+    const antigo = acoes; // apos qualquer acao, recarregar o relatorio aberto em vez de redesenhar a aba inteira
+    c.onclick = async ev => { const b = ev.target.closest('button[data-act]'); if (!b) return; const r = await AC[b.dataset.act](b.dataset.id, b);
+      if (r && !r.ok) alert('HTTP ' + r.status + ': ' + (r.dados && r.dados.detail || '')); if (['salvarRel','aprovarRel','enviarRel'].includes(b.dataset.act)) { const x = await api('GET', `/api/relatorios/clientes/${b.dataset.id}`); if (x.ok) mostrar(x.dados); } };
+  },
+  async alertas(c) {
+    const r = await api('GET', '/api/alertas'); if (!r.ok) return c.innerHTML = erro(r);
+    c.innerHTML = (eu.perfil === 'SOCIA' ? '<button id="exal">Gerar e enviar alertas agora</button> <span id="almsg"></span>' : '') + '<p class="tag">Véspera do prazo interno/fatal, audiência 10 dias antes e na véspera, atendimento na véspera, resumo diário. Em dev o e-mail é simulado (ver log do servidor).</p>' +
+      tabela(['id','tipo','para','status','assunto','mensagem'], r.dados.map(n => [n.id, n.tipo, esc(nome(n.destinatarioId)), n.status, esc(n.assunto), esc(n.corpo)]));
+    if ($('#exal')) $('#exal').onclick = async () => { const x = await api('POST', '/api/alertas/executar'); $('#almsg').innerHTML = x.ok ? `<span class="ok">geradas ${x.dados.geradas}, enviadas ${x.dados.enviadas}</span>` : erro(x); setTimeout(desenhar, 900); };
+  },
+  async modelos(c) {
+    const r = await api('GET', '/api/modelos'); if (!r.ok) return c.innerHTML = erro(r); acoes(c);
+    c.innerHTML = tabela(['id','tipo','área','título','arquivo','',''], r.dados.map(m => [m.id, m.tipo, esc(m.areaDireito), esc(m.titulo), esc(m.nomeArquivo), `<a href="/api/modelos/${m.id}/download">baixar</a>`, eu.perfil === 'SOCIA' ? btn('desativarModelo', m.id, 'Desativar') : ''])) +
+      (eu.perfil === 'SOCIA' ? `<fieldset><legend>Novo modelo (PDF/DOCX...)</legend><label>tipo<select id="mt"><option>INI</option><option>CON</option><option>MAN</option><option>REC</option></select></label><label>área<input id="ma" value="Civel"></label><label>título<input id="mti"></label><input type="file" id="mf"> <button id="mup">Enviar</button> <span id="mmsg"></span></fieldset>` : '<p class="tag">Somente sócias cadastram modelos.</p>');
+    if ($('#mup')) $('#mup').onclick = async () => { const f = new FormData(); f.append('tipo', $('#mt').value); f.append('area', $('#ma').value); f.append('titulo', $('#mti').value); if ($('#mf').files[0]) f.append('arquivo', $('#mf').files[0]);
+      const x = await api('POST', '/api/modelos', null, f); $('#mmsg').innerHTML = x.ok ? '<span class="ok">Cadastrado</span>' : erro(x); if (x.ok) setTimeout(desenhar, 700); };
   },
   async usuarios(c) {
     const r = await api('GET', '/api/usuarios'); if (!r.ok) return c.innerHTML = erro(r) + '<p class="tag">Somente sócias gerenciam usuários.</p>';
-    c.innerHTML = `<table><tr><th>id</th><th>nome</th><th>e-mail</th><th>perfil</th><th>ativo</th><th>OABs</th></tr>${r.dados.map(u => `<tr><td>${u.id}</td><td>${esc(u.nome)}</td><td>${u.email}</td><td>${u.perfil}</td><td>${u.ativo}</td><td>${u.oabs.map(o => o.numero + '/' + o.uf + (o.principal ? '★' : '') + (o.ativa ? '' : ' (inativa)')).join('<br>')}</td></tr>`).join('')}</table>`;
+    c.innerHTML = tabela(['id','nome','e-mail','perfil','ativo','supervisor','OABs'], r.dados.map(u => [u.id, esc(u.nome), u.email, u.perfil, u.ativo, u.supervisorId ? esc(nome(u.supervisorId)) : '', u.oabs.map(o => o.numero + '/' + o.uf + (o.principal ? '★' : '') + (o.ativa ? '' : ' (inativa)')).join('<br>')]));
   },
   async visibilidade(c) {
     const r = await api('GET', '/api/visibilidade'); if (!r.ok) return c.innerHTML = erro(r) + '<p class="tag">Somente sócias.</p>';
-    const ids = Object.keys(nomes).map(Number).sort((a,b) => a-b);
-    const tem = (o,t) => ['PUBLICACAO','AGENDAMENTO','PROCESSO'].filter(e => r.dados.some(x => x.observadorId===o && x.titularId===t && x.escopo===e)).length;
-    c.innerHTML = `<p class="tag">Linha = quem vê · coluna = em nome de quem. Número = escopos liberados (de 3).</p><table><tr><th></th>${ids.map(i => `<th>${esc(nome(i))}</th>`).join('')}</tr>
-      ${ids.map(o => `<tr><th>${esc(nome(o))}</th>${ids.map(t => `<td style="text-align:center">${tem(o,t) || '·'}</td>`).join('')}</tr>`).join('')}</table>`;
+    const ids = Object.keys(nomes).map(Number).sort((a,b) => a-b), tem = (o,t) => ['PUBLICACAO','AGENDAMENTO','PROCESSO'].filter(e => r.dados.some(x => x.observadorId===o && x.titularId===t && x.escopo===e)).length;
+    c.innerHTML = `<p class="tag">Linha = quem vê · coluna = em nome de quem. Número = escopos liberados (de 3).</p><table><tr><th></th>${ids.map(i => `<th>${esc(nome(i))}</th>`).join('')}</tr>${ids.map(o => `<tr><th>${esc(nome(o))}</th>${ids.map(t => `<td style="text-align:center">${tem(o,t) || '·'}</td>`).join('')}</tr>`).join('')}</table>`;
   },
   async calendario(c) {
     const r = await api('GET', '/api/calendario'); if (!r.ok) return c.innerHTML = erro(r);
-    c.innerHTML = `<table><tr><th>escopo</th><th>ref.</th><th>tipo</th><th>de</th><th>até</th><th>descrição</th><th>ativo</th></tr>${r.dados.map(f => `<tr><td>${f.escopo}</td><td>${f.referencia || ''}</td><td>${f.tipo}</td><td>${f.dataInicial}</td><td>${f.dataFinal}</td><td>${esc(f.descricao)}</td><td>${f.ativo}</td></tr>`).join('')}</table>`;
+    c.innerHTML = tabela(['escopo','ref.','tipo','de','até','descrição','ativo'], r.dados.map(f => [f.escopo, f.referencia||'', f.tipo, f.dataInicial, f.dataFinal, esc(f.descricao), f.ativo]));
+  },
+  async seguranca(c) {
+    const st = await api('GET', '/api/me/2fa');
+    c.innerHTML = `<p>Segundo fator (TOTP) de <b>${esc(eu.nome)}</b>: <b>${st.dados.ativo ? 'ATIVO' : 'inativo'}</b>. Cada usuário gerencia o próprio. O botão abaixo gera o código com o segredo exibido (só neste console de teste).</p>
+      <div class="row"><button id="t1">1. Iniciar cadastro</button><button id="t2">2. Confirmar (gera o código)</button><button id="t3">Desativar (gera o código)</button></div><pre id="tsaida"></pre>
+      <p class="tag">Depois de ativar, saia e entre de novo como este usuário: o login pedirá o código. Cinco falhas seguidas bloqueiam o login por 15 min (HTTP 429).</p>`;
+    let seg = null;
+    $('#t1').onclick = async () => { const r = await api('POST', '/api/me/2fa/iniciar'); r.ok ? (seg = r.dados.segredo, $('#tsaida').textContent = 'Segredo: ' + seg + '\n' + r.dados.uri) : $('#tsaida').textContent = r.status + ' ' + JSON.stringify(r.dados); };
+    $('#t2').onclick = async () => { if (!seg) return alert('Inicie primeiro'); const r = await api('POST', '/api/me/2fa/confirmar', {codigo: await totp(seg)}); $('#tsaida').textContent = r.status === 204 ? '2FA ATIVADO' : r.status + ' ' + JSON.stringify(r.dados); if (r.ok) setTimeout(desenhar, 900); };
+    $('#t3').onclick = async () => { if (!seg) seg = prompt('Informe o segredo base32:'); const r = await api('POST', '/api/me/2fa/desativar', {codigo: await totp(seg)}); $('#tsaida').textContent = r.status === 204 ? '2FA DESATIVADO' : r.status + ' ' + JSON.stringify(r.dados); if (r.ok) setTimeout(desenhar, 900); };
   },
   async console(c) {
-    const PRESETS = {
-      'GET /api/me': ['GET','/api/me',''],
-      'Marcar audiência (conflito de teste)': ['POST','/api/compromissos', {tipo:'AUD',processoId:1,descricao:'Teste',responsavelId:3,inicio:new Date(Date.now()+864e5).toISOString().slice(0,10)+'T10:15:00',duracaoMin:60,modalidade:'ONLINE',localOuLink:'https://exemplo.test'}],
-      'Novo cliente': ['POST','/api/clientes',{nome:'Cliente Novo',documento:'',email:'novo@exemplo.test'}],
-      'Observação no agendamento 1': ['POST','/api/agendamentos/1/observacoes',{texto:'Observação de teste'}],
-      'Listar observações do agendamento 1': ['GET','/api/agendamentos/1/observacoes',''],
-      'Prazo inexistente': ['GET','/api/prazos/9999','']};
-    c.innerHTML = `<p class="tag">Qualquer endpoint da API, com sessão e CSRF automáticos.</p>
-      <div class="row"><select id="pre"><option value="">presets...</option>${Object.keys(PRESETS).map(k => `<option>${esc(k)}</option>`).join('')}</select>
-      <select id="met"><option>GET</option><option>POST</option><option>PUT</option><option>DELETE</option></select>
-      <input id="cam" size="40" value="/api/me"><button id="env">Enviar</button></div>
+    const P = {'GET /api/me':['GET','/api/me',''], 'Marcar audiência (testa conflito)':['POST','/api/compromissos',{tipo:'AUD',processoId:1,descricao:'Teste',responsavelId:3,inicio:hoje(1)+'T10:15:00',duracaoMin:60,modalidade:'ONLINE',localOuLink:'https://exemplo.test'}],
+      'Importar e-mail simulado (sócia)':['POST','/api/captura/importar',{titularId:3,itens:[{fonte:'EMAIL',idExterno:'teste-'+Date.now(),numeroProcesso:'0000001-31.2025.8.07.0001',tribunal:'TJDFT',dataPublicacao:hoje(),conteudo:'Aviso simulado de teste.'}]}],
+      'LGPD: exportar cliente 1 (sócia)':['GET','/api/lgpd/clientes/1/exportar',''], 'Novo cliente':['POST','/api/clientes',{nome:'Cliente Novo',email:'novo@exemplo.test'}],
+      'Novo filtro de captura (sócia)':['POST','/api/captura/filtros',{usuarioId:1,fonte:'EMAIL',tribunalPrefixo:'TRT',excecoes:'TRT-10'}], 'Prazo inexistente (404)':['GET','/api/prazos/9999','']};
+    c.innerHTML = `<p class="tag">Qualquer endpoint da API, com sessão e CSRF automáticos.</p><div class="row"><select id="pre"><option value="">presets...</option>${Object.keys(P).map(k => `<option>${esc(k)}</option>`).join('')}</select>
+      <select id="met"><option>GET</option><option>POST</option><option>PUT</option><option>DELETE</option></select><input id="cam" size="44" value="/api/me"><button id="env">Enviar</button></div>
       <textarea id="cor" placeholder="corpo JSON (opcional)"></textarea><pre id="saida"></pre>`;
-    $('#pre').onchange = e => { const p = PRESETS[e.target.value]; if (!p) return; $('#met').value = p[0]; $('#cam').value = p[1]; $('#cor').value = p[2] ? JSON.stringify(p[2], null, 2) : ''; };
+    $('#pre').onchange = e => { const p = P[e.target.value]; if (!p) return; $('#met').value = p[0]; $('#cam').value = p[1]; $('#cor').value = p[2] ? JSON.stringify(p[2], null, 2) : ''; };
     $('#env').onclick = async () => { const x = await api($('#met').value, $('#cam').value, $('#cor').value || undefined); $('#saida').textContent = x.status + '\n' + JSON.stringify(x.dados, null, 2); };
   }
 };
-
-montarTopo(); desenhar();
+topo(); desenhar();
 </script>
 </body>
 </html>

@@ -20,6 +20,9 @@ public class DevApplication {
 		System.setProperty("DB_PASSWORD", "postgres");
 		System.setProperty("COOKIE_SECURE", "false");
 		System.setProperty("STORAGE_DIR", "target/dev-storage");
+		// Em dev o DJEN real fica inalcancavel de proposito: OABs ficticias poderiam coincidir com advogados reais
+		// e trazer publicacoes de terceiros para o banco de teste.
+		System.setProperty("app.captura.djen.url", "http://127.0.0.1:9");
 		SpringApplication app = new SpringApplication(GestaoApplication.class);
 		app.setAdditionalProfiles("dev");
 		app.run(args);

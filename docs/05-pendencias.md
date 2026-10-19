@@ -48,3 +48,14 @@ Lacunas da spec e decisoes abertas. Nao decidir por analogia: perguntar. Ao reso
 31. Audiencia sem duracao informada assume 60 min para detectar conflito. Confirmar o padrao.
 32. Luana nao pode agendar ATD (o atendente seria advogado/socia, vedado pelo item 8) nem AUD para advogado; so para si ou estagiario. Confirmar se deseja excecao para agendar atendimentos em nome de advogados.
 33. Itens vencidos ha mais de 30 dias saem da agenda individual (continuam nos dados); ver pendencia 2 sobre onde passam a aparecer.
+
+## Fases 5 a 11 (2026-10-19)
+34. Conectores do Domicilio Judicial Eletronico e do e-mail push (IMAP/OAuth por advogado): dependem de acesso/credenciais (spike da pendencia 12). Hoje entram por `POST /api/captura/importar`. O DJEN ja tem conector (API publica verificada).
+35. WhatsApp: sem provedor definido (pendencia 13); relatorio ao cliente por WhatsApp/impressao e so registrado (o escritorio entrega o PDF). Alertas so por e-mail.
+36. Socia pode conferir o que ela mesma finalizou. Exigir outra socia? E devolucao: pode a socia que devolveu receber de volta para conferir de novo?
+37. 2FA existe e e opcional; definir se e obrigatorio para socias (pendencia 14) e se o segredo TOTP deve ser criptografado em repouso.
+38. Seed da equipe real: Luana liberada pela matriz, filtro de TRT da Leticia, OABs suplementares, feriados locais e suspensoes dos tribunais (pendencias 9 e 11). Timbre: logotipo do site; falta endereco e contato do escritorio (`app.escritorio.*`, pendencia 10).
+39. Alertas e captura agendados assumem UMA instancia do backend (sem trava distribuida); limite de login tambem e em memoria.
+40. Backup do Postgres existe; falta incluir `STORAGE_DIR` (anexos e modelos) e testar restauracao (pendencia 30).
+41. Relatorio ao cliente: o texto das movimentacoes vem do resumo da publicacao e precisa de revisao do advogado (linguagem simples). Confirmar se andamentos tambem devem nascer de movimentos que nao sejam publicacoes (pendencia 8).
+42. Anonimizacao LGPD preserva processos, relatorios enviados e auditoria (retencao legal). Confirmar prazos de retencao (pendencia 16).

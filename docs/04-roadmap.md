@@ -19,3 +19,6 @@ Ordem pensada para entregar valor cedo e deixar o risco (visibilidade, captura) 
 
 Criterio de pronto por fase: regras da spec cobertas por teste, permissoes testadas pela matriz, auditoria registrando, migracao reversivel, documentacao e RAG atualizadas.
 Captura (fase 6) depende de verificar as fontes oficiais; fazer uma investigacao tecnica (spike) antes.
+
+## Status (2026-10-19)
+Fases 0 a 11 implementadas no backend e commitadas (172 testes, Postgres real validado). Faltam: frontend das telas (o console `/dev/` cobre os testes), conectores do Domicilio e e-mail, WhatsApp, seed da equipe real, deploy das migracoes na VM. Ver `docs/05-pendencias.md` (itens 34 a 42) e `docs/rag/estado.md`.

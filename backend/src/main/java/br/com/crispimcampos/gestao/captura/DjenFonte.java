@@ -45,6 +45,10 @@ class DjenFonte implements FonteDePublicacoes {
 							.queryParam("itensPorPagina", POR_PAGINA).queryParam("pagina", p).build())
 					.retrieve().body(new ParameterizedTypeReference<Map<String, Object>>() {
 					});
+			if (resposta == null || !"success".equals(String.valueOf(resposta.get("status"))) || !(resposta.get("items") instanceof java.util.List)) {
+				// fonte fora do ar ou formato inesperado: e falha (registrada), nunca "0 itens"
+				throw new IllegalStateException("Resposta inesperada do DJEN");
+			}
 			DjenParser.Pagina pg = DjenParser.parse(resposta);
 			todos.addAll(pg.itens());
 			if (pg.recebidos() < POR_PAGINA || todos.size() + pg.invalidos() >= pg.total()) {

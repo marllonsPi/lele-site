@@ -17,6 +17,9 @@ spring:
       max-request-size: 21MB
   jackson:
     default-property-inclusion: non_null
+    deserialization:
+      # Jackson 3 recusa `null` em campo primitivo; para a API, booleano ausente significa false.
+      fail-on-null-for-primitives: false
 
 server:
   forward-headers-strategy: framework

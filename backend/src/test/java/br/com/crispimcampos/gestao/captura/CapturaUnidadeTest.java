@@ -77,6 +77,28 @@ class CapturaUnidadeTest {
 		assertThat(PipelineCaptura.resumo("a".repeat(500))).hasSize(400).endsWith("...");
 	}
 
+	@Test
+	void conectorTrataRespostaVaziaOuForaDoPadraoComoFalha() throws IOException {
+		for (String corpo : new String[] {"{}", "{\"status\":\"error\"}", "{\"status\":\"success\"}"}) {
+			HttpServer srv = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+			srv.createContext("/api/v1/comunicacao", ex -> {
+				byte[] b = corpo.getBytes(StandardCharsets.UTF_8);
+				ex.getResponseHeaders().add("Content-Type", "application/json");
+				ex.sendResponseHeaders(200, b.length);
+				ex.getResponseBody().write(b);
+				ex.close();
+			});
+			srv.start();
+			try {
+				var fonte = new DjenFonte("http://127.0.0.1:" + srv.getAddress().getPort());
+				org.assertj.core.api.Assertions.assertThatThrownBy(() -> fonte.buscar(new OabMonitorada(1L, "90001", "DF"), LocalDate.now(), LocalDate.now()))
+						.isInstanceOf(IllegalStateException.class);
+			} finally {
+				srv.stop(0);
+			}
+		}
+	}
+
 	// ---- conector DJEN contra um servidor HTTP local (sem rede externa)
 
 	@Test

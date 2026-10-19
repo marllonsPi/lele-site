@@ -2,12 +2,12 @@
 
 Base: `docs/08-infra-oracle.md`. Nada abaixo foi executado. Cada fase so avanca com OK da usuaria; a VM roda o Divas Nete em producao.
 
-## Lacunas no repositorio antes de subir (fazer localmente)
-1. `frontend/nginx.conf` serve so o app em `/`. O site (`site/`) ainda nao e servido: definir layout (proposta de `docs/07`: site em `/`, app em `/app`, `/api` ao backend) e incluir `site/` na imagem web. O app Vue precisa de `base: '/app/'` no Vite e rotas ajustadas; alternativa mais simples de inicio: site em `/` e app em subdominio `app.`.
-2. TLS: nginx interno escuta so `80`. Terminacao HTTPS fica no proxy da VM (fase 3); manter `COOKIE_SECURE=true` e repassar `X-Forwarded-Proto` (conferir `server.forward-headers-strategy` no Spring).
-3. `deploy/docker-compose.yml` publica `${WEB_PORT:-8080}`: na VM usar `WEB_PORT=8081` (8080 e do Divas Nete/ngrok) e preferir `127.0.0.1:8081:80` para nao expor sem proxy.
-4. Validar build das imagens em arm64 e x86 (temurin, node, nginx, postgres sao multi-arch; so confirmar o shape da VM).
-5. Compose/CI/Flyway em Postgres real ainda NAO validados (ver `docs/rag/estado.md`): rodar `docker compose up --build` localmente antes de qualquer VM.
+## Lacunas no repositorio antes de subir (resolvidas localmente em 2026-10-19, nao validadas com Docker)
+1. Layout unificado: nginx (`deploy/nginx.conf`) serve o site em `/` e o app Vue em `/app/` (`base: '/app/'` no Vite), `/api` vai ao backend. Imagem web em `deploy/web.Dockerfile` (contexto na raiz; `testeLogin/` e RAG do site ficam fora da imagem).
+2. TLS: nginx interno escuta so `80` e repassa `X-Forwarded-Proto` do proxy da VM; Spring usa `forward-headers-strategy: framework`; manter `COOKIE_SECURE=true`.
+3. Compose publica `127.0.0.1:${WEB_PORT:-8081}:80` (so loopback; exposicao via proxy).
+4. VM: a VM do Divas Nete (x86, 954 MB RAM) nao comporta o sistema; usar uma segunda VM (Ampere A1 ARM, Always Free). Imagens base sao multi-arch.
+5. Compose/CI/Flyway em Postgres real ainda NAO validados: validar na VM nova.
 
 ## Fase 0 - Leitura da VM (precisa chave SSH + OK)
 Somente leitura: `uname -m`, `free -h`, `df -h`, `docker --version`, `docker compose version`, `docker ps`, `ss -ltnp` (portas livres), `systemctl list-units | grep -i ngrok`, regras de firewall local. Registrar em `docs/08` e nao tocar nos containers do Divas Nete.

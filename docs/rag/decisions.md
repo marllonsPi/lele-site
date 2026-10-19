@@ -23,3 +23,13 @@ Pendencia 1 em aberto: o prazo fatal e informado por quem lanca; so o interno e 
 
 ## 2026-10-19 - Agenda: compromissos, conflitos e anexos
 Agendamento unico (`agendamento`) serve prazos e compromissos; a data de trabalho na agenda e o prazo interno (prazos) ou a data de `inicio_em` no fuso America/Sao_Paulo (AUD/ATD). Conflito de horario so avisa (pendencia 5): mesmo advogado (AUD/ATD) ou duas audiencias no escritorio; o aviso nao detalha processo. Anexos: dono pode ser agendamento ou processo e herdam a visibilidade do dono; nome no disco e UUID, download sempre `application/octet-stream` + attachment. Observacoes sao historico imutavel (trigger) e nunca entram no relatorio ao cliente.
+
+## 2026-10-19 - Fases 5 a 11 (resumo das decisoes)
+- Conferencia: estagiario -> supervisor -> socia; devolucao exige motivo, volta ao responsavel e entra no historico (tabela `conferencia` imutavel). Socia pode conferir o que ela mesma finalizou (sem exigencia de segunda socia; pendencia 36).
+- Captura: pipeline idempotente (UNIQUE no banco); filtros por dados; DJEN por API publica; Domicilio e e-mail por `POST /api/captura/importar` ate haver conector. Resposta vazia/fora do padrao da fonte e FALHA registrada, nunca "0 itens".
+- Alertas: gerados no banco (idempotentes) e enviados por SMTP quando configurado; sem SMTP ficam PENDENTE (so as do ultimo dia sao enviadas depois). Mensagem so com numero do processo, tipo e data.
+- Relatorio ao cliente: conteudo so existe como `ConteudoCliente` (lista branca, teste por reflexao); aprovacao exigida no servico e por CHECK; so apos aprovado ha PDF/envio; ao enviar guarda copia e marca andamentos como repassados. Advogado so gera dos proprios processos; financeiro so se a socia gerar.
+- Financeiro: nao usa a matriz de visibilidade; toda operacao exige perfil Socia e a consulta de resumo grava auditoria (por isso nao e `readOnly`).
+- Seguranca: limite de login por IP+e-mail em memoria (5 falhas/15 min -> 429); 2FA TOTP opcional por usuario (obrigatoriedade das socias e decisao da usuaria); CSP e Referrer-Policy; `Clock` unico no modulo `seguranca`.
+- Jackson 3 (Boot 4) recusa `null` em primitivo: `spring.jackson.deserialization.fail-on-null-for-primitives=false` (booleano ausente = false).
+- Ambiente de teste: Postgres embutido so no escopo `test`; o console `/dev/` e o seed ficam em `src/test` e nao entram no pacote de producao.
