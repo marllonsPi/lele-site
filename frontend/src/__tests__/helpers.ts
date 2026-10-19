@@ -52,15 +52,19 @@ export function prazo(parcial: Partial<Prazo> = {}): Prazo {
 }
 
 /** Define quem esta logado sem passar pela rede. */
-export function logarComo(eu: Eu): void {
+export function logarComo(eu: Eu, usuarios: unknown[] = []): Promise<unknown> {
   const sessao = useSessao()
   sessao.reiniciar()
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string) =>
-      url === '/api/me' ? new Response(JSON.stringify(eu), { status: 200 }) : new Response('[]', { status: 403 }),
+      url === '/api/me'
+        ? new Response(JSON.stringify(eu), { status: 200 })
+        : url === '/api/usuarios' && usuarios.length
+          ? new Response(JSON.stringify(usuarios), { status: 200 })
+          : new Response('[]', { status: 403 }),
     ),
   )
   useUsuarios().reiniciar()
-  return void sessao.carregar()
+  return sessao.carregar()
 }
