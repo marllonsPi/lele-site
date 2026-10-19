@@ -41,3 +41,10 @@ Lacunas da spec e decisoes abertas. Nao decidir por analogia: perguntar. Ao reso
 26. Seed do calendario cobre so feriados nacionais 2026-2027 (datas fixas + Sexta-feira Santa) e a suspensao de 20/12 a 20/01; faltam feriados locais, recessos e suspensoes de tribunais (pendencia 11). Fora desses anos o calculo recusa (de proposito).
 27. Processo ainda nao guarda UF/municipio: feriados ESTADO/MUNICIPIO so valem quando o contexto os informar; hoje o calendario do prazo usa o tribunal.
 28. Estagiario lanca prazo so em tarefa distribuida (Fase 5); hoje nao lanca. Advogado lanca prazo apenas atribuido a si mesmo.
+
+## Fase 4 (2026-10-19)
+29. Anexos sem antivirus: hoje so extensao + assinatura do arquivo e 20 MB. Decidir ferramenta (ex.: ClamAV) antes de dados reais.
+30. `STORAGE_DIR` precisa ser volume persistente no Compose da VM e entrar no backup criptografado (hoje o backup cobre so o Postgres).
+31. Audiencia sem duracao informada assume 60 min para detectar conflito. Confirmar o padrao.
+32. Luana nao pode agendar ATD (o atendente seria advogado/socia, vedado pelo item 8) nem AUD para advogado; so para si ou estagiario. Confirmar se deseja excecao para agendar atendimentos em nome de advogados.
+33. Itens vencidos ha mais de 30 dias saem da agenda individual (continuam nos dados); ver pendencia 2 sobre onde passam a aparecer.

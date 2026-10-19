@@ -15,11 +15,11 @@ Status: proposta, 2026-10-19. Nomes de tabela/campo definitivos nascem na primei
 - `ParteProcesso` (V3, existe): processo, nome, papel (CLIENTE | CONTRARIA | OUTRO); a parte CLIENTE e criada junto com o processo.
 
 ## Agenda
-- `Agendamento` (V5, parcial: so prazos; `titular_id` = advogado do processo no lancamento, base da visibilidade; CHECK `conferido_por <> lancado_por`): processo (obrigatorio, exceto ATD so com cliente), tipo (CTR|INI|CON|MAN|AUD|REC|ATD), responsavel, criado_por, urgente, status (PENDENTE | AGUARDANDO_CONFERENCIA_PRAZO | FINALIZADO | EM_CONFERENCIA_SOCIA | CONFERIDO | DEVOLVIDO | EM_CONFERENCIA_SUPERVISOR), origem (publicacao opcional).
+- `Agendamento` (V5+V6; prazos e AUD/ATD com `inicio_em`, `duracao_min`, `modalidade`, `local_ou_link`, `cliente_id`, `advogado_atendente_id`; `titular_id` = advogado do processo no lancamento, base da visibilidade; CHECK `conferido_por <> lancado_por`): processo (obrigatorio, exceto ATD so com cliente), tipo (CTR|INI|CON|MAN|AUD|REC|ATD), responsavel, criado_por, urgente, status (PENDENTE | AGUARDANDO_CONFERENCIA_PRAZO | FINALIZADO | EM_CONFERENCIA_SOCIA | CONFERIDO | DEVOLVIDO | EM_CONFERENCIA_SUPERVISOR), origem (publicacao opcional).
 - Campos de prazo (CTR/INI/CON/MAN/REC): `inicio_prazo`, `prazo_interno`, `prazo_fatal`, `lancado_por`, `conferido_por`, `conferido_em`.
 - Campos de AUD/ATD: `inicio_em`, `duracao_min`, `modalidade`, `local_ou_link`; ATD: `cliente`, `advogado_atendente`.
-- `ObservacaoAgendamento`: agendamento, autor, texto, momento (historico imutavel).
-- `Anexo`: agendamento ou processo, arquivo, autor, momento.
+- `ObservacaoAgendamento` (V6, existe; trigger impede alterar/apagar): agendamento, autor, texto, momento (historico imutavel).
+- `Anexo` (V6, existe; arquivo em `STORAGE_DIR` com nome UUID): agendamento ou processo, arquivo, autor, momento.
 - `ConferenciaSocia`: agendamento, socia, resultado (CONFERIDO | DEVOLVIDO), motivo, momento.
 - `ModeloPeca`: tipo (INI|CON|MAN|REC), area do direito, titulo, arquivo.
 

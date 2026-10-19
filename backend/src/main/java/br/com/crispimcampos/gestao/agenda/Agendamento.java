@@ -19,7 +19,8 @@ class Agendamento {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(name = "processo_id", nullable = false, updatable = false)
+	/** Obrigatorio, exceto atendimento (ATD) ligado apenas ao cliente. */
+	@Column(name = "processo_id", updatable = false)
 	private Long processoId;
 
 	/** Em nome de quem esta (advogado do processo no momento do lancamento): base da visibilidade. */
@@ -63,7 +64,50 @@ class Agendamento {
 	@Column(name = "conferido_em")
 	private Instant conferidoEm;
 
+	@Column(name = "inicio_em", updatable = false)
+	private Instant inicioEm;
+
+	@Column(name = "duracao_min")
+	private Integer duracaoMin;
+
+	@Enumerated(EnumType.STRING)
+	private Modalidade modalidade;
+
+	@Column(name = "local_ou_link")
+	private String localOuLink;
+
+	@Column(name = "cliente_id", updatable = false)
+	private Long clienteId;
+
+	@Column(name = "advogado_atendente_id")
+	private Long advogadoAtendenteId;
+
 	protected Agendamento() {
+	}
+
+	/** Audiencia ou atendimento: data e hora proprias, sem a regra dos 3 dias uteis nem conferencia de prazo. */
+	static Agendamento marcarCompromisso(Long processoId, Long titularId, TipoAgendamento tipo, String descricao,
+			Long responsavelId, Long criadoPor, boolean urgente, Instant inicioEm, int duracaoMin,
+			Modalidade modalidade, String localOuLink, Long clienteId, Long advogadoAtendenteId) {
+		if (tipo.ehPrazo()) {
+			throw new IllegalArgumentException("Prazo nao e compromisso com hora marcada");
+		}
+		Agendamento a = new Agendamento();
+		a.processoId = processoId;
+		a.titularId = titularId;
+		a.tipo = tipo;
+		a.descricao = descricao;
+		a.responsavelId = responsavelId;
+		a.criadoPor = criadoPor;
+		a.urgente = urgente;
+		a.status = StatusAgendamento.PENDENTE;
+		a.inicioEm = inicioEm;
+		a.duracaoMin = duracaoMin;
+		a.modalidade = modalidade;
+		a.localOuLink = localOuLink;
+		a.clienteId = clienteId;
+		a.advogadoAtendenteId = advogadoAtendenteId;
+		return a;
 	}
 
 	/** Prazo recem-lancado: sempre aguarda a conferencia de outra pessoa. */
@@ -127,4 +171,10 @@ class Agendamento {
 	Long getLancadoPor() { return lancadoPor; }
 	Long getConferidoPor() { return conferidoPor; }
 	Instant getConferidoEm() { return conferidoEm; }
+	Instant getInicioEm() { return inicioEm; }
+	Integer getDuracaoMin() { return duracaoMin; }
+	Modalidade getModalidade() { return modalidade; }
+	String getLocalOuLink() { return localOuLink; }
+	Long getClienteId() { return clienteId; }
+	Long getAdvogadoAtendenteId() { return advogadoAtendenteId; }
 }

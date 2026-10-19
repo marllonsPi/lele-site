@@ -11,6 +11,10 @@ spring:
       ddl-auto: validate
   flyway:
     enabled: true
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 21MB
   jackson:
     default-property-inclusion: non_null
 
@@ -41,3 +45,6 @@ app:
       nome: ${BOOTSTRAP_SOCIA_NOME:}
       email: ${BOOTSTRAP_SOCIA_EMAIL:}
       senha: ${BOOTSTRAP_SOCIA_SENHA:}
+
+# Pasta dos anexos (fora de qualquer pasta publica; deve ser volume persistente e entrar no backup).
+app.storage.dir: ${STORAGE_DIR:./storage}

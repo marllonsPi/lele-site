@@ -20,3 +20,6 @@ Titular do processo para a visibilidade e o advogado responsavel (`advogado_id`,
 
 ## 2026-10-19 - Prazos: fatal informado, calendario que recusa lacuna
 Pendencia 1 em aberto: o prazo fatal e informado por quem lanca; so o interno e calculado (fatal menos 3 dias uteis no calendario do tribunal do processo). O calculo recusa periodo sem nenhum feriado nacional cadastrado, para nunca produzir prazo interno errado em silencio. Dupla conferencia vale no dominio, no servico e no banco (CHECK); conferente precisa enxergar o agendamento (escopo AGENDAMENTO) e nao ser estagiario. Atribuicao: socia a qualquer usuario ativo; assistente a si ou estagiario; advogado a si (invariante 7). Feriado e suspensao compartilham a tabela `feriado` (campo `tipo`).
+
+## 2026-10-19 - Agenda: compromissos, conflitos e anexos
+Agendamento unico (`agendamento`) serve prazos e compromissos; a data de trabalho na agenda e o prazo interno (prazos) ou a data de `inicio_em` no fuso America/Sao_Paulo (AUD/ATD). Conflito de horario so avisa (pendencia 5): mesmo advogado (AUD/ATD) ou duas audiencias no escritorio; o aviso nao detalha processo. Anexos: dono pode ser agendamento ou processo e herdam a visibilidade do dono; nome no disco e UUID, download sempre `application/octet-stream` + attachment. Observacoes sao historico imutavel (trigger) e nunca entram no relatorio ao cliente.

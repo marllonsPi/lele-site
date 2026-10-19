@@ -41,8 +41,8 @@ class PrazoServiceTest {
 	Visibilidade visibilidade = mock(Visibilidade.class);
 	UsuarioService usuarios = mock(UsuarioService.class);
 	Clock relogio = Clock.fixed(Instant.parse("2026-10-05T12:00:00Z"), ZoneOffset.UTC);
-	PrazoService servico = new PrazoService(repo, cadastros, calendario, visibilidade, usuarios,
-			mock(AuditoriaService.class), relogio);
+	PrazoService servico = new PrazoService(repo, cadastros, calendario, visibilidade,
+			new RegrasAgendamento(repo, visibilidade, usuarios), mock(AuditoriaService.class), relogio);
 
 	UsuarioLogado leticia = ator(LETICIA, Perfil.SOCIA);
 	UsuarioLogado andressa = ator(ANDRESSA, Perfil.ADVOGADO);
@@ -59,7 +59,7 @@ class PrazoServiceTest {
 
 	@BeforeEach
 	void prepara() {
-		when(cadastros.resumo(10L)).thenReturn(new ProcessoResumo(10L, ANDRESSA, "TJDFT", true));
+		when(cadastros.resumo(10L)).thenReturn(new ProcessoResumo(10L, ANDRESSA, 1L, "TJDFT", true));
 		when(calendario.subtrairDiasUteis(any(), any(), org.mockito.ArgumentMatchers.eq(3))).thenReturn(INTERNO);
 		when(repo.save(any())).thenAnswer(i -> {
 			Object salvo = i.getArgument(0);

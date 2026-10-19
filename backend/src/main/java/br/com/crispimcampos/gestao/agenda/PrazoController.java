@@ -7,9 +7,7 @@ import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.util.List;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ProblemDetail;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -62,16 +60,5 @@ class PrazoController {
 	@PostMapping("/api/prazos/{id}/conferir")
 	PrazoDto conferir(@AuthenticationPrincipal UsuarioLogado u, @PathVariable Long id) {
 		return servico.conferir(u, id);
-	}
-
-	@ExceptionHandler(RegraDeAgendaException.class)
-	ProblemDetail regra(RegraDeAgendaException e) {
-		return ProblemDetail.forStatusAndDetail(e.isProibido() ? HttpStatus.FORBIDDEN : HttpStatus.UNPROCESSABLE_ENTITY,
-				e.getMessage());
-	}
-
-	@ExceptionHandler(AgendaNaoEncontradaException.class)
-	ProblemDetail naoEncontrado(AgendaNaoEncontradaException e) {
-		return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, e.getMessage());
 	}
 }

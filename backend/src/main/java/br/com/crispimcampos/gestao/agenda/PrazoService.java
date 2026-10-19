@@ -9,9 +9,7 @@ import br.com.crispimcampos.gestao.calendario.CalendarioException;
 import br.com.crispimcampos.gestao.calendario.CalendarioService;
 import br.com.crispimcampos.gestao.calendario.ContextoCalendario;
 import br.com.crispimcampos.gestao.contas.Perfil;
-import br.com.crispimcampos.gestao.contas.UsuarioDto;
 import br.com.crispimcampos.gestao.contas.UsuarioLogado;
-import br.com.crispimcampos.gestao.contas.UsuarioService;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
@@ -34,17 +32,17 @@ public class PrazoService {
 	private final CadastroService cadastros;
 	private final CalendarioService calendario;
 	private final Visibilidade visibilidade;
-	private final UsuarioService usuarios;
+	private final RegrasAgendamento regras;
 	private final AuditoriaService auditoria;
 	private final Clock relogio;
 
 	PrazoService(AgendamentoRepository agendamentos, CadastroService cadastros, CalendarioService calendario,
-			Visibilidade visibilidade, UsuarioService usuarios, AuditoriaService auditoria, Clock relogio) {
+			Visibilidade visibilidade, RegrasAgendamento regras, AuditoriaService auditoria, Clock relogio) {
 		this.agendamentos = agendamentos;
 		this.cadastros = cadastros;
 		this.calendario = calendario;
 		this.visibilidade = visibilidade;
-		this.usuarios = usuarios;
+		this.regras = regras;
 		this.auditoria = auditoria;
 		this.relogio = relogio;
 	}
@@ -63,7 +61,7 @@ public class PrazoService {
 
 	@Transactional(readOnly = true)
 	public PrazoDto buscar(UsuarioLogado usuario, Long id) {
-		return PrazoDto.de(obterVisivel(usuario, id));
+		return PrazoDto.de(regras.obterVisivel(usuario, id));
 	}
 
 	@Transactional
@@ -82,7 +80,7 @@ public class PrazoService {
 		if (!visibilidade.podeVer(ator, Escopo.AGENDAMENTO, processo.titularId())) {
 			throw new AgendaNaoEncontradaException("Processo nao encontrado");
 		}
-		validarResponsavel(ator, responsavelId);
+		regras.validarResponsavel(ator, responsavelId);
 		LocalDate interno = calcularInterno(processo, inicio, fatal);
 		Agendamento a = agendamentos.save(Agendamento.lancarPrazo(processoId, processo.titularId(), tipo,
 				limpo(descricao), responsavelId, ator.id(), urgente, inicio, interno, fatal));
@@ -94,14 +92,14 @@ public class PrazoService {
 	@Transactional
 	public PrazoDto corrigir(UsuarioLogado ator, Long id, String descricao, Long responsavelId, boolean urgente,
 			LocalDate inicio, LocalDate fatal) {
-		Agendamento a = obterVisivel(ator, id);
+		Agendamento a = regras.obterVisivel(ator, id);
 		if (!ator.id().equals(a.getLancadoPor()) && ator.perfil() != Perfil.SOCIA) {
 			throw proibido("Somente quem lancou o prazo (ou uma socia) pode corrigi-lo");
 		}
 		if (a.getStatus() != StatusAgendamento.AGUARDANDO_CONFERENCIA_PRAZO) {
 			throw regra("Prazo ja conferido nao pode ser alterado");
 		}
-		validarResponsavel(ator, responsavelId);
+		regras.validarResponsavel(ator, responsavelId);
 		ProcessoResumo processo = cadastros.resumo(a.getProcessoId());
 		a.corrigirPrazo(limpo(descricao), responsavelId, urgente, inicio, calcularInterno(processo, inicio, fatal), fatal);
 		auditoria.registrar(ator.id(), "PRAZO_CORRIGIDO", "agendamento", String.valueOf(id), null);
@@ -113,7 +111,7 @@ public class PrazoService {
 		if (ator.perfil() == Perfil.ESTAGIARIO) {
 			throw proibido("Estagiario nao confirma prazos");
 		}
-		Agendamento a = obterVisivel(ator, id);
+		Agendamento a = regras.obterVisivel(ator, id);
 		if (ator.id().equals(a.getLancadoPor())) {
 			throw proibido("Quem lancou o prazo nao pode confirma-lo");
 		}
@@ -140,44 +138,6 @@ public class PrazoService {
 		} catch (CalendarioException e) {
 			throw regra(e.getMessage());
 		}
-	}
-
-	/**
-	 * Invariante 7 e distribuicao: socia atribui a qualquer usuario ativo; assistente a si mesma ou a estagiario
-	 * (nunca a advogado ou socia); advogado a si mesmo.
-	 */
-	private void validarResponsavel(UsuarioLogado ator, Long responsavelId) {
-		if (responsavelId == null) {
-			throw regra("Informe o responsavel");
-		}
-		UsuarioDto r;
-		try {
-			r = usuarios.buscar(responsavelId);
-		} catch (RuntimeException e) {
-			throw regra("Responsavel nao encontrado");
-		}
-		if (!r.ativo()) {
-			throw regra("Responsavel desativado");
-		}
-		boolean permitido = switch (ator.perfil()) {
-			case SOCIA -> true;
-			case ASSISTENTE -> responsavelId.equals(ator.id()) || r.perfil() == Perfil.ESTAGIARIO;
-			case ADVOGADO -> responsavelId.equals(ator.id());
-			case ESTAGIARIO -> false;
-		};
-		if (!permitido) {
-			throw proibido("Voce nao pode atribuir tarefa a este usuario");
-		}
-	}
-
-	private Agendamento obterVisivel(UsuarioLogado usuario, Long id) {
-		Agendamento a = agendamentos.findById(id).orElseThrow(() -> new AgendaNaoEncontradaException("Prazo nao encontrado"));
-		boolean visivel = usuario.perfil() == Perfil.ESTAGIARIO ? usuario.id().equals(a.getResponsavelId())
-				: visibilidade.podeVer(usuario, Escopo.AGENDAMENTO, a.getTitularId());
-		if (!visivel) {
-			throw new AgendaNaoEncontradaException("Prazo nao encontrado");
-		}
-		return a;
 	}
 
 	private static String limpo(String s) {

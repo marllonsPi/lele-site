@@ -168,7 +168,13 @@ public class CadastroService {
 	@Transactional(readOnly = true)
 	public ProcessoResumo resumo(Long processoId) {
 		Processo p = obterProcesso(processoId);
-		return new ProcessoResumo(p.getId(), p.getAdvogadoId(), p.getTribunal(), p.isAtivo());
+		return new ProcessoResumo(p.getId(), p.getAdvogadoId(), p.getCliente().getId(), p.getTribunal(), p.isAtivo());
+	}
+
+	/** Uso interno entre modulos: o cliente existe e esta ativo? (nao revela dados). */
+	@Transactional(readOnly = true)
+	public boolean clienteExisteAtivo(Long clienteId) {
+		return clientes.findById(clienteId).map(Cliente::isAtivo).orElse(false);
 	}
 
 	// ---- internos
