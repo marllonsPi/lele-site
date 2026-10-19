@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import br.com.crispimcampos.gestao.acesso.Escopo;
 import br.com.crispimcampos.gestao.acesso.Visibilidade;
 import br.com.crispimcampos.gestao.agenda.AgendaService;
+import br.com.crispimcampos.gestao.alertas.AlertaService;
 import br.com.crispimcampos.gestao.agenda.ConclusaoService;
 import br.com.crispimcampos.gestao.agenda.TipoAgendamento;
 import br.com.crispimcampos.gestao.captura.DadosBrutos;
@@ -90,7 +91,7 @@ class PostgresRealTest {
 	@Test
 	void migracoesAplicadasEMapeamentoValido() {
 		Integer aplicadas = jdbc.queryForObject("select count(*) from flyway_schema_history where success", Integer.class);
-		assertThat(aplicadas).isEqualTo(8);
+		assertThat(aplicadas).isEqualTo(9);
 	}
 
 	@Test
@@ -130,6 +131,27 @@ class PostgresRealTest {
 	PublicacaoService publicacoes;
 	@Autowired
 	PipelineCaptura pipeline;
+	@Autowired
+	AlertaService alertas;
+
+	@Test
+	void alertasSaoGeradosEnviadosENaoDuplicam() {
+		UsuarioLogado socia = como("Socia A");
+		var primeira = alertas.executar(socia.id());
+		// audiencias amanha (2), audiencia em 10 dias (1) e resumo de vencidos: ao menos varios alertas, todos enviados pelo envio de dev
+		assertThat(primeira.geradas()).isGreaterThan(6);
+		assertThat(primeira.enviadas()).isEqualTo(primeira.geradas());
+		var lista = alertas.listar(socia);
+		assertThat(lista).extracting("tipo").contains(br.com.crispimcampos.gestao.alertas.TipoAlerta.AUDIENCIA_VESPERA,
+				br.com.crispimcampos.gestao.alertas.TipoAlerta.AUDIENCIA_10_DIAS, br.com.crispimcampos.gestao.alertas.TipoAlerta.RESUMO_VENCIDOS);
+		assertThat(lista).allSatisfy(n -> assertThat(n.status()).isEqualTo("ENVIADA"));
+		var segunda = alertas.executar(socia.id());
+		assertThat(segunda.geradas()).as("idempotente").isZero();
+		assertThat(segunda.enviadas()).isZero();
+		// cada pessoa so lista as proprias notificacoes
+		UsuarioLogado wendell = como("Advogado D");
+		assertThat(alertas.listar(wendell)).isNotEmpty().allSatisfy(n -> assertThat(n.destinatarioId()).isEqualTo(wendell.id()));
+	}
 
 	@Test
 	void capturaCruzaFontesFiltraEMantemIdempotencia() {

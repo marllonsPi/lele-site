@@ -131,6 +131,7 @@ public class DevSeed implements ApplicationRunner {
 		compromissos.marcar(socia, TipoAgendamento.AUD, pC.id(), null, "Audiencia de instrucao", c.id(), false, LocalDateTime.of(amanha, LocalTime.of(10, 0)), 60, Modalidade.PRESENCIAL, "Forum - Sala 3");
 		compromissos.marcar(socia, TipoAgendamento.AUD, pD.id(), null, "Audiencia de conciliacao", d.id(), false, LocalDateTime.of(amanha, LocalTime.of(10, 30)), 60, Modalidade.ONLINE, "https://exemplo.test/sala-d");
 		compromissos.marcar(socia, TipoAgendamento.AUD, pA.id(), null, "Audiencia una", a.id(), false, LocalDateTime.of(hoje.plusDays(8), LocalTime.of(14, 0)), null, Modalidade.ONLINE, "https://exemplo.test/sala-a");
+		compromissos.marcar(socia, TipoAgendamento.AUD, pD.id(), null, "Audiencia de julgamento", d.id(), false, LocalDateTime.of(hoje.plusDays(10), LocalTime.of(9, 0)), 90, Modalidade.PRESENCIAL, "Tribunal - Sala 7");
 		compromissos.marcar(socia, TipoAgendamento.ATD, null, joao.id(), "Primeira consulta", c.id(), false, LocalDateTime.of(hoje, LocalTime.of(16, 0)), 45, Modalidade.TELEFONE, null);
 		// Captura: filtro da Socia A (e-mail de TRT, exceto TRT-10) e publicacoes ficticias para a fila "A classificar"
 		filtros.criar(a.id(), a.id(), Fonte.EMAIL, "TRT", "TRT-10");

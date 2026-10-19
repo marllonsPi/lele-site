@@ -171,6 +171,12 @@ public class CadastroService {
 		return new ProcessoResumo(p.getId(), p.getAdvogadoId(), p.getCliente().getId(), p.getTribunal(), p.isAtivo());
 	}
 
+	/** Uso interno (alertas): numero CNJ formatado do processo, sem aplicar visibilidade nem expor outros dados. */
+	@Transactional(readOnly = true)
+	public String numeroFormatado(Long processoId) {
+		return processos.findById(processoId).map(p -> NumeroCnj.formatar(p.getNumero())).orElse(null);
+	}
+
 	/** Uso interno (captura): processo cadastrado pelo numero CNJ, para vincular a publicacao automaticamente. */
 	@Transactional(readOnly = true)
 	public java.util.Optional<ProcessoResumo> processoPorNumero(String numero) {

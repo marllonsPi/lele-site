@@ -70,6 +70,16 @@ public class AgendaService {
 				.map(a -> AgendaItemDto.de(a, hoje, relogio.getZone())).sorted(ORDEM).toList();
 	}
 
+	/**
+	 * SOMENTE para tarefas do sistema (alertas): todos os itens em aberto, sem filtro de visibilidade. Nenhum controller
+	 * expoe este metodo.
+	 */
+	@Transactional(readOnly = true)
+	public List<AgendaItemDto> abertosParaAlertas() {
+		LocalDate hoje = LocalDate.now(relogio);
+		return agendamentos.findByStatusIn(ABERTOS).stream().map(a -> AgendaItemDto.de(a, hoje, relogio.getZone())).toList();
+	}
+
 	/** Por dia; no dia, compromissos com hora primeiro e em ordem de horario; depois urgentes. */
 	static final Comparator<AgendaItemDto> ORDEM = Comparator.comparing(AgendaItemDto::data)
 			.thenComparing(AgendaItemDto::hora, Comparator.nullsLast(Comparator.naturalOrder()))
