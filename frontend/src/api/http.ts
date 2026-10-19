@@ -17,6 +17,8 @@ export class ApiError extends Error {
 export interface Opcoes {
   json?: unknown
   form?: Record<string, string>
+  /** Envio de arquivo (multipart); o navegador define o Content-Type. */
+  multipart?: FormData
 }
 
 let aoExpirar: () => void = () => {}
@@ -48,7 +50,9 @@ export async function enviar(metodo: string, url: string, opcoes: Opcoes = {}): 
   if (metodo !== 'GET') {
     cabecalhos['X-XSRF-TOKEN'] = await garantirCsrf()
   }
-  if (opcoes.form) {
+  if (opcoes.multipart) {
+    corpo = opcoes.multipart
+  } else if (opcoes.form) {
     corpo = new URLSearchParams(opcoes.form)
   } else if (opcoes.json !== undefined) {
     cabecalhos['Content-Type'] = 'application/json'

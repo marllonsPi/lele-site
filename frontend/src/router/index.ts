@@ -3,6 +3,9 @@ import { useSessao } from '../composables/useSessao'
 import LoginView from '../views/LoginView.vue'
 import LayoutApp from '../components/LayoutApp.vue'
 import InicioView from '../views/InicioView.vue'
+import AgendaView from '../views/AgendaView.vue'
+import PrazosView from '../views/PrazosView.vue'
+import ConferenciaView from '../views/ConferenciaView.vue'
 import NaoEncontradaView from '../views/NaoEncontradaView.vue'
 
 export function criarRoteador(historico: RouterHistory = createWebHistory(import.meta.env.BASE_URL)) {
@@ -15,6 +18,9 @@ export function criarRoteador(historico: RouterHistory = createWebHistory(import
         component: LayoutApp,
         children: [
           { path: '', name: 'inicio', component: InicioView, meta: { titulo: 'Início' } },
+          { path: 'agenda', name: 'agenda', component: AgendaView, meta: { titulo: 'Agenda' } },
+          { path: 'prazos', name: 'prazos', component: PrazosView, meta: { titulo: 'Prazos' } },
+          { path: 'conferencia', name: 'conferencia', component: ConferenciaView, meta: { titulo: 'Conferência' } },
           { path: ':resto(.*)*', name: 'nao-encontrada', component: NaoEncontradaView, meta: { titulo: 'Página não encontrada' } },
         ],
       },

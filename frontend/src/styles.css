@@ -23,6 +23,11 @@
   --status-vencido: #fbd5d2;
   --status-hoje: #fdf0b3;
   --status-amanha: #d3efd6;
+  --status-vencido-borda: #d6453d;
+  --status-hoje-borda: #d9a800;
+  --status-amanha-borda: #2e9e44;
+  --cor-urgente: #c62828;
+  --cor-ok: #1b6e2d;
 
   --espaco-1: 0.25rem;
   --espaco-2: 0.5rem;
@@ -52,6 +57,11 @@
     --status-vencido: #5a2a28;
     --status-hoje: #5a4d17;
     --status-amanha: #1f4a27;
+    --status-vencido-borda: #ff7a70;
+    --status-hoje-borda: #e5b800;
+    --status-amanha-borda: #4cc264;
+    --cor-urgente: #e04a4a;
+    --cor-ok: #7fd48f;
     color-scheme: dark;
   }
 }
@@ -70,6 +80,11 @@
   --status-vencido: #5a2a28;
   --status-hoje: #5a4d17;
   --status-amanha: #1f4a27;
+  --status-vencido-borda: #ff7a70;
+  --status-hoje-borda: #e5b800;
+  --status-amanha-borda: #4cc264;
+  --cor-urgente: #e04a4a;
+  --cor-ok: #7fd48f;
   color-scheme: dark;
 }
 
@@ -258,5 +273,154 @@ button:disabled {
 
   .usuario-nome {
     display: inline;
+  }
+}
+
+/* Bolinha do tipo e cartoes da agenda */
+.tipo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-1);
+}
+
+.bolinha {
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  background: var(--cor-borda);
+}
+
+.tipo-CTR { background: var(--tipo-ctr); }
+.tipo-INI { background: var(--tipo-ini); }
+.tipo-CON { background: var(--tipo-con); }
+.tipo-MAN { background: var(--tipo-man); }
+.tipo-AUD { background: var(--tipo-aud); }
+.tipo-REC { background: var(--tipo-rec); }
+.tipo-ATD { background: var(--tipo-atd); }
+
+.cartao {
+  margin: 0 0 var(--espaco-3);
+  padding: var(--espaco-3);
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-left-width: 6px;
+  border-radius: var(--raio);
+}
+
+.cartao.status-VERMELHO { background: var(--status-vencido); border-color: var(--status-vencido-borda); }
+.cartao.status-AMARELO { background: var(--status-hoje); border-color: var(--status-hoje-borda); }
+.cartao.status-VERDE { background: var(--status-amanha); border-color: var(--status-amanha-borda); }
+
+.cartao p {
+  margin: var(--espaco-1) 0;
+}
+
+.cartao-topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espaco-2);
+}
+
+.cartao-quando {
+  margin-left: auto;
+  font-weight: 600;
+}
+
+.cartao-descricao {
+  font-weight: 600;
+}
+
+.cartao-acoes,
+.grupo-botoes,
+.barra-ferramentas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-2);
+  align-items: end;
+  margin: var(--espaco-2) 0;
+}
+
+.urgente {
+  padding: 0 var(--espaco-2);
+  font-weight: 700;
+  color: #fff;
+  background: var(--cor-urgente);
+  border-radius: var(--raio);
+}
+
+.alerta {
+  font-weight: 600;
+}
+
+.suave {
+  color: var(--cor-texto-suave);
+}
+
+.ok {
+  color: var(--cor-ok);
+}
+
+.formulario {
+  display: grid;
+  gap: var(--espaco-3);
+  margin: var(--espaco-3) 0;
+  padding: var(--espaco-3);
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+}
+
+.marcar {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-2);
+}
+
+.marcar input {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.detalhe {
+  margin-top: var(--espaco-3);
+  padding-top: var(--espaco-2);
+  border-top: 1px solid var(--cor-borda);
+}
+
+.detalhe h3 {
+  margin: var(--espaco-3) 0 var(--espaco-1);
+  font-size: 1rem;
+}
+
+.lista-simples {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lista-simples li {
+  margin-bottom: var(--espaco-2);
+}
+
+.texto-livre {
+  white-space: pre-wrap;
+}
+
+.linha-form {
+  display: grid;
+  gap: var(--espaco-2);
+}
+
+@media (min-width: 48rem) {
+  .formulario {
+    grid-template-columns: repeat(2, 1fr);
+    align-items: end;
+  }
+
+  .formulario .suave,
+  .formulario button[type='submit'] {
+    grid-column: 1 / -1;
+    justify-self: start;
   }
 }
