@@ -1,0 +1,43 @@
+spring:
+  application:
+    name: gestao
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/gestao}
+    username: ${DB_USER:gestao}
+    password: ${DB_PASSWORD:}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+  jackson:
+    default-property-inclusion: non_null
+
+server:
+  forward-headers-strategy: framework
+  servlet:
+    session:
+      timeout: 8h
+      cookie:
+        http-only: true
+        same-site: lax
+        secure: ${COOKIE_SECURE:true}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+# Primeira socia, criada somente se nao houver nenhum usuario e as tres variaveis existirem.
+app:
+  bootstrap:
+    socia:
+      nome: ${BOOTSTRAP_SOCIA_NOME:}
+      email: ${BOOTSTRAP_SOCIA_EMAIL:}
+      senha: ${BOOTSTRAP_SOCIA_SENHA:}

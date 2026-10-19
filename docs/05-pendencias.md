@@ -1,0 +1,25 @@
+# Pontos A Confirmar Com A Usuaria
+
+Lacunas da spec e decisoes abertas. Nao decidir por analogia: perguntar. Ao resolver, mover para `docs/rag/decisions.md` e atualizar `00-especificacao.md` se mudar regra.
+
+## Regra de negocio
+1. Prazo fatal e digitado ou calculado a partir de inicio + numero de dias? (hoje a spec calcula so o interno)
+2. Itens vencidos ha mais de 30 dias: continuam visiveis? em que cor?
+3. Quem pode conferir prazo alem das socias (advogados, Luana)? Estagiario nao pode.
+4. Advogados (Andressa, Wendell) podem criar agendamentos nos proprios processos?
+5. Conflito de agenda: apenas aviso ou bloqueio?
+6. "Em nome da Leticia vao para a Controladoria": Controladoria e uma tela/fila propria ou o tipo CTR?
+7. Publicacao sem OAB identificavel ou de OAB de advogado desativado: quem recebe?
+8. Atendimento avulso e "andamentos pendentes de repasse": o que gera um andamento (so publicacoes classificadas ou tambem movimentos)?
+
+## Dados
+9. Dados completos da Luana e OABs suplementares (Leticia/SP, Wendell/GO).
+10. Timbre, logotipo e dados do escritorio para PDF.
+11. Lista inicial de feriados locais e tribunais usados (DF, SP, GO, TRT-10, outros).
+
+## Tecnico / contratacao
+12. Acesso programatico ao DJEN, Domicilio Judicial Eletronico e formato dos e-mails push: verificar fontes oficiais (spike).
+13. Provedor de WhatsApp e de e-mail transacional.
+14. Hospedagem (pais, provedor), dominio, 2FA obrigatorio.
+15. Stack decidida em 2026-10-19: Java 21 + Spring Boot + PostgreSQL + Vue 3/TS (ADR-0001). Esqueleto da Fase 0 criado. Pendente: biblioteca de componentes Vue, hospedagem, onde fica o remoto Git/CI (workflow escrito para GitHub Actions).
+16. Volume de dados esperado e retencao (LGPD).

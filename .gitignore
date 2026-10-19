@@ -1,0 +1,17 @@
+# segredos e ambiente
+.env
+deploy/.env
+*.key
+*.pem
+# builds
+backend/target/
+frontend/node_modules/
+frontend/dist/
+# IDE e SO
+.idea/
+.vscode/
+*.iml
+.DS_Store
+# dados reais nunca no Git
+*.dump
+*.sql.gz*
