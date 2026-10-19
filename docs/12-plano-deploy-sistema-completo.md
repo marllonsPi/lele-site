@@ -84,3 +84,13 @@ Objetivo: trocar SO o backend pela versao completa (V2 a V15). `web`, `caddy` e 
 - Falha grave de dados: restaurar o backup da Fase B (`deploy/restore.md`). OBSERVACAO: esse backup ainda nao teve a restauracao testada; o risco e baixo (banco com 1 usuario, esquema so aditivo), mas e o motivo de manter o teste como recomendado.
 
 **Fora desta fase:** criar usuarios, ativar 2FA da socia, rotinas diarias, SMTP, copia/rotina de backup (Fases D a F). Na D, recomendo ativar o 2FA da conta da socia, pois a API completa passa a ficar publica atras apenas de senha.
+
+## Resultado da Fase C (2026-10-19, executada com aprovacao)
+- C0: pacote de 0,96 MB (358 arquivos, SHA-256 `b3f587b0...d90e`), sem `.env`, chave, `testeLogin` nem `project-rag`. Commit `70c8846` (`MAVEN_OPTS=-Xmx350m`).
+- C1: os 33 arquivos de web/site/proxy eram identicos aos da VM: o `web` NAO foi reconstruido. Antes: 258 MiB de RAM disponivel, 3,7 GiB de swap livre, 38 GB de disco.
+- C2: pacote enviado e conferido por hash; imagem antiga rotulada `crispim-backend:antes-v15`; codigo antigo em `~/crispim-campos/backend.antes-v15`; `.env` intacto (600, 6 variaveis).
+- C3: build do backend em ~6 min (exit 0), sem OOM nem reinicio de containers; imagem nova `6b512c783c21` (593 MB).
+- C4: troca as 20:15 UTC; backend subiu em ~2m30s; Flyway versoes 1 a 15 todas `success` em Postgres 16.15; 28 tabelas e os 4 triggers de imutabilidade; 1 usuario preservado; 0 reinicios, sem erros no log; `/data/storage` gravavel pelo usuario `gestao`; RAM apos a troca: 293 MiB disponiveis, backend 240 MiB.
+- Visto de fora (HTTPS): `/` 200, `/app/` 200, apex 301, `/api/me` e `/api/usuarios` 401, `/dev/index.html` 404 (console de teste nao foi publicado), cabecalhos CSP, Referrer-Policy, HSTS, nosniff e X-Frame-Options presentes.
+- Nao alterados: `web`, `caddy`, `db`, `.env`, DNS. Rotinas diarias seguem desligadas. Rollback disponivel (rotulo `antes-v15`), nao usado.
+- Pendente (Fases D a F): validar login real e 2FA da socia, upload e PDF na VM, criar usuarios e dados reais, SMTP, rotina e restauracao de backup. Observacao: a API completa esta publica atras so de senha; ativar o 2FA da conta da socia.
