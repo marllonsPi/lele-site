@@ -1,0 +1,5 @@
+# Backup criptografado diario as 03:15 (Sao Paulo). Instalar: crontab deploy/oci/crontab-vm.txt (usuario ubuntu)
+CRON_TZ=America/Sao_Paulo
+BACKUP_DIR=/home/ubuntu/backups/crispim
+BACKUP_PASSPHRASE_FILE=/home/ubuntu/.crispim-backup.pass
+15 3 * * * nice -n 10 ionice -c3 /home/ubuntu/crispim-campos/deploy/backup.sh >> /home/ubuntu/backups/crispim/backup.log 2>&1
