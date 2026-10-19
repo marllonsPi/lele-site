@@ -171,6 +171,13 @@ public class CadastroService {
 		return new ProcessoResumo(p.getId(), p.getAdvogadoId(), p.getCliente().getId(), p.getTribunal(), p.isAtivo());
 	}
 
+	/** Uso interno (captura): processo cadastrado pelo numero CNJ, para vincular a publicacao automaticamente. */
+	@Transactional(readOnly = true)
+	public java.util.Optional<ProcessoResumo> processoPorNumero(String numero) {
+		return processos.findByNumero(NumeroCnj.normalizar(numero))
+				.map(p -> new ProcessoResumo(p.getId(), p.getAdvogadoId(), p.getCliente().getId(), p.getTribunal(), p.isAtivo()));
+	}
+
 	/** Uso interno entre modulos: o cliente existe e esta ativo? (nao revela dados). */
 	@Transactional(readOnly = true)
 	public boolean clienteExisteAtivo(Long clienteId) {

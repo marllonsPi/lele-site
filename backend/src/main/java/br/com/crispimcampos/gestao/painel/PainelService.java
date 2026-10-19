@@ -5,6 +5,7 @@ import br.com.crispimcampos.gestao.agenda.AgendaService;
 import br.com.crispimcampos.gestao.agenda.ConclusaoService;
 import br.com.crispimcampos.gestao.agenda.StatusAgendamento;
 import br.com.crispimcampos.gestao.agenda.TipoAgendamento;
+import br.com.crispimcampos.gestao.captura.PublicacaoService;
 import br.com.crispimcampos.gestao.contas.Perfil;
 import br.com.crispimcampos.gestao.contas.UsuarioLogado;
 import java.time.Clock;
@@ -25,11 +26,13 @@ public class PainelService {
 
 	private final AgendaService agenda;
 	private final ConclusaoService conclusao;
+	private final PublicacaoService publicacoes;
 	private final Clock relogio;
 
-	PainelService(AgendaService agenda, ConclusaoService conclusao, Clock relogio) {
+	PainelService(AgendaService agenda, ConclusaoService conclusao, PublicacaoService publicacoes, Clock relogio) {
 		this.agenda = agenda;
 		this.conclusao = conclusao;
+		this.publicacoes = publicacoes;
 		this.relogio = relogio;
 	}
 
@@ -41,7 +44,8 @@ public class PainelService {
 		LocalDate hoje = LocalDate.now(relogio);
 		List<AgendaItemDto> abertos = agenda.todosAbertos(ator);
 		return montar(abertos, conclusao.pendentesDeConferencia(ator).stream()
-				.filter(i -> i.status() == StatusAgendamento.EM_CONFERENCIA_SOCIA).toList(), hoje, 0);
+				.filter(i -> i.status() == StatusAgendamento.EM_CONFERENCIA_SOCIA).toList(), hoje,
+				publicacoes.contarAClassificar(ator));
 	}
 
 	/** Calculo puro, testavel sem banco. */

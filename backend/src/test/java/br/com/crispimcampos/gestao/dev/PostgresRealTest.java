@@ -7,6 +7,13 @@ import br.com.crispimcampos.gestao.acesso.Escopo;
 import br.com.crispimcampos.gestao.acesso.Visibilidade;
 import br.com.crispimcampos.gestao.agenda.AgendaService;
 import br.com.crispimcampos.gestao.agenda.ConclusaoService;
+import br.com.crispimcampos.gestao.agenda.TipoAgendamento;
+import br.com.crispimcampos.gestao.captura.DadosBrutos;
+import br.com.crispimcampos.gestao.captura.EstadoPublicacao;
+import br.com.crispimcampos.gestao.captura.Fonte;
+import br.com.crispimcampos.gestao.captura.PipelineCaptura;
+import br.com.crispimcampos.gestao.captura.PublicacaoService;
+import java.time.LocalDate;
 import br.com.crispimcampos.gestao.agenda.PrazoService;
 import br.com.crispimcampos.gestao.cadastros.CadastroService;
 import br.com.crispimcampos.gestao.contas.Perfil;
@@ -34,6 +41,7 @@ import org.springframework.test.context.DynamicPropertySource;
  */
 @SpringBootTest
 @ActiveProfiles("dev")
+@org.junit.jupiter.api.TestMethodOrder(org.junit.jupiter.api.MethodOrderer.OrderAnnotation.class)
 class PostgresRealTest {
 
 	static final EmbeddedPostgres PG = iniciar();
@@ -82,7 +90,7 @@ class PostgresRealTest {
 	@Test
 	void migracoesAplicadasEMapeamentoValido() {
 		Integer aplicadas = jdbc.queryForObject("select count(*) from flyway_schema_history where success", Integer.class);
-		assertThat(aplicadas).isEqualTo(7);
+		assertThat(aplicadas).isEqualTo(8);
 	}
 
 	@Test
@@ -118,8 +126,70 @@ class PostgresRealTest {
 
 	@Autowired
 	ConclusaoService conclusao;
+	@Autowired
+	PublicacaoService publicacoes;
+	@Autowired
+	PipelineCaptura pipeline;
 
 	@Test
+	void capturaCruzaFontesFiltraEMantemIdempotencia() {
+		UsuarioLogado socia = como("Socia A");
+		var fila = publicacoes.listar(socia, EstadoPublicacao.A_CLASSIFICAR);
+		// C: cruzada DJEN+EMAIL (1) e nao cadastrada (1); D: 1; A: so o TRT-10 (o TRT-1 foi ignorado)
+		assertThat(fila).hasSize(4);
+		var cruzada = fila.stream().filter(p -> p.fontes().size() == 2).findFirst().orElseThrow();
+		assertThat(cruzada.fontes()).containsExactlyInAnyOrder(Fonte.DJEN, Fonte.EMAIL);
+		assertThat(cruzada.somenteEmUmaFonte()).isFalse();
+		assertThat(cruzada.processoId()).as("processo cadastrado: vinculo automatico").isNotNull();
+		var naoCadastrada = fila.stream().filter(p -> p.numeroProcesso().equals("00009999920258070001")).findFirst().orElseThrow();
+		assertThat(naoCadastrada.somenteEmUmaFonte()).isTrue();
+		assertThat(naoCadastrada.sugerirCadastro()).isTrue();
+		assertThat(jdbc.queryForObject("select count(*) from item_ignorado", Integer.class)).isEqualTo(1);
+		assertThat(jdbc.queryForObject("select count(*) from publicacao_bruta where fonte = 'EMAIL' and id_externo = 'm-2'", Integer.class))
+				.as("o ignorado fica registrado").isEqualTo(1);
+
+		// segunda passada com os mesmos itens: nada novo (invariante 4)
+		var repetido = pipeline.processar(como("Advogada C").id(), java.util.List.of(
+				new DadosBrutos(Fonte.DJEN, "9001", cruzada.numeroProcesso(), "TJDFT", LocalDate.now(), "qualquer", "h9001")));
+		assertThat(repetido.duplicados()).isEqualTo(1);
+		assertThat(repetido.novasPublicacoes()).isZero();
+		assertThat(publicacoes.listar(socia, EstadoPublicacao.A_CLASSIFICAR)).hasSize(4);
+	}
+
+	@Test
+	void visibilidadeDasPublicacoesSegueAMatriz() {
+		assertThat(publicacoes.listar(como("Advogado D"), null)).hasSize(1);
+		assertThat(publicacoes.listar(como("Advogada C"), null)).hasSize(2);
+		// Assistente E ve A e C (3 + ... ) mas nunca a do Advogado D
+		assertThat(publicacoes.listar(como("Assistente E"), null)).extracting("titularId").doesNotContain(como("Advogado D").id());
+		assertThat(publicacoes.listar(como("Socia A"), null)).hasSize(4);
+	}
+
+	@Test
+	@org.junit.jupiter.api.Order(Integer.MAX_VALUE)
+	void sociaClassificaGerandoPrazoQueAguardaConferenciaEOutrosNaoClassificam() {
+		UsuarioLogado socia = como("Socia B");
+		UsuarioLogado assistente = como("Assistente E");
+		var alvo = publicacoes.listar(socia, EstadoPublicacao.A_CLASSIFICAR).stream().filter(p -> p.processoId() != null && p.fontes().size() == 2).findFirst().orElseThrow();
+		assertThatThrownBy(() -> publicacoes.classificar(assistente, alvo.id(), TipoAgendamento.CON, null, assistente.id(), false, null,
+				LocalDate.now().minusDays(1), LocalDate.now().plusDays(8))).isInstanceOf(SecurityException.class);
+		var feita = publicacoes.classificar(socia, alvo.id(), TipoAgendamento.CON, null, como("Advogada C").id(), true, null,
+				LocalDate.now().minusDays(1), LocalDate.now().plusDays(8));
+		assertThat(feita.estado()).isEqualTo(EstadoPublicacao.CLASSIFICADA);
+		assertThat(feita.agendamentoId()).isNotNull();
+		assertThat(jdbc.queryForObject("select status from agendamento where id = ?", String.class, feita.agendamentoId()))
+				.isEqualTo("AGUARDANDO_CONFERENCIA_PRAZO");
+		assertThatThrownBy(() -> publicacoes.descartar(socia, alvo.id(), "tarde demais")).isInstanceOf(IllegalStateException.class);
+		var outra = publicacoes.listar(socia, EstadoPublicacao.A_CLASSIFICAR).stream().filter(p -> p.numeroProcesso().equals("00009999920258070001")).findFirst().orElseThrow();
+		assertThatThrownBy(() -> publicacoes.descartar(socia, outra.id(), " ")).isInstanceOf(IllegalArgumentException.class);
+		assertThatThrownBy(() -> publicacoes.classificar(socia, outra.id(), TipoAgendamento.CON, null, como("Advogada C").id(), false, null,
+				LocalDate.now().minusDays(1), LocalDate.now().plusDays(8))).hasMessageContaining("processo");
+		assertThat(publicacoes.descartar(socia, outra.id(), "Nao e do escritorio").estado()).isEqualTo(EstadoPublicacao.DESCARTADA_COM_REGISTRO);
+		assertThatThrownBy(() -> jdbc.update("delete from item_ignorado")).hasMessageContaining("somente de insercao");
+	}
+
+	@Test
+	@org.junit.jupiter.api.Order(Integer.MAX_VALUE - 1)
 	void fluxoCompletoDoEstagiarioAteAConferenciaDaSocia() {
 		UsuarioLogado estagiario = como("Estagiario F");
 		UsuarioLogado supervisora = como("Advogada C");

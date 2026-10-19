@@ -10,6 +10,10 @@ import br.com.crispimcampos.gestao.agenda.PrazoDto;
 import br.com.crispimcampos.gestao.agenda.PrazoService;
 import br.com.crispimcampos.gestao.agenda.TipoAgendamento;
 import br.com.crispimcampos.gestao.cadastros.CadastroService;
+import br.com.crispimcampos.gestao.captura.DadosBrutos;
+import br.com.crispimcampos.gestao.captura.Fonte;
+import br.com.crispimcampos.gestao.captura.FiltroService;
+import br.com.crispimcampos.gestao.captura.PipelineCaptura;
 import br.com.crispimcampos.gestao.cadastros.NumeroCnj;
 import br.com.crispimcampos.gestao.cadastros.PapelParte;
 import br.com.crispimcampos.gestao.cadastros.ProcessoDto;
@@ -48,15 +52,19 @@ public class DevSeed implements ApplicationRunner {
 	private final PrazoService prazos;
 	private final CompromissoService compromissos;
 	private final ObservacaoService observacoes;
+	private final PipelineCaptura pipeline;
+	private final FiltroService filtros;
 
 	DevSeed(UsuarioService usuarios, MatrizVisibilidadeService matriz, CadastroService cadastros, PrazoService prazos,
-			CompromissoService compromissos, ObservacaoService observacoes) {
+			CompromissoService compromissos, ObservacaoService observacoes, PipelineCaptura pipeline, FiltroService filtros) {
 		this.usuarios = usuarios;
 		this.matriz = matriz;
 		this.cadastros = cadastros;
 		this.prazos = prazos;
 		this.compromissos = compromissos;
 		this.observacoes = observacoes;
+		this.pipeline = pipeline;
+		this.filtros = filtros;
 	}
 
 	@Override
@@ -124,7 +132,25 @@ public class DevSeed implements ApplicationRunner {
 		compromissos.marcar(socia, TipoAgendamento.AUD, pD.id(), null, "Audiencia de conciliacao", d.id(), false, LocalDateTime.of(amanha, LocalTime.of(10, 30)), 60, Modalidade.ONLINE, "https://exemplo.test/sala-d");
 		compromissos.marcar(socia, TipoAgendamento.AUD, pA.id(), null, "Audiencia una", a.id(), false, LocalDateTime.of(hoje.plusDays(8), LocalTime.of(14, 0)), null, Modalidade.ONLINE, "https://exemplo.test/sala-a");
 		compromissos.marcar(socia, TipoAgendamento.ATD, null, joao.id(), "Primeira consulta", c.id(), false, LocalDateTime.of(hoje, LocalTime.of(16, 0)), 45, Modalidade.TELEFONE, null);
+		// Captura: filtro da Socia A (e-mail de TRT, exceto TRT-10) e publicacoes ficticias para a fila "A classificar"
+		filtros.criar(a.id(), a.id(), Fonte.EMAIL, "TRT", "TRT-10");
+		String n1 = numeroDoProcesso(1);
+		pipeline.processar(c.id(), java.util.List.of(
+				new DadosBrutos(Fonte.DJEN, "9001", n1, "TJDFT", hoje, "INTIMACAO (teste): fica a parte intimada para apresentar contestacao no prazo legal.", "h9001"),
+				new DadosBrutos(Fonte.EMAIL, "m-1", n1, "TJDFT", hoje, "Aviso push (teste) sobre o mesmo processo.", "h-m1"),
+				new DadosBrutos(Fonte.DJEN, "9002", "0000999-99.2025.8.07.0001", "TJDFT", hoje, "PUBLICACAO (teste) de processo ainda nao cadastrado: sugerir cadastro.", "h9002")));
+		pipeline.processar(d.id(), java.util.List.of(
+				new DadosBrutos(Fonte.DJEN, "9003", numeroDoProcesso(2), "TRT-10", hoje, "INTIMACAO (teste) do advogado D, que Assistente E nao ve.", "h9003")));
+		pipeline.processar(a.id(), java.util.List.of(
+				new DadosBrutos(Fonte.EMAIL, "m-2", "0000888-88.2025.5.01.0001", "TRT-1", hoje, "Push do TRT-1 (teste): ignorado pelo filtro.", "h-m2"),
+				new DadosBrutos(Fonte.EMAIL, "m-3", numeroDoProcesso(3), "TRT-10", hoje, "Push do TRT-10 (teste): mantido.", "h-m3")));
 		log.info("Dados ficticios de desenvolvimento criados. Senha de todos os usuarios: {}", SENHA);
+	}
+
+	private static String numeroDoProcesso(int n) {
+		String seq = String.format("%07d", n);
+		String resto = "2025" + "8" + "07" + "0001";
+		return seq + NumeroCnj.calcularDv(seq, resto) + resto;
 	}
 
 	private ProcessoDto processo(UsuarioDto ator, int n, Long clienteId, Long advogadoId, String tribunal) {
