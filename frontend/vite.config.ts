@@ -3,6 +3,7 @@ import vue from '@vitejs/plugin-vue'
 
 // Em desenvolvimento, /api e /actuator vao para o backend (mesma origem para o navegador).
 export default defineConfig({
+  base: '/app/',
   plugins: [vue()],
   server: {
     proxy: {

@@ -1,0 +1,10 @@
+# HTTPS automatico (Let's Encrypt). DOMINIO vem do .env, ex.: www.crispimcamposadvogados.com.br
+{$DOMINIO} {
+	encode gzip
+	reverse_proxy web:80
+}
+
+# Dominio sem "www" redireciona para o principal (so ativa se DOMINIO_APEX estiver definido).
+{$DOMINIO_APEX:invalido.localhost} {
+	redir https://{$DOMINIO}{uri} permanent
+}

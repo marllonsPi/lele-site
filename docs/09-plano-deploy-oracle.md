@@ -37,3 +37,5 @@ Fases 1-3 sao aditivas: reverter = `docker compose -p crispim down` (sem `-v` at
 
 ## Decisoes que dependem da usuaria
 Chave SSH/acesso (e quem executa); subdominio e controle do DNS; opcao A ou B; site em `/` com app em `/app` ou subdominios separados.
+
+Atualizacao 2026-10-19: plano revisado para o sistema completo (migracoes V2 a V15, volume de anexos, backup do storage, build leve) em `docs/12-plano-deploy-sistema-completo.md`.

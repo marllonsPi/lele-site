@@ -22,6 +22,7 @@ services:
       db:
         condition: service_healthy
     environment:
+      JAVA_TOOL_OPTIONS: ${JAVA_OPTS:--Xmx384m}
       DB_URL: jdbc:postgresql://db:5432/gestao
       DB_USER: gestao
       DB_PASSWORD: ${DB_PASSWORD}
@@ -29,14 +30,43 @@ services:
       BOOTSTRAP_SOCIA_NOME: ${BOOTSTRAP_SOCIA_NOME:-}
       BOOTSTRAP_SOCIA_EMAIL: ${BOOTSTRAP_SOCIA_EMAIL:-}
       BOOTSTRAP_SOCIA_SENHA: ${BOOTSTRAP_SOCIA_SENHA:-}
+      # Anexos e modelos de pecas: volume proprio (entra no backup)
+      STORAGE_DIR: /data/storage
+      # Rotinas diarias: desligadas ate o e-mail e as OABs estarem configurados
+      APP_CAPTURA_AGENDADA: ${APP_CAPTURA_AGENDADA:-false}
+      APP_ALERTAS_AGENDADO: ${APP_ALERTAS_AGENDADO:-false}
+      APP_ESCRITORIO_ENDERECO: ${APP_ESCRITORIO_ENDERECO:-}
+      APP_ESCRITORIO_CONTATO: ${APP_ESCRITORIO_CONTATO:-}
+    volumes:
+      - storage:/data/storage
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    profiles: ["https"]
+    depends_on:
+      - web
+    environment:
+      DOMINIO: ${DOMINIO:-localhost}
+      DOMINIO_APEX: ${DOMINIO_APEX:-}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddydata:/data
 
   web:
-    build: ../frontend
+    build:
+      context: ..
+      dockerfile: deploy/web.Dockerfile
     restart: unless-stopped
     depends_on:
       - backend
     ports:
-      - "${WEB_PORT:-8080}:80"
+      - "127.0.0.1:${WEB_PORT:-8081}:80"
 
 volumes:
   dbdata:
+  storage:
+  caddydata:
