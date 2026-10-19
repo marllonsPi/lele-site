@@ -1,5 +1,7 @@
 FROM eclipse-temurin:21-jdk AS build
 WORKDIR /src
+# VM de 1 GB: limita o heap do Maven durante o build
+ENV MAVEN_OPTS="-Xmx350m"
 COPY .mvn .mvn
 COPY mvnw pom.xml ./
 RUN ./mvnw -B -q dependency:go-offline
