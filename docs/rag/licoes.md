@@ -14,3 +14,12 @@ start.spring.io gerou `4.1.1.RELEASE`, que nao existe no Maven Central (a versao
 
 ## Teste de contexto exige Docker (2026-10-19)
 `GestaoApplicationTests` usa `@Testcontainers(disabledWithoutDocker = true)`: sem Docker ele e IGNORADO, nao aprovado. Nao declarar a Flyway/JPA validada sem rodar esse teste.
+
+- Teste de contexto com Postgres era ignorado sem Docker e escondeu divergencia entre migracao Flyway (`CHAR(2)`) e entidade JPA; so apareceu no deploy. Rodar o teste com Postgres real (Testcontainers/CI) antes de deploy.
+
+## Hibernate valida CHAR(2) como VARCHAR (2026-10-19)
+Primeiro boot real contra Postgres 16 (VM) falhou: `Schema validation: wrong column type in oab.uf; found bpchar, expecting varchar`. `columnDefinition` nao muda o tipo validado. Correcao: `@JdbcTypeCode(SqlTypes.CHAR)` em `Oab.uf`. O teste de contexto com Testcontainers teria pego isso; so roda com Docker.
+
+- Teste de seguranca: o post-processor `csrf()` do Spring Security Test troca o repositorio de token do filtro compartilhado e vaza para testes seguintes do mesmo contexto; use o fluxo real (GET /api/csrf, cookie + cabecalho `X-XSRF-TOKEN`).
+- `/api/csrf` nao pode depender do token adiado: o endpoint le/gera e grava o cookie ele mesmo (`SecurityConfig.CsrfEndpoint`). O nome nao termina em `Controller` porque a regra ArchUnit proibe controller de tocar `*Repository`.
+- Ambiente local varia: nesta maquina nao ha `/usr/lib/jvm`; o JDK 21 usado foi o da extensao Java do VS Code (`~/.vscode/extensions/redhat.java-*/jre/...`). Sem Node e sem Docker.

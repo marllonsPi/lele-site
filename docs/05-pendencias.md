@@ -32,3 +32,7 @@ Lacunas da spec e decisoes abertas. Nao decidir por analogia: perguntar. Ao reso
 21. Comentarios do site: moderacao dentro do sistema?
 22. Agenda publica: manter Google Calendar ou agenda propria?
 23. Contas de teste e IDs em `testeLogin/supabase/admin-setup.sql`: remover antes de versionar?
+
+## Fase 2 (2026-10-19)
+24. Hoje so socias criam/editam cliente e processo (pendencia 4 segue aberta para advogados e Luana). Luana ve processos pela matriz, mas nao os cadastra.
+25. CPF/CNPJ guardado em texto puro no banco; decidir criptografia em repouso (arquitetura 9, LGPD).

@@ -6,13 +6,13 @@ Status: proposta, 2026-10-19. Nomes de tabela/campo definitivos nascem na primei
 - `Usuario`: nome, e-mail, perfil (SOCIA | ADVOGADO | ASSISTENTE | ESTAGIARIO), ativo, supervisor (so estagiario -> advogado), 2FA.
 - `OAB`: usuario, numero, UF, principal (bool), ativa. Varias por usuario. Criar/ativar dispara inclusao automatica na captura.
 - `ContaEmailCaptura`: usuario, endereco, tipo de acesso, ativo (credenciais fora do banco em texto claro).
-- `RegraVisibilidade`: observador, titular, escopo (PUBLICACAO | AGENDAMENTO | PROCESSO), ativo.
+- `RegraVisibilidade` (migracao V2, existe): observador, titular, escopo (PUBLICACAO | AGENDAMENTO | PROCESSO); presenca da linha = regra ativa, unica por (observador, titular, escopo).
 - `LogAuditoria`: usuario, acao, entidade, id, antes, depois, momento, ip. Somente insercao.
 
 ## Cadastros
-- `Cliente`: nome, CPF/CNPJ, contatos, endereco, observacoes, ativo.
-- `Processo`: numero CNJ (normalizado), tribunal, vara/comarca, classe, situacao, valor da causa, cliente, advogado responsavel.
-- `ParteProcesso`: processo, nome, papel (CLIENTE | CONTRARIA | OUTRO).
+- `Cliente` (V3, existe): nome, documento (so digitos, CPF/CNPJ validado, unico), e-mail, telefone, endereco, observacoes, ativo.
+- `Processo` (V3, existe): numero CNJ (20 digitos, DV validado, unico), tribunal, vara/comarca, classe, situacao, valor da causa, cliente, advogado responsavel (`advogado_id` = titular para a visibilidade), ativo.
+- `ParteProcesso` (V3, existe): processo, nome, papel (CLIENTE | CONTRARIA | OUTRO); a parte CLIENTE e criada junto com o processo.
 
 ## Agenda
 - `Agendamento`: processo (obrigatorio, exceto ATD so com cliente), tipo (CTR|INI|CON|MAN|AUD|REC|ATD), responsavel, criado_por, urgente, status (PENDENTE | AGUARDANDO_CONFERENCIA_PRAZO | FINALIZADO | EM_CONFERENCIA_SOCIA | CONFERIDO | DEVOLVIDO | EM_CONFERENCIA_SUPERVISOR), origem (publicacao opcional).
