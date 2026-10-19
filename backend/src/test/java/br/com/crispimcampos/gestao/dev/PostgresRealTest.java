@@ -104,7 +104,7 @@ class PostgresRealTest {
 	@Test
 	void migracoesAplicadasEMapeamentoValido() {
 		Integer aplicadas = jdbc.queryForObject("select count(*) from flyway_schema_history where success", Integer.class);
-		assertThat(aplicadas).isEqualTo(15);
+		assertThat(aplicadas).isEqualTo(16);
 	}
 
 	@Test

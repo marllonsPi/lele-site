@@ -59,7 +59,7 @@ public class AnexoService {
 		return gravar(u, processoId, null, nome, conteudo);
 	}
 
-	@Transactional(readOnly = true)
+	@Transactional // grava auditoria: nao pode ser readOnly
 	public Download baixar(UsuarioLogado u, Long anexoId) {
 		Anexo a = anexos.findById(anexoId).orElseThrow(() -> new AgendaNaoEncontradaException("Anexo nao encontrado"));
 		if (a.getAgendamentoId() != null) {
