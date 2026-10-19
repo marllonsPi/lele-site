@@ -18,7 +18,7 @@ done
 for p in $(grep -oE '`[a-z]+\.md`' docs/rag/index.md | tr -d '`' | sort -u); do
   [ -f "docs/rag/$p" ] || err "docs/rag/$p citado e inexistente"
 done
-if grep -rEn '(password|senha|token|secret)[[:space:]]*[:=][[:space:]]*[^[:space:]$]{6,}' --include=*.md --include=*.py --include=*.env --include=*.yml --include=*.yaml --include=*.properties --exclude-dir=node_modules --exclude-dir=target --exclude-dir=dist --exclude-dir=.git --exclude-dir=lele-site-main . 2>/dev/null | grep -v rag-check.sh; then
+if grep -rEn '(password|senha|token|secret)[[:space:]]*[:=][[:space:]]*[^[:space:]$]{6,}' --include=*.md --include=*.py --include=*.env --include=*.yml --include=*.yaml --include=*.properties --exclude-dir=node_modules --exclude-dir=target --exclude-dir=dist --exclude-dir=.git --exclude-dir=site . 2>/dev/null | grep -v rag-check.sh; then
   err "possivel segredo versionado"
 fi
 [ "$fail" -eq 0 ] && echo "OK: 0 erros" || { echo "$fail erro(s)"; exit 1; }

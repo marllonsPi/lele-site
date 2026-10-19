@@ -23,3 +23,12 @@ Lacunas da spec e decisoes abertas. Nao decidir por analogia: perguntar. Ao reso
 14. Hospedagem (pais, provedor), dominio, 2FA obrigatorio.
 15. Stack decidida em 2026-10-19: Java 21 + Spring Boot + PostgreSQL + Vue 3/TS (ADR-0001). Esqueleto da Fase 0 criado. Pendente: biblioteca de componentes Vue, hospedagem, onde fica o remoto Git/CI (workflow escrito para GitHub Actions).
 16. Volume de dados esperado e retencao (LGPD).
+
+## Integracao site + sistema (2026-10-19)
+17. Destino do remoto Git: o remoto `github.com/marllonsPi/lele-site` e publico e e o do site; o sistema vai para ele (monorepo) ou para repositorio novo privado? (nao enviar nada antes de decidir)
+18. `testeLogin`/Supabase: descartar, migrar para o Postgres do sistema ou manter ate o portal novo? Ha clientes reais nele?
+19. Portal do cliente: o que o cliente ve (so andamentos aprovados? documentos?) e como se autentica.
+20. Triagem do site deve gravar no sistema (lead/atendimento) com consentimento LGPD, mantendo o WhatsApp?
+21. Comentarios do site: moderacao dentro do sistema?
+22. Agenda publica: manter Google Calendar ou agenda propria?
+23. Contas de teste e IDs em `testeLogin/supabase/admin-setup.sql`: remover antes de versionar?

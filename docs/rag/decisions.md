@@ -8,3 +8,6 @@ A usuaria recusou a proposta Django+HTMX e pediu Node, Python ou Java (gosta de 
 
 ## 2026-10-19 - Projeto local e RAG em duas camadas
 Pasta `/home/p_991274/crispim-campos` (nao e repositorio Git ainda). RAG do projeto em `docs/rag/`; ponteiro no RAG global (`/home/p_991274/ai/systems/crispim-campos.md`). Motivo: o conhecimento viaja com o projeto e o global so roteia.
+
+## 2026-10-19 - Site e sistema viram um produto unico
+Usuaria quer incorporar o site (`lele-site-main/`) ao sistema e vice-versa: mesmo repositorio, mesmo deploy, mesma marca. Mapa e proposta em `docs/07-integracao-site.md`. Substitui "site e sistema independentes". Destino do Supabase (`testeLogin`) e escopo do portal do cliente: pendentes em `docs/05-pendencias.md`.
