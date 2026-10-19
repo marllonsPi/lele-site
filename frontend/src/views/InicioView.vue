@@ -1,24 +1,12 @@
 <script setup lang="ts">
-import { ROTULO_PERFIL, sair, type Eu } from '../api/sessao'
+import { useSessao } from '../composables/useSessao'
 
-defineProps<{ eu: Eu }>()
-const emit = defineEmits<{ (e: 'saiu'): void }>()
-
-async function encerrar() {
-  await sair()
-  emit('saiu')
-}
+const { eu } = useSessao()
 </script>
 
 <template>
-  <main class="inicio">
-    <header>
-      <h1>Crispim &amp; Campos Advocacia</h1>
-      <div>
-        <span>{{ eu.nome }} · {{ ROTULO_PERFIL[eu.perfil] }}</span>
-        <button type="button" @click="encerrar">Sair</button>
-      </div>
-    </header>
-    <p>Sistema em construção. Próximas telas: agenda, processos, clientes.</p>
-  </main>
+  <section>
+    <h1>Olá, {{ eu?.nome }}</h1>
+    <p>Sistema em construção. As telas de agenda, prazos, clientes e processos chegam por etapas.</p>
+  </section>
 </template>
