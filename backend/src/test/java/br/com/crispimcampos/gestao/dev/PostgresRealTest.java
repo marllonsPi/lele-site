@@ -9,6 +9,9 @@ import br.com.crispimcampos.gestao.agenda.AgendaService;
 import br.com.crispimcampos.gestao.alertas.AlertaService;
 import br.com.crispimcampos.gestao.atendimento.AtendimentoService;
 import br.com.crispimcampos.gestao.financeiro.FinanceiroService;
+import br.com.crispimcampos.gestao.relatorios.ConteudoCliente;
+import br.com.crispimcampos.gestao.relatorios.RelatorioClienteService;
+import br.com.crispimcampos.gestao.relatorios.RelatoriosInternosService;
 import br.com.crispimcampos.gestao.agenda.ConclusaoService;
 import br.com.crispimcampos.gestao.agenda.TipoAgendamento;
 import br.com.crispimcampos.gestao.captura.DadosBrutos;
@@ -93,7 +96,7 @@ class PostgresRealTest {
 	@Test
 	void migracoesAplicadasEMapeamentoValido() {
 		Integer aplicadas = jdbc.queryForObject("select count(*) from flyway_schema_history where success", Integer.class);
-		assertThat(aplicadas).isEqualTo(11);
+		assertThat(aplicadas).isEqualTo(12);
 	}
 
 	@Test
@@ -139,6 +142,10 @@ class PostgresRealTest {
 	AtendimentoService atendimentos;
 	@Autowired
 	FinanceiroService financeiro;
+	@Autowired
+	RelatorioClienteService relatorios;
+	@Autowired
+	RelatoriosInternosService internos;
 
 	Long clienteDe(String nome) {
 		return jdbc.queryForObject("select id from cliente where nome like ?", Long.class, nome + "%");
@@ -244,7 +251,7 @@ class PostgresRealTest {
 	}
 
 	@Test
-	@org.junit.jupiter.api.Order(Integer.MAX_VALUE)
+	@org.junit.jupiter.api.Order(Integer.MAX_VALUE - 1)
 	void sociaClassificaGerandoPrazoQueAguardaConferenciaEOutrosNaoClassificam() {
 		UsuarioLogado socia = como("Socia B");
 		UsuarioLogado assistente = como("Assistente E");
@@ -276,7 +283,7 @@ class PostgresRealTest {
 	}
 
 	@Test
-	@org.junit.jupiter.api.Order(Integer.MAX_VALUE - 2)
+	@org.junit.jupiter.api.Order(Integer.MAX_VALUE - 3)
 	void atdConcluidoGeraRegistroDeAtendimento() {
 		UsuarioLogado advogada = como("Advogada C");
 		var atd = agenda.agenda(advogada, null).stream().filter(i -> i.tipo() == TipoAgendamento.ATD).findFirst().orElseThrow();
@@ -290,7 +297,7 @@ class PostgresRealTest {
 	}
 
 	@Test
-	@org.junit.jupiter.api.Order(Integer.MAX_VALUE - 1)
+	@org.junit.jupiter.api.Order(Integer.MAX_VALUE - 2)
 	void fluxoCompletoDoEstagiarioAteAConferenciaDaSocia() {
 		UsuarioLogado estagiario = como("Estagiario F");
 		UsuarioLogado supervisora = como("Advogada C");
@@ -351,5 +358,89 @@ class PostgresRealTest {
 		assertThat(dataSource.getConnection().isValid(2)).isTrue();
 		assertThat(usuarios.listar()).extracting(UsuarioDto::perfil).contains(Perfil.SOCIA, Perfil.ADVOGADO, Perfil.ASSISTENTE);
 		assertThat(List.of(Perfil.values())).hasSize(4);
+	}
+
+	@Test
+	@org.junit.jupiter.api.Order(Integer.MAX_VALUE)
+	void relatorioAoClienteSoSaiAprovadoESemDadosInternos() throws Exception {
+		UsuarioLogado advogada = como("Advogada C");
+		UsuarioLogado socia = como("Socia A");
+		Long maria = clienteDe("Maria");
+
+		// quem nao pode gerar
+		assertThatThrownBy(() -> relatorios.criarRascunho(como("Assistente E"), maria, null, null, null, false, false)).isInstanceOf(SecurityException.class);
+		assertThatThrownBy(() -> relatorios.criarRascunho(como("Advogado D"), maria, null, null, null, false, false)).isInstanceOf(RuntimeException.class);
+		assertThatThrownBy(() -> relatorios.criarRascunho(advogada, maria, null, null, null, false, true)).isInstanceOf(SecurityException.class);
+
+		var rascunho = relatorios.criarRascunho(advogada, maria, null, LocalDate.now().minusDays(30), LocalDate.now(), false, false);
+		assertThat(rascunho.estado()).isEqualTo("RASCUNHO");
+		assertThat(rascunho.conteudo().processos()).hasSize(1);
+		String bruto = jdbc.queryForObject("select conteudo from relatorio_cliente where id = ?", String.class, rascunho.id());
+		assertThat(bruto).contains("Peticao protocolada e juntada aos autos.");
+		// nada interno vaza: observacao de prazo, outros clientes, outros processos
+		assertThat(bruto).doesNotContain("feriado local").doesNotContain("Empresa Ficticia").doesNotContain("Joao Ficticio")
+				.doesNotContainIgnoringCase("prazoInterno").doesNotContainIgnoringCase("conferi").doesNotContainIgnoringCase("observac");
+
+		// sem aprovacao: sem PDF, sem envio, e o banco tambem recusa
+		assertThatThrownBy(() -> relatorios.gerarPdf(advogada, rascunho.id())).isInstanceOf(IllegalStateException.class);
+		assertThatThrownBy(() -> relatorios.enviar(advogada, rascunho.id(), "EMAIL")).isInstanceOf(IllegalStateException.class);
+		assertThatThrownBy(() -> jdbc.update("update relatorio_cliente set estado = 'APROVADO' where id = ?", rascunho.id())).hasMessageContaining("ck_relatorio_aprovacao");
+		assertThatThrownBy(() -> jdbc.update("update relatorio_cliente set estado = 'ENVIADO' where id = ?", rascunho.id())).hasMessageContaining("ck_relatorio");
+
+		// edicao: comentarios do advogado; nao pode incluir processo de fora
+		var conteudo = rascunho.conteudo();
+		var comComentario = new ConteudoCliente(conteudo.clienteNome(), conteudo.periodoInicio(), conteudo.periodoFim(), conteudo.processos(), "O caso segue bem.", null);
+		assertThat(relatorios.editar(advogada, rascunho.id(), comComentario).estado()).isEqualTo("EM_REVISAO");
+		var estranho = new ConteudoCliente.ProcessoRel("0000000-00.0000.0.00.0000", "x", "x", "x", "x", List.of(), List.of(), List.of(), List.of());
+		assertThatThrownBy(() -> relatorios.editar(advogada, rascunho.id(), new ConteudoCliente(conteudo.clienteNome(), null, conteudo.periodoFim(), List.of(estranho), null, null)))
+				.isInstanceOf(IllegalArgumentException.class);
+
+		// outra advogada/advogado nao enxerga o relatorio; a socia sim
+		assertThatThrownBy(() -> relatorios.buscar(como("Advogado D"), rascunho.id())).isInstanceOf(RuntimeException.class);
+		assertThat(relatorios.buscar(socia, rascunho.id()).conteudo().comentarios()).isEqualTo("O caso segue bem.");
+
+		var aprovado = relatorios.aprovar(advogada, rascunho.id());
+		assertThat(aprovado.estado()).isEqualTo("APROVADO");
+		assertThat(aprovado.aprovadoPor()).isEqualTo(advogada.id());
+		assertThatThrownBy(() -> relatorios.editar(advogada, rascunho.id(), comComentario)).isInstanceOf(IllegalStateException.class);
+		byte[] pdf = relatorios.gerarPdf(advogada, rascunho.id());
+		assertThat(new String(pdf, 0, 5)).isEqualTo("%PDF-");
+
+		int pendentesAntes = atendimentos.pendentesDeRepasse(advogada).size();
+		assertThat(pendentesAntes).isPositive();
+		var enviado = relatorios.enviar(advogada, rascunho.id(), "EMAIL");
+		assertThat(enviado.estado()).isEqualTo("ENVIADO");
+		assertThat(enviado.canal()).isEqualTo("EMAIL");
+		assertThat(jdbc.queryForObject("select length(pdf) from relatorio_cliente where id = ?", Integer.class, rascunho.id())).isGreaterThan(500);
+		assertThat(atendimentos.pendentesDeRepasse(advogada)).as("andamentos incluidos foram marcados como repassados").isEmpty();
+		assertThatThrownBy(() -> relatorios.enviar(advogada, rascunho.id(), "EMAIL")).isInstanceOf(IllegalStateException.class);
+		assertThat(relatorios.doCliente(socia, maria)).extracting("estado").contains("ENVIADO");
+
+		// resumo financeiro: so socia inclui; guarda parcelas pagas e a vencer
+		var comFin = relatorios.criarRascunho(socia, maria, null, null, LocalDate.now().plusDays(5), true, true);
+		assertThat(comFin.conteudo().financeiro().parcelasPagas()).isEqualByComparingTo("1000.00");
+		assertThat(comFin.conteudo().periodoInicio()).as("desde o ultimo relatorio enviado").isEqualTo(LocalDate.now().plusDays(1));
+		assertThatThrownBy(() -> relatorios.criarRascunho(socia, maria, null, null, LocalDate.now(), true, false))
+				.as("sem periodo novo desde o ultimo envio").isInstanceOf(IllegalArgumentException.class);
+	}
+
+	@Test
+	@org.junit.jupiter.api.Order(Integer.MAX_VALUE)
+	void relatoriosInternosRespeitamPerfilEGeramPdf() {
+		UsuarioLogado socia = como("Socia A");
+		UsuarioLogado wendell = como("Advogado D");
+		var geral = internos.gerar(socia, RelatoriosInternosService.Tipo.PENDENTES, null, null, null, null);
+		assertThat(geral.linhas()).isNotEmpty();
+		var doWendell = internos.gerar(wendell, RelatoriosInternosService.Tipo.PENDENTES, null, null, null, null);
+		assertThat(doWendell.linhas()).hasSizeLessThan(geral.linhas().size()).allSatisfy(l -> assertThat(l.get(4)).contains("Advogado D"));
+		assertThat(internos.gerar(socia, RelatoriosInternosService.Tipo.VENCIDOS, null, null, null, null).linhas()).isNotEmpty();
+		assertThat(internos.gerar(socia, RelatoriosInternosService.Tipo.AGENDA_DIA, LocalDate.now().plusDays(1), null, null, null).linhas()).hasSize(2);
+		assertThat(internos.gerar(socia, RelatoriosInternosService.Tipo.FINANCEIRO_CLIENTE, null, null, null, clienteDe("Maria")).linhas()).hasSize(8);
+		assertThat(internos.gerar(socia, RelatoriosInternosService.Tipo.ATENDIMENTOS, LocalDate.now().minusDays(5), LocalDate.now(), null, null).linhas()).isNotEmpty();
+		assertThatThrownBy(() -> internos.gerar(wendell, RelatoriosInternosService.Tipo.FINANCEIRO_CLIENTE, null, null, null, 1L)).isInstanceOf(SecurityException.class);
+		assertThatThrownBy(() -> internos.gerar(wendell, RelatoriosInternosService.Tipo.AGENDA_USUARIO, null, null, socia.id(), null)).isInstanceOf(SecurityException.class);
+		assertThat(new String(internos.pdf(socia, RelatoriosInternosService.Tipo.PENDENTES, null, null, null, null), 0, 5)).isEqualTo("%PDF-");
+		assertThat(internos.enviarAsSocias(socia, RelatoriosInternosService.Tipo.PENDENTES, null, null, null, null)).isEqualTo(2);
+		assertThatThrownBy(() -> internos.enviarAsSocias(wendell, RelatoriosInternosService.Tipo.PENDENTES, null, null, null, null)).isInstanceOf(SecurityException.class);
 	}
 }

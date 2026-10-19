@@ -153,6 +153,13 @@ public class AtendimentoService {
 		return jdbc.queryForObject("select * from andamento where id = ?", AND, id);
 	}
 
+	/** Uso interno (relatorio ao cliente): andamentos do processo no periodo, sem filtro de visibilidade. */
+	@Transactional(readOnly = true)
+	public List<AndamentoDto> andamentosDoProcesso(Long processoId, java.time.LocalDate de, java.time.LocalDate ate) {
+		return jdbc.query("select * from andamento where processo_id = ? and data >= ? and data <= ? order by data, id", AND, processoId,
+				java.sql.Date.valueOf(de == null ? java.time.LocalDate.of(1900, 1, 1) : de), java.sql.Date.valueOf(ate));
+	}
+
 	/** Chamado pelo relatorio ao cliente (Fase 10) ao enviar: marca os andamentos incluidos como repassados. */
 	@Transactional
 	public int marcarRepassadosPorRelatorio(List<Long> ids, String via, Long porUsuario) {

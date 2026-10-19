@@ -28,4 +28,20 @@ class EnviadorEmailSmtp implements EnviadorEmail {
 		m.setText(corpo);
 		remetente.send(m);
 	}
+
+	@Override
+	public void enviarComAnexo(String para, String assunto, String corpo, String nomeArquivo, byte[] anexo) {
+		try {
+			var mime = remetente.createMimeMessage();
+			var h = new org.springframework.mail.javamail.MimeMessageHelper(mime, true, "UTF-8");
+			h.setFrom(de);
+			h.setTo(para);
+			h.setSubject("[Crispim & Campos] " + assunto);
+			h.setText(corpo);
+			h.addAttachment(nomeArquivo, new org.springframework.core.io.ByteArrayResource(anexo), "application/pdf");
+			remetente.send(mime);
+		} catch (jakarta.mail.MessagingException e) {
+			throw new IllegalStateException("Falha ao montar o e-mail", e);
+		}
+	}
 }

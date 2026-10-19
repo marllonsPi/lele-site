@@ -80,6 +80,25 @@ public class AgendaService {
 		return agendamentos.findByStatusIn(ABERTOS).stream().map(a -> AgendaItemDto.de(a, hoje, relogio.getZone())).toList();
 	}
 
+	public record Finalizado(AgendaItemDto item, Long finalizadoPor, java.time.Instant finalizadoEm) {
+	}
+
+	/** Itens finalizados (em conferencia ou conferidos) no periodo, dos titulares visiveis. */
+	@Transactional(readOnly = true)
+	public List<Finalizado> finalizadosNoPeriodo(UsuarioLogado ator, LocalDate de, LocalDate ate) {
+		Set<Long> titulares = visibilidade.titularesVisiveis(ator, Escopo.AGENDAMENTO);
+		if (titulares.isEmpty()) {
+			return List.of();
+		}
+		LocalDate hoje = LocalDate.now(relogio);
+		var zona = relogio.getZone();
+		return agendamentos.findByTitularIdInAndFinalizadoEmGreaterThanEqualAndFinalizadoEmLessThan(titulares,
+				de.atStartOfDay(zona).toInstant(), ate.plusDays(1).atStartOfDay(zona).toInstant()).stream()
+				.filter(a -> a.getStatus() != StatusAgendamento.DEVOLVIDO)
+				.map(a -> new Finalizado(AgendaItemDto.de(a, hoje, zona), a.getFinalizadoPor(), a.getFinalizadoEm()))
+				.sorted(Comparator.comparing(f -> f.finalizadoEm())).toList();
+	}
+
 	/** Por dia; no dia, compromissos com hora primeiro e em ordem de horario; depois urgentes. */
 	static final Comparator<AgendaItemDto> ORDEM = Comparator.comparing(AgendaItemDto::data)
 			.thenComparing(AgendaItemDto::hora, Comparator.nullsLast(Comparator.naturalOrder()))

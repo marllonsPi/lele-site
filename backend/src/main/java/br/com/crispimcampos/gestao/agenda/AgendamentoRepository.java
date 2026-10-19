@@ -30,6 +30,12 @@ interface AgendamentoRepository extends JpaRepository<Agendamento, Long> {
 	List<Agendamento> findCompromissosIniciandoEntre(@Param("tipos") Collection<TipoAgendamento> tipos,
 			@Param("de") Instant de, @Param("ate") Instant ate);
 
+	List<Agendamento> findByProcessoIdAndFinalizadoEmGreaterThanEqualAndFinalizadoEmLessThan(Long processoId, Instant de, Instant ate);
+
+	List<Agendamento> findByProcessoIdAndStatusIn(Long processoId, Collection<StatusAgendamento> status);
+
+	List<Agendamento> findByTitularIdInAndFinalizadoEmGreaterThanEqualAndFinalizadoEmLessThan(Collection<Long> titulares, Instant de, Instant ate);
+
 	List<Agendamento> findByStatusIn(Collection<StatusAgendamento> status);
 
 	/** Itens de titulares visiveis em certos estados (conferencia, painel). */

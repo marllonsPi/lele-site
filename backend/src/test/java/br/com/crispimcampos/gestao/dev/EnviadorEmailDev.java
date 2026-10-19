@@ -17,4 +17,9 @@ class EnviadorEmailDev implements EnviadorEmail {
 	public void enviar(String para, String assunto, String corpo) {
 		log.info("[DEV] e-mail simulado para {}: {}", para, assunto);
 	}
+
+	@Override
+	public void enviarComAnexo(String para, String assunto, String corpo, String nomeArquivo, byte[] anexo) {
+		log.info("[DEV] e-mail simulado para {}: {} (anexo {}, {} bytes)", para, assunto, nomeArquivo, anexo.length);
+	}
 }
