@@ -24,9 +24,13 @@ class ConclusaoController {
 		this.servico = servico;
 	}
 
+	record Resumo(@Size(max = 5000) String resumo) {
+	}
+
 	@PostMapping("/api/agendamentos/{id}/finalizar")
-	AgendaItemDto finalizar(@AuthenticationPrincipal UsuarioLogado u, @PathVariable Long id) {
-		return servico.finalizar(u, id);
+	AgendaItemDto finalizar(@AuthenticationPrincipal UsuarioLogado u, @PathVariable Long id,
+			@Valid @RequestBody(required = false) Resumo r) {
+		return servico.finalizar(u, id, r == null ? null : r.resumo());
 	}
 
 	@PostMapping("/api/agendamentos/{id}/aprovar-supervisor")

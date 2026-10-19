@@ -10,6 +10,7 @@ import br.com.crispimcampos.gestao.agenda.PrazoDto;
 import br.com.crispimcampos.gestao.agenda.PrazoService;
 import br.com.crispimcampos.gestao.agenda.TipoAgendamento;
 import br.com.crispimcampos.gestao.cadastros.CadastroService;
+import br.com.crispimcampos.gestao.atendimento.AtendimentoService;
 import br.com.crispimcampos.gestao.captura.DadosBrutos;
 import br.com.crispimcampos.gestao.captura.Fonte;
 import br.com.crispimcampos.gestao.captura.FiltroService;
@@ -18,6 +19,7 @@ import br.com.crispimcampos.gestao.cadastros.NumeroCnj;
 import br.com.crispimcampos.gestao.cadastros.PapelParte;
 import br.com.crispimcampos.gestao.cadastros.ProcessoDto;
 import br.com.crispimcampos.gestao.contas.Perfil;
+import br.com.crispimcampos.gestao.financeiro.FinanceiroService;
 import br.com.crispimcampos.gestao.contas.UsuarioDto;
 import br.com.crispimcampos.gestao.contas.UsuarioLogado;
 import br.com.crispimcampos.gestao.contas.UsuarioService;
@@ -54,9 +56,12 @@ public class DevSeed implements ApplicationRunner {
 	private final ObservacaoService observacoes;
 	private final PipelineCaptura pipeline;
 	private final FiltroService filtros;
+	private final AtendimentoService atendimentos;
+	private final FinanceiroService financeiro;
 
 	DevSeed(UsuarioService usuarios, MatrizVisibilidadeService matriz, CadastroService cadastros, PrazoService prazos,
-			CompromissoService compromissos, ObservacaoService observacoes, PipelineCaptura pipeline, FiltroService filtros) {
+			CompromissoService compromissos, ObservacaoService observacoes, PipelineCaptura pipeline, FiltroService filtros,
+			AtendimentoService atendimentos, FinanceiroService financeiro) {
 		this.usuarios = usuarios;
 		this.matriz = matriz;
 		this.cadastros = cadastros;
@@ -65,6 +70,8 @@ public class DevSeed implements ApplicationRunner {
 		this.observacoes = observacoes;
 		this.pipeline = pipeline;
 		this.filtros = filtros;
+		this.atendimentos = atendimentos;
+		this.financeiro = financeiro;
 	}
 
 	@Override
@@ -145,6 +152,13 @@ public class DevSeed implements ApplicationRunner {
 		pipeline.processar(a.id(), java.util.List.of(
 				new DadosBrutos(Fonte.EMAIL, "m-2", "0000888-88.2025.5.01.0001", "TRT-1", hoje, "Push do TRT-1 (teste): ignorado pelo filtro.", "h-m2"),
 				new DadosBrutos(Fonte.EMAIL, "m-3", numeroDoProcesso(3), "TRT-10", hoje, "Push do TRT-10 (teste): mantido.", "h-m3")));
+		// Atendimento e financeiro (so socias veem o financeiro)
+		atendimentos.registrarAvulso(assistente, maria.id(), pC.id(), "WHATSAPP", LocalDateTime.of(hoje.minusDays(1), LocalTime.of(11, 30)), "Cliente perguntou sobre a data da audiencia.", e.id());
+		atendimentos.registrarAndamento(socia, pC.id(), hoje.minusDays(2), "Peticao protocolada e juntada aos autos.");
+		Long contrato = financeiro.criarContrato(socia, maria.id(), pC.id(), "Honorarios contratuais - caso Maria", new java.math.BigDecimal("6000.00"), 6, hoje.minusMonths(2));
+		financeiro.pagarParcela(socia, financeiro.parcelas(socia, contrato).get(0).get("id") instanceof Number n ? n.longValue() : 0L, hoje.minusMonths(2), new java.math.BigDecimal("1000.00"));
+		financeiro.registrarDespesa(socia, maria.id(), pC.id(), "CUSTAS", "Custas iniciais", new java.math.BigDecimal("350.00"), hoje.minusMonths(2), true);
+		financeiro.registrarHonorarioVariavel(socia, maria.id(), pC.id(), "EXITO", "Exito de 10% sobre o valor recebido", new java.math.BigDecimal("1500.00"));
 		log.info("Dados ficticios de desenvolvimento criados. Senha de todos os usuarios: {}", SENHA);
 	}
 

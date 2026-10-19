@@ -33,15 +33,18 @@ public class PublicacaoService {
 	private final CadastroService cadastros;
 	private final AuditoriaService auditoria;
 	private final JdbcTemplate jdbc;
+	private final org.springframework.context.ApplicationEventPublisher eventos;
 
 	PublicacaoService(PublicacaoRepository publicacoes, Visibilidade visibilidade, PrazoService prazos,
-			CadastroService cadastros, AuditoriaService auditoria, JdbcTemplate jdbc) {
+			CadastroService cadastros, AuditoriaService auditoria, JdbcTemplate jdbc,
+			org.springframework.context.ApplicationEventPublisher eventos) {
 		this.publicacoes = publicacoes;
 		this.visibilidade = visibilidade;
 		this.prazos = prazos;
 		this.cadastros = cadastros;
 		this.auditoria = auditoria;
 		this.jdbc = jdbc;
+		this.eventos = eventos;
 	}
 
 	@Transactional(readOnly = true)
@@ -96,6 +99,7 @@ public class PublicacaoService {
 		}
 		p.classificar(prazo.id());
 		auditoria.registrar(u.id(), "PUBLICACAO_CLASSIFICADA", "publicacao", String.valueOf(id), "tipo=" + tipo);
+		eventos.publishEvent(new PublicacaoClassificada(id, processo, p.getDataPublicacao(), p.getResumo(), u.id()));
 		return PublicacaoDto.de(p, fontesDe(List.of(id)).getOrDefault(id, List.of()), null);
 	}
 

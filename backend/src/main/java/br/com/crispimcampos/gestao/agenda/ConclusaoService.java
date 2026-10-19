@@ -12,6 +12,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,10 +32,11 @@ public class ConclusaoService {
 	private final UsuarioService usuarios;
 	private final AuditoriaService auditoria;
 	private final Clock relogio;
+	private final ApplicationEventPublisher eventos;
 
 	ConclusaoService(AgendamentoRepository agendamentos, ConferenciaRepository conferencias,
 			ObservacaoRepository observacoes, RegrasAgendamento regras, Visibilidade visibilidade,
-			UsuarioService usuarios, AuditoriaService auditoria, Clock relogio) {
+			UsuarioService usuarios, AuditoriaService auditoria, Clock relogio, ApplicationEventPublisher eventos) {
 		this.agendamentos = agendamentos;
 		this.conferencias = conferencias;
 		this.observacoes = observacoes;
@@ -43,11 +45,18 @@ public class ConclusaoService {
 		this.usuarios = usuarios;
 		this.auditoria = auditoria;
 		this.relogio = relogio;
+		this.eventos = eventos;
 	}
 
 	/** O responsavel (ou uma socia) conclui o item. */
 	@Transactional
 	public AgendaItemDto finalizar(UsuarioLogado ator, Long id) {
+		return finalizar(ator, id, null);
+	}
+
+	/** @param resumo para atendimento (ATD): o que foi tratado; vira o registro de atendimento (item 13) */
+	@Transactional
+	public AgendaItemDto finalizar(UsuarioLogado ator, Long id, String resumo) {
 		Agendamento a = regras.obterVisivel(ator, id);
 		if (!ator.id().equals(a.getResponsavelId()) && ator.perfil() != Perfil.SOCIA) {
 			throw RegrasAgendamento.proibido("Somente o responsavel ou uma socia finaliza o item");
@@ -62,6 +71,12 @@ public class ConclusaoService {
 				: usuarios.buscar(a.getResponsavelId()).perfil() == Perfil.ESTAGIARIO;
 		a.finalizar(ator.id(), responsavelEstagiario, relogio.instant());
 		auditoria.registrar(ator.id(), "AGENDAMENTO_FINALIZADO", "agendamento", String.valueOf(id), null);
+		if (a.getTipo() == TipoAgendamento.ATD) {
+			eventos.publishEvent(new AtendimentoConcluido(a.getId(), a.getClienteId(), a.getProcessoId(), a.getInicioEm(),
+					a.getAdvogadoAtendenteId(), a.getModalidade().name(),
+					resumo != null && !resumo.isBlank() ? resumo.trim() : (a.getDescricao() != null ? a.getDescricao() : "Atendimento realizado"),
+					ator.id()));
+		}
 		return item(a);
 	}
 

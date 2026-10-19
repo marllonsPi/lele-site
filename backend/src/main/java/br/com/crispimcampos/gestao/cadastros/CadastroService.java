@@ -171,6 +171,17 @@ public class CadastroService {
 		return new ProcessoResumo(p.getId(), p.getAdvogadoId(), p.getCliente().getId(), p.getTribunal(), p.isAtivo());
 	}
 
+	/** Cliente visivel ao usuario (socia: todos; demais: quem ve algum processo do cliente). */
+	@Transactional(readOnly = true)
+	public boolean clienteVisivel(UsuarioLogado usuario, Long clienteId) {
+		try {
+			buscarCliente(usuario, clienteId);
+			return true;
+		} catch (CadastroNaoEncontradoException e) {
+			return false;
+		}
+	}
+
 	/** Uso interno (alertas): numero CNJ formatado do processo, sem aplicar visibilidade nem expor outros dados. */
 	@Transactional(readOnly = true)
 	public String numeroFormatado(Long processoId) {

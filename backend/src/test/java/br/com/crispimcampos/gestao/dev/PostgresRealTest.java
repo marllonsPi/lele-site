@@ -7,6 +7,8 @@ import br.com.crispimcampos.gestao.acesso.Escopo;
 import br.com.crispimcampos.gestao.acesso.Visibilidade;
 import br.com.crispimcampos.gestao.agenda.AgendaService;
 import br.com.crispimcampos.gestao.alertas.AlertaService;
+import br.com.crispimcampos.gestao.atendimento.AtendimentoService;
+import br.com.crispimcampos.gestao.financeiro.FinanceiroService;
 import br.com.crispimcampos.gestao.agenda.ConclusaoService;
 import br.com.crispimcampos.gestao.agenda.TipoAgendamento;
 import br.com.crispimcampos.gestao.captura.DadosBrutos;
@@ -91,7 +93,7 @@ class PostgresRealTest {
 	@Test
 	void migracoesAplicadasEMapeamentoValido() {
 		Integer aplicadas = jdbc.queryForObject("select count(*) from flyway_schema_history where success", Integer.class);
-		assertThat(aplicadas).isEqualTo(9);
+		assertThat(aplicadas).isEqualTo(11);
 	}
 
 	@Test
@@ -133,6 +135,60 @@ class PostgresRealTest {
 	PipelineCaptura pipeline;
 	@Autowired
 	AlertaService alertas;
+	@Autowired
+	AtendimentoService atendimentos;
+	@Autowired
+	FinanceiroService financeiro;
+
+	Long clienteDe(String nome) {
+		return jdbc.queryForObject("select id from cliente where nome like ?", Long.class, nome + "%");
+	}
+
+	@Test
+	void financeiroSoParaSociasComResumoCorreto() {
+		UsuarioLogado socia = como("Socia A");
+		Long maria = clienteDe("Maria");
+		var r = financeiro.resumoDoCliente(socia, maria);
+		assertThat(r.contratado()).isEqualByComparingTo("6000.00");
+		assertThat(r.parcelasPagas()).isEqualByComparingTo("1000.00");
+		assertThat(r.parcelasEmAtraso()).isEqualByComparingTo("1000.00");
+		assertThat(r.quantidadeEmAtraso()).isEqualTo(1);
+		assertThat(r.parcelasAVencer()).isEqualByComparingTo("4000.00");
+		assertThat(r.custasEDespesas()).isEqualByComparingTo("350.00");
+		assertThat(r.reembolsavel()).isEqualByComparingTo("350.00");
+		assertThat(r.exitoPrevisto()).isEqualByComparingTo("1500.00");
+		assertThat(r.exitoRecebido()).isEqualByComparingTo("0");
+		Long processo = jdbc.queryForObject("select id from processo where cliente_id = ? order by id limit 1", Long.class, maria);
+		assertThat(financeiro.resumoDoProcesso(socia, processo).contratado()).isEqualByComparingTo("6000.00");
+		assertThat(jdbc.queryForObject("select count(*) from log_auditoria where acao = 'FINANCEIRO_CONSULTADO'", Integer.class)).isGreaterThanOrEqualTo(2);
+		for (String quem : new String[] {"Advogada C", "Advogado D", "Assistente E", "Socia B"}) {
+			UsuarioLogado u = como(quem);
+			if (quem.startsWith("Socia")) {
+				assertThat(financeiro.resumoDoCliente(u, maria)).isNotNull();
+			} else {
+				assertThatThrownBy(() -> financeiro.resumoDoCliente(u, maria)).isInstanceOf(SecurityException.class);
+				assertThatThrownBy(() -> financeiro.contratos(u, maria)).isInstanceOf(SecurityException.class);
+				assertThatThrownBy(() -> financeiro.criarContrato(u, maria, null, "x", java.math.BigDecimal.TEN, 1, LocalDate.now())).isInstanceOf(SecurityException.class);
+			}
+		}
+	}
+
+	@Test
+	void bancoRecusaValoresInvalidosNoFinanceiro() {
+		assertThatThrownBy(() -> jdbc.update("insert into parcela (contrato_id, numero, vencimento, valor) values (1, 99, now(), -5)")).hasMessageContaining("ck_parcela_valor");
+		assertThatThrownBy(() -> jdbc.update("update parcela set pago_em = now() where id = (select min(id) from parcela where pago_em is null)")).hasMessageContaining("ck_parcela_pagamento");
+	}
+
+	@Test
+	void atendimentoAvulsoRespeitaVisibilidadeDoCliente() {
+		Long maria = clienteDe("Maria");
+		assertThat(atendimentos.listar(como("Socia A"), maria)).extracting("origem").contains("AVULSO");
+		assertThat(atendimentos.listar(como("Assistente E"), maria)).isNotEmpty();
+		assertThatThrownBy(() -> atendimentos.listar(como("Advogado D"), maria)).hasMessageContaining("Cliente");
+		assertThat(atendimentos.listar(como("Advogado D"), null)).isEmpty();
+		assertThatThrownBy(() -> atendimentos.registrarAvulso(como("Estagiario F"), maria, null, "TELEFONE", null, "x", null)).isInstanceOf(SecurityException.class);
+		assertThatThrownBy(() -> atendimentos.registrarAvulso(como("Socia A"), maria, null, "FAX", null, "x", null)).isInstanceOf(IllegalArgumentException.class);
+	}
 
 	@Test
 	void alertasSaoGeradosEnviadosENaoDuplicam() {
@@ -208,6 +264,29 @@ class PostgresRealTest {
 				LocalDate.now().minusDays(1), LocalDate.now().plusDays(8))).hasMessageContaining("processo");
 		assertThat(publicacoes.descartar(socia, outra.id(), "Nao e do escritorio").estado()).isEqualTo(EstadoPublicacao.DESCARTADA_COM_REGISTRO);
 		assertThatThrownBy(() -> jdbc.update("delete from item_ignorado")).hasMessageContaining("somente de insercao");
+
+		// a publicacao classificada virou andamento pendente de repasse; repassar tira da lista
+		var pendentes = atendimentos.pendentesDeRepasse(socia);
+		var doPublicacao = pendentes.stream().filter(a -> "PUBLICACAO".equals(a.origem())).findFirst().orElseThrow();
+		assertThat(atendimentos.pendentesDeRepasse(como("Advogado D"))).extracting("id").doesNotContain(doPublicacao.id());
+		assertThat(atendimentos.marcarRepassado(socia, doPublicacao.id(), "EMAIL").repassado()).isTrue();
+		assertThat(atendimentos.pendentesDeRepasse(socia)).extracting("id").doesNotContain(doPublicacao.id());
+		assertThatThrownBy(() -> atendimentos.marcarRepassado(socia, doPublicacao.id(), "EMAIL")).isInstanceOf(IllegalStateException.class);
+		assertThat(pendentes).extracting("origem").contains("MANUAL");
+	}
+
+	@Test
+	@org.junit.jupiter.api.Order(Integer.MAX_VALUE - 2)
+	void atdConcluidoGeraRegistroDeAtendimento() {
+		UsuarioLogado advogada = como("Advogada C");
+		var atd = agenda.agenda(advogada, null).stream().filter(i -> i.tipo() == TipoAgendamento.ATD).findFirst().orElseThrow();
+		conclusao.finalizar(advogada, atd.id(), "Orientado sobre documentos necessarios.");
+		var lista = atendimentos.listar(como("Socia A"), atd.clienteId());
+		var gerado = lista.stream().filter(a -> "AGENDAMENTO".equals(a.origem())).findFirst().orElseThrow();
+		assertThat(gerado.resumo()).isEqualTo("Orientado sobre documentos necessarios.");
+		assertThat(gerado.agendamentoId()).isEqualTo(atd.id());
+		assertThat(gerado.canal()).isEqualTo("TELEFONE");
+		assertThat(jdbc.queryForObject("select count(*) from atendimento where agendamento_id = ?", Integer.class, atd.id())).isEqualTo(1);
 	}
 
 	@Test

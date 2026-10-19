@@ -37,7 +37,8 @@ class ConclusaoServiceTest {
 	UsuarioService usuarios = mock(UsuarioService.class);
 	Clock relogio = Clock.fixed(Instant.parse("2026-10-20T15:00:00Z"), ZoneId.of("America/Sao_Paulo"));
 	ConclusaoService servico = new ConclusaoService(repo, conferencias, observacoes,
-			new RegrasAgendamento(repo, visibilidade, usuarios), visibilidade, usuarios, mock(AuditoriaService.class), relogio);
+			new RegrasAgendamento(repo, visibilidade, usuarios), visibilidade, usuarios, mock(AuditoriaService.class), relogio,
+			mock(org.springframework.context.ApplicationEventPublisher.class));
 
 	UsuarioLogado leticia = new UsuarioLogado(LETICIA, "L", "l@exemplo.test", "x", Perfil.SOCIA, true);
 	UsuarioLogado lorraynny = new UsuarioLogado(LORRAYNNY, "Lo", "lo@exemplo.test", "x", Perfil.SOCIA, true);
