@@ -16,6 +16,9 @@ import CapturaView from '../views/CapturaView.vue'
 import PainelView from '../views/PainelView.vue'
 import AtendimentoView from '../views/AtendimentoView.vue'
 import FinanceiroView from '../views/FinanceiroView.vue'
+import RelatoriosView from '../views/RelatoriosView.vue'
+import ModelosView from '../views/ModelosView.vue'
+import SegurancaView from '../views/SegurancaView.vue'
 import NaoEncontradaView from '../views/NaoEncontradaView.vue'
 
 export function criarRoteador(historico: RouterHistory = createWebHistory(import.meta.env.BASE_URL)) {
@@ -41,6 +44,9 @@ export function criarRoteador(historico: RouterHistory = createWebHistory(import
           { path: 'painel', name: 'painel', component: PainelView, meta: { titulo: 'Painel das sócias', perfis: ['SOCIA'] } },
           { path: 'atendimento', name: 'atendimento', component: AtendimentoView, meta: { titulo: 'Atendimento' } },
           { path: 'financeiro', name: 'financeiro', component: FinanceiroView, meta: { titulo: 'Financeiro', perfis: ['SOCIA'] } },
+          { path: 'relatorios', name: 'relatorios', component: RelatoriosView, meta: { titulo: 'Relatórios' } },
+          { path: 'modelos', name: 'modelos', component: ModelosView, meta: { titulo: 'Modelos de peças' } },
+          { path: 'seguranca', name: 'seguranca', component: SegurancaView, meta: { titulo: 'Segurança da conta' } },
           { path: ':resto(.*)*', name: 'nao-encontrada', component: NaoEncontradaView, meta: { titulo: 'Página não encontrada' } },
         ],
       },

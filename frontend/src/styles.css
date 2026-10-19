@@ -246,6 +246,7 @@ button:disabled {
 .usuario-nome {
   display: none;
   color: var(--cor-texto-suave);
+  text-decoration: none;
 }
 
 .conteudo {
@@ -499,4 +500,13 @@ td input[type='checkbox'] {
 .perigo {
   font-weight: 700;
   color: var(--cor-erro);
+}
+
+.segredo {
+  display: block;
+  padding: var(--espaco-2);
+  overflow-wrap: anywhere;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
 }

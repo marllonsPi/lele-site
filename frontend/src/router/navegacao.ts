@@ -10,20 +10,23 @@ export interface ItemMenu {
 /** Menu principal; cada parte do frontend acrescenta suas telas aqui. */
 export const ITENS_MENU: ItemMenu[] = [
   { rota: '/', rotulo: 'Início' },
+  { rota: '/painel', rotulo: 'Painel', perfis: ['SOCIA'] },
   { rota: '/agenda', rotulo: 'Agenda' },
   { rota: '/prazos', rotulo: 'Prazos' },
   // supervisores sao advogados; o servidor decide o que cada um ve na fila
-  { rota: '/painel', rotulo: 'Painel', perfis: ['SOCIA'] },
+  { rota: '/conferencia', rotulo: 'Conferência', perfis: ['SOCIA', 'ADVOGADO'] },
   { rota: '/publicacoes', rotulo: 'Publicações' },
-  { rota: '/captura', rotulo: 'Captura', perfis: ['SOCIA'] },
+  { rota: '/atendimento', rotulo: 'Atendimento' },
   { rota: '/clientes', rotulo: 'Clientes' },
   { rota: '/processos', rotulo: 'Processos' },
-  { rota: '/atendimento', rotulo: 'Atendimento' },
+  { rota: '/relatorios', rotulo: 'Relatórios' },
+  { rota: '/modelos', rotulo: 'Modelos' },
   { rota: '/financeiro', rotulo: 'Financeiro', perfis: ['SOCIA'] },
   { rota: '/calendario', rotulo: 'Calendário' },
+  { rota: '/captura', rotulo: 'Captura', perfis: ['SOCIA'] },
   { rota: '/usuarios', rotulo: 'Usuários', perfis: ['SOCIA'] },
   { rota: '/visibilidade', rotulo: 'Visibilidade', perfis: ['SOCIA'] },
-  { rota: '/conferencia', rotulo: 'Conferência', perfis: ['SOCIA', 'ADVOGADO'] },
+  { rota: '/seguranca', rotulo: 'Segurança' },
 ]
 
 export function itensPara(perfil: Perfil): ItemMenu[] {
