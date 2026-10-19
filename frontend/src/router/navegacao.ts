@@ -18,6 +18,8 @@ export const ITENS_MENU: ItemMenu[] = [
   { rota: '/captura', rotulo: 'Captura', perfis: ['SOCIA'] },
   { rota: '/clientes', rotulo: 'Clientes' },
   { rota: '/processos', rotulo: 'Processos' },
+  { rota: '/atendimento', rotulo: 'Atendimento' },
+  { rota: '/financeiro', rotulo: 'Financeiro', perfis: ['SOCIA'] },
   { rota: '/calendario', rotulo: 'Calendário' },
   { rota: '/usuarios', rotulo: 'Usuários', perfis: ['SOCIA'] },
   { rota: '/visibilidade', rotulo: 'Visibilidade', perfis: ['SOCIA'] },
