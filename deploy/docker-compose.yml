@@ -22,7 +22,8 @@ services:
       db:
         condition: service_healthy
     environment:
-      JAVA_TOOL_OPTIONS: ${JAVA_OPTS:--Xmx384m}
+      # IPv4 na JVM: a VM nao tem saida IPv6 e o Google resolve primeiro por IPv6 (connect timed out)
+      JAVA_TOOL_OPTIONS: ${JAVA_OPTS:--Xmx384m} -Djava.net.preferIPv4Stack=true -Djava.net.preferIPv4Addresses=true
       DB_URL: jdbc:postgresql://db:5432/gestao
       DB_USER: gestao
       DB_PASSWORD: ${DB_PASSWORD}
@@ -40,6 +41,13 @@ services:
       APP_ALERTAS_AGENDADO: ${APP_ALERTAS_AGENDADO:-false}
       APP_ESCRITORIO_ENDERECO: ${APP_ESCRITORIO_ENDERECO:-}
       APP_ESCRITORIO_CONTATO: ${APP_ESCRITORIO_CONTATO:-}
+      # Conexao Google (Gmail e Drive): desligada enquanto faltar algum destes (docs/13 e docs/14)
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-}
+      GOOGLE_TOKEN_KEY: ${GOOGLE_TOKEN_KEY:-}
+      IMPORTACAO_PASTA_CLIENTES_ID: ${IMPORTACAO_PASTA_CLIENTES_ID:-}
+      IMPORTACAO_PLANILHA_ID: ${IMPORTACAO_PLANILHA_ID:-}
     volumes:
       - storage:/data/storage
 

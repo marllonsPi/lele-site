@@ -33,7 +33,7 @@ gerar "$BACKUP_DIR/storage-$carimbo.tar.gz.enc" 40 \
 # retencao: apaga o que passou de 30 dias, preservando os 7 mais recentes de cada tipo
 for padrao in 'gestao-*.sql.gz.enc' 'storage-*.tar.gz.enc'; do
   ls -1t "$BACKUP_DIR"/$padrao 2>/dev/null | tail -n +8 | while read -r f; do
-    [ -n "$(find "$f" -mtime +30 -print)" ] && rm -f -- "$f"
+    if [ -n "$(find "$f" -mtime +30 -print)" ]; then rm -f -- "$f"; fi
   done
 done
 echo "Backup ok: $carimbo"
