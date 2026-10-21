@@ -54,6 +54,15 @@ public class ConfiguracaoService {
 		return propriedade != null && !propriedade.isBlank() ? propriedade : padrao;
 	}
 
+	/** Chave interna (interruptor), fora do catalogo da tela de configuracao. */
+	@Transactional
+	public void definirInterna(Long atorId, String chave, String valor) {
+		jdbc.update("insert into configuracao (chave, valor, atualizado_em, atualizado_por) values (?, ?, now(), ?) "
+				+ "on conflict (chave) do update set valor = excluded.valor, atualizado_em = now(), atualizado_por = excluded.atualizado_por",
+				chave, valor, atorId);
+		auditoria.registrar(atorId, "CONFIGURACAO_ALTERADA", "configuracao", chave, "valor=" + valor);
+	}
+
 	@Transactional(readOnly = true)
 	public Map<String, String> todas() {
 		Map<String, String> saida = new LinkedHashMap<>();

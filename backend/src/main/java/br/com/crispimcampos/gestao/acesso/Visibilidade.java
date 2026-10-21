@@ -30,7 +30,7 @@ public class Visibilidade {
 	public Set<Long> titularesVisiveis(UsuarioLogado usuario, Escopo escopo) {
 		if (usuario.mestre()) {
 			// o acesso mestre le tudo, de todos, sem depender da matriz
-			return usuarios.listar().stream().map(UsuarioDto::id).collect(Collectors.toCollection(HashSet::new));
+			return usuarios.listarComMestre().stream().map(UsuarioDto::id).collect(Collectors.toCollection(HashSet::new));
 		}
 		List<ParVisibilidade> pares = regras.findByObservadorId(usuario.id()).stream()
 				.map(r -> new ParVisibilidade(r.getObservadorId(), r.getTitularId(), r.getEscopo())).toList();

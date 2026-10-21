@@ -42,25 +42,36 @@ public class PipelineCaptura {
 		this.jdbc = jdbc;
 	}
 
-	@Transactional
 	public Resultado processar(Long titularId, List<DadosBrutos> itens) {
+		return processar(titularId, null, itens);
+	}
+
+	/** {@code oab}: a inscricao que originou a busca (null quando a fonte nao e por OAB); filtros de uma OAB so valem para ela. */
+	@Transactional
+	public Resultado processar(Long titularId, OabMonitorada oab, List<DadosBrutos> itens) {
 		Resultado total = Resultado.vazio();
 		for (DadosBrutos d : itens) {
-			total = Resultado.soma(total, um(titularId, d));
+			total = Resultado.soma(total, um(titularId, oab, d));
 		}
 		return total;
 	}
 
-	private Resultado um(Long titularId, DadosBrutos d) {
+	private Resultado um(Long titularId, OabMonitorada oab, DadosBrutos d) {
 		if (brutas.existsByFonteAndIdExternoAndTitularId(d.fonte(), d.idExterno(), titularId)) {
 			return new Resultado(1, 1, 0, 0, 0);
 		}
 		PublicacaoBruta bruta = brutas.save(new PublicacaoBruta(titularId, d));
+		if (d.metadados() != null) {
+			jdbc.update("update publicacao_bruta set metadados = ? where id = ?", MetadadosJson.escrever(d.metadados()), bruta.getId());
+		}
 		for (FiltroCaptura f : filtros.findByUsuarioIdAndFonteAndAtivoTrue(titularId, d.fonte())) {
-			if (Filtros.ignora(d.tribunal(), f.getTribunalPrefixo(), f.getExcecoes())) {
-				jdbc.update("insert into item_ignorado (bruta_id, regra, motivo) values (?, ?, ?)", bruta.getId(),
-						"FILTRO_" + f.getId(), "Tribunal " + d.tribunal() + " ignorado pelo filtro " + f.getTribunalPrefixo()
-								+ (f.getExcecoes() == null ? "" : " (exceto " + f.getExcecoes() + ")"));
+			if (f.getOabNumero() != null && (oab == null || !f.getOabNumero().equals(oab.numero()) || !f.getOabUf().equalsIgnoreCase(oab.uf()))) {
+				continue; // filtro de uma OAB especifica: nao vale para itens de outra
+			}
+			String motivo = motivoDeIgnorar(f, d);
+			if (motivo != null) {
+				jdbc.update("insert into item_ignorado (bruta_id, regra, motivo) values (?, ?, ?)", bruta.getId(), "FILTRO_" + f.getId(),
+						motivo.length() > 300 ? motivo.substring(0, 300) : motivo);
 				return new Resultado(1, 0, 1, 0, 0);
 			}
 		}
@@ -72,6 +83,21 @@ public class PipelineCaptura {
 		jdbc.update("insert into publicacao_fonte (publicacao_id, fonte, bruta_id) values (?, ?, ?) on conflict do nothing",
 				p.getId(), d.fonte().name(), bruta.getId());
 		return new Resultado(1, 0, 0, nova ? 1 : 0, nova ? 0 : 1);
+	}
+
+	private static String motivoDeIgnorar(FiltroCaptura f, DadosBrutos d) {
+		String daOab = f.getOabNumero() == null ? "" : " [OAB " + f.getOabNumero() + "/" + f.getOabUf() + "]";
+		if ("SO_UF".equals(f.getModo())) {
+			if (Filtros.ignoraForaDasUfs(f.getUfs(), d.numeroProcesso(), d.tribunal())) {
+				return "Processo de fora de " + f.getUfs() + " (tribunal " + d.tribunal() + ")" + daOab;
+			}
+			return null;
+		}
+		if (Filtros.ignora(d.tribunal(), f.getTribunalPrefixo(), f.getExcecoes())) {
+			return "Tribunal " + d.tribunal() + " ignorado pelo filtro " + f.getTribunalPrefixo()
+					+ (f.getExcecoes() == null ? "" : " (exceto " + f.getExcecoes() + ")") + daOab;
+		}
+		return null;
 	}
 
 	/** Numero CNJ normalizado; sem numero valido usa o hash do conteudo, para nao misturar publicacoes distintas. */

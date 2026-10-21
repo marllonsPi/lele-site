@@ -29,11 +29,13 @@ class GoogleApi {
 	private final String revogarUrl;
 	private final String userinfoUrl;
 	private final String gmailUrl;
+	private final String driveUrl;
 
 	GoogleApi(@Value("${app.google.token-url:https://oauth2.googleapis.com/token}") String tokenUrl,
 			@Value("${app.google.revoke-url:https://oauth2.googleapis.com/revoke}") String revogarUrl,
 			@Value("${app.google.userinfo-url:https://openidconnect.googleapis.com/v1/userinfo}") String userinfoUrl,
-			@Value("${app.google.gmail-url:https://gmail.googleapis.com}") String gmailUrl) {
+			@Value("${app.google.gmail-url:https://gmail.googleapis.com}") String gmailUrl,
+			@Value("${app.google.drive-url:https://www.googleapis.com}") String driveUrl) {
 		JdkClientHttpRequestFactory fabrica = new JdkClientHttpRequestFactory(
 				HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build());
 		fabrica.setReadTimeout(Duration.ofSeconds(30));
@@ -42,6 +44,7 @@ class GoogleApi {
 		this.revogarUrl = revogarUrl;
 		this.userinfoUrl = userinfoUrl;
 		this.gmailUrl = gmailUrl;
+		this.driveUrl = driveUrl;
 	}
 
 	Tokens trocarCodigo(String clientId, String segredo, String redirect, String code, String verifier) {
@@ -129,5 +132,109 @@ class GoogleApi {
 			}
 		}
 		return saida;
+	}
+
+	// ---- Drive
+
+	/** Item de pasta do Drive. {@code pasta}: e uma pasta (mimeType application/vnd.google-apps.folder). */
+	record ItemDrive(String id, String nome, String mime, java.time.Instant modificadoEm, long tamanho, boolean pasta) {
+	}
+
+	List<ItemDrive> filhos(String acesso, String pastaId) {
+		List<ItemDrive> saida = new ArrayList<>();
+		String pagina = null;
+		do {
+			final String pt = pagina;
+			String q = "'" + pastaId.replaceAll("[^A-Za-z0-9_-]", "") + "' in parents and trashed = false";
+			Map<String, Object> r = http.get().uri(driveUrl + "/drive/v3/files?q={q}&pageSize=200&fields={f}&supportsAllDrives=true&includeItemsFromAllDrives=true"
+					+ (pt == null ? "" : "&pageToken={p}"), pt == null ? new Object[] { q, "nextPageToken,files(id,name,mimeType,modifiedTime,size)" }
+							: new Object[] { q, "nextPageToken,files(id,name,mimeType,modifiedTime,size)", pt })
+					.headers(h -> h.setBearerAuth(acesso)).retrieve().body(MAPA);
+			if (r == null) {
+				throw new ConexaoGoogleException("Resposta inesperada do Drive");
+			}
+			if (r.get("files") instanceof List<?> fs) {
+				for (Object o : fs) {
+					if (o instanceof Map<?, ?> m) {
+						String mime = String.valueOf(m.get("mimeType"));
+						saida.add(new ItemDrive(String.valueOf(m.get("id")), String.valueOf(m.get("name")), mime,
+								m.get("modifiedTime") == null ? null : java.time.Instant.parse(String.valueOf(m.get("modifiedTime"))),
+								m.get("size") == null ? 0 : Long.parseLong(String.valueOf(m.get("size"))), mime.equals("application/vnd.google-apps.folder")));
+					}
+				}
+			}
+			pagina = r.get("nextPageToken") == null ? null : String.valueOf(r.get("nextPageToken"));
+		} while (pagina != null);
+		return saida;
+	}
+
+	/** Conteudo binario de um arquivo (alt=media). */
+	byte[] baixar(String acesso, String arquivoId) {
+		return http.get().uri(driveUrl + "/drive/v3/files/{id}?alt=media&supportsAllDrives=true", arquivoId).headers(h -> h.setBearerAuth(acesso))
+				.retrieve().body(byte[].class);
+	}
+
+	/** Exporta um arquivo nativo do Google (Docs, Sheets) para o tipo pedido. */
+	byte[] exportar(String acesso, String arquivoId, String mimeDestino) {
+		return http.get().uri(driveUrl + "/drive/v3/files/{id}/export?mimeType={m}", arquivoId, mimeDestino).headers(h -> h.setBearerAuth(acesso))
+				.retrieve().body(byte[].class);
+	}
+
+	/** Pastas filhas de uma pasta (para achar pasta por nome sem criar duplicada). */
+	List<ItemDrive> pastasFilhas(String acesso, String paiId) {
+		return filhos(acesso, paiId).stream().filter(ItemDrive::pasta).toList();
+	}
+
+	/** Cria uma pasta dentro de {@code paiId}; devolve o id. */
+	String criarPasta(String acesso, String paiId, String nome) {
+		Map<String, Object> corpo = Map.of("name", nome, "mimeType", "application/vnd.google-apps.folder", "parents", List.of(paiId));
+		Map<String, Object> r = http.post().uri(driveUrl + "/drive/v3/files?supportsAllDrives=true&fields=id").headers(h -> h.setBearerAuth(acesso))
+				.contentType(MediaType.APPLICATION_JSON).body(corpo).retrieve().body(MAPA);
+		if (r == null || r.get("id") == null) {
+			throw new ConexaoGoogleException("O Drive nao confirmou a criacao da pasta");
+		}
+		return String.valueOf(r.get("id"));
+	}
+
+	/** Envia um arquivo (ate ~20 MB, upload multipart) para a pasta; devolve o id do arquivo. */
+	String enviarArquivo(String acesso, String paiId, String nome, String mime, byte[] conteudo) {
+		String limite = "crispim" + java.util.UUID.randomUUID().toString().replace("-", "");
+		String meta = "{\"name\":" + jsonTexto(nome) + ",\"parents\":[" + jsonTexto(paiId) + "]}";
+		String tipo = mime == null || mime.isBlank() ? "application/octet-stream" : mime;
+		var saida = new java.io.ByteArrayOutputStream();
+		byte[] cabecalho = ("--" + limite + "\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n" + meta + "\r\n--" + limite + "\r\nContent-Type: " + tipo + "\r\n\r\n")
+				.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+		saida.writeBytes(cabecalho);
+		saida.writeBytes(conteudo);
+		saida.writeBytes(("\r\n--" + limite + "--").getBytes(java.nio.charset.StandardCharsets.UTF_8));
+		Map<String, Object> r = http.post().uri(driveUrl + "/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true&fields=id")
+				.headers(h -> h.setBearerAuth(acesso)).contentType(MediaType.parseMediaType("multipart/related; boundary=" + limite))
+				.body(saida.toByteArray()).retrieve().body(MAPA);
+		if (r == null || r.get("id") == null) {
+			throw new ConexaoGoogleException("O Drive nao confirmou o envio do arquivo");
+		}
+		return String.valueOf(r.get("id"));
+	}
+
+	/** Texto JSON escapado (aspas, barras e controles), sem depender de biblioteca. */
+	static String jsonTexto(String v) {
+		StringBuilder b = new StringBuilder("\"");
+		for (char c : v.toCharArray()) {
+			switch (c) {
+				case '"' -> b.append("\\\"");
+				case '\\' -> b.append("\\\\");
+				case '\n' -> b.append("\\n");
+				case '\r' -> b.append("\\r");
+				case '\t' -> b.append("\\t");
+				default -> {
+					if (c < 0x20) {
+						b.append(String.format("\\u%04x", (int) c));
+					} else {
+						b.append(c);
+					}
+				}
+			}
+		}
+		return b.append('"').toString();
 	}
 }

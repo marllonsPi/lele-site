@@ -31,11 +31,14 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class GoogleContasService {
 
 	static final String ESCOPO_GMAIL = "https://www.googleapis.com/auth/gmail.readonly";
+	/** Drive completo: o sistema le as pastas dos clientes e GRAVA os anexos no Drive do escritorio (criar pastas e arquivos). */
+	static final String ESCOPO_DRIVE = "https://www.googleapis.com/auth/drive";
 	static final String ESCOPOS = "openid email " + ESCOPO_GMAIL;
 	private static final Logger log = LoggerFactory.getLogger(GoogleContasService.class);
 	private static final SecureRandom RANDOM = new SecureRandom();
 
-	public record Status(boolean disponivel, boolean conectado, String estado, String email, Instant desde) {
+	/** {@code drive}: a conexao inclui leitura do Drive (opt-in, usado na importacao de pastas de clientes e da planilha). */
+	public record Status(boolean disponivel, boolean conectado, String estado, String email, Instant desde, boolean drive) {
 	}
 
 	private record AcessoEmCache(String token, Instant expira) {
@@ -81,14 +84,21 @@ public class GoogleContasService {
 	}
 
 	public Status status(Long usuarioId) {
-		var linhas = jdbc.query("select estado, email_google, criada_em from conexao_google where usuario_id = ?",
-				(rs, n) -> new Status(disponivel(), true, rs.getString(1), rs.getString(2), rs.getTimestamp(3).toInstant()), usuarioId);
-		return linhas.isEmpty() ? new Status(disponivel(), false, null, null, null) : linhas.get(0);
+		var linhas = jdbc.query("select estado, email_google, criada_em, escopos from conexao_google where usuario_id = ?",
+				(rs, n) -> new Status(disponivel(), true, rs.getString(1), rs.getString(2), rs.getTimestamp(3).toInstant(),
+						temEscopo(rs.getString(4), ESCOPO_DRIVE)), usuarioId);
+		return linhas.isEmpty() ? new Status(disponivel(), false, null, null, null, false) : linhas.get(0);
 	}
 
 	/** Gera o estado e o desafio PKCE e devolve a URL de consentimento do Google. */
 	@Transactional
 	public String iniciar(Long usuarioId, String emailDica) {
+		return iniciar(usuarioId, emailDica, false);
+	}
+
+	/** Com {@code drive}, pede tambem o acesso ao Google Drive (ler as pastas e gravar os anexos). */
+	@Transactional
+	public String iniciar(Long usuarioId, String emailDica, boolean drive) {
 		exigirDisponivel();
 		jdbc.update("delete from oauth_estado where expira_em < ?", agora());
 		String state = aleatorio(32);
@@ -97,7 +107,7 @@ public class GoogleContasService {
 				sha256(state), usuarioId, cifra.cifrar(verifier, "oauth_estado:" + usuarioId), agora().plusMinutes(10));
 		return UriComponentsBuilder.fromUriString(authUrl)
 				.queryParam("client_id", clientId).queryParam("redirect_uri", redirect).queryParam("response_type", "code")
-				.queryParam("scope", ESCOPOS).queryParam("access_type", "offline").queryParam("prompt", "consent")
+				.queryParam("scope", drive ? ESCOPOS + " " + ESCOPO_DRIVE : ESCOPOS).queryParam("access_type", "offline").queryParam("prompt", "consent")
 				.queryParam("include_granted_scopes", "false").queryParam("state", state)
 				.queryParam("code_challenge", sha256Base64Url(verifier)).queryParam("code_challenge_method", "S256")
 				.queryParam("login_hint", emailDica)
@@ -134,7 +144,8 @@ public class GoogleContasService {
 				  escopos = excluded.escopos, estado = 'ATIVA', criada_em = now(), ultimo_uso_em = null
 				""", usuarioId, email, cifra.cifrar(t.refresh(), aad(usuarioId)), CifraToken.VERSAO_CHAVE, t.escopos());
 		cache.put(usuarioId, new AcessoEmCache(t.acesso(), relogio.instant().plusSeconds(Math.max(60, t.expiraEmSegundos() - 60))));
-		auditoria.registrar(usuarioId, "GOOGLE_CONECTAR", "conexao_google", String.valueOf(usuarioId), "escopo=gmail.readonly");
+		auditoria.registrar(usuarioId, "GOOGLE_CONECTAR", "conexao_google", String.valueOf(usuarioId),
+				temEscopo(t.escopos(), ESCOPO_DRIVE) ? "escopo=gmail.readonly+drive" : "escopo=gmail.readonly");
 	}
 
 	/** Desconexao pela propria pessoa: revoga no Google e apaga o token local, mesmo se a revogacao falhar. */
@@ -172,6 +183,22 @@ public class GoogleContasService {
 		List<MensagemGmail> r = api.mensagens(acesso, consulta, maximo);
 		jdbc.update("update conexao_google set ultimo_uso_em = now() where usuario_id = ?", usuarioId);
 		return r;
+	}
+
+	/** Escopos vem separados por espaco; compara inteiro (drive.readonly nao conta como drive). */
+	static boolean temEscopo(String escopos, String escopo) {
+		return escopos != null && java.util.Arrays.asList(escopos.split("\\s+")).contains(escopo);
+	}
+
+	/** Token para o Drive do proprio usuario; exige que a conexao tenha sido feita com o acesso ao Drive. */
+	String tokenDeAcessoDrive(Long usuarioId) {
+		var escopos = jdbc.queryForList("select escopos from conexao_google where usuario_id = ?", String.class, usuarioId);
+		if (escopos.isEmpty() || !temEscopo(escopos.get(0), ESCOPO_DRIVE)) {
+			throw new ConexaoGoogleException("A conta Google nao esta conectada com acesso ao Drive; reconecte autorizando o Drive");
+		}
+		String t = tokenDeAcesso(usuarioId);
+		jdbc.update("update conexao_google set ultimo_uso_em = now() where usuario_id = ?", usuarioId);
+		return t;
 	}
 
 	String tokenDeAcesso(Long usuarioId) {

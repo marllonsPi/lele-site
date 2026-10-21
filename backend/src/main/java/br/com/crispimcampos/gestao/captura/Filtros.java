@@ -23,4 +23,12 @@ final class Filtros {
 		return excecoes == null || Arrays.stream(excecoes.split(",")).map(Filtros::normalizar).filter(s -> !s.isEmpty())
 				.noneMatch(t::equals);
 	}
+
+	/** Modo "so trazer": ignora apenas quando a UF e identificavel e nenhuma esta na lista (ex.: "GO,DF"). */
+	static boolean ignoraForaDasUfs(String ufsPermitidas, String numeroProcesso, String tribunal) {
+		java.util.Set<String> permitidas = Arrays.stream(ufsPermitidas == null ? new String[0] : ufsPermitidas.split(","))
+				.map(u -> u.trim().toUpperCase(Locale.ROOT)).filter(u -> !u.isEmpty()).collect(java.util.stream.Collectors.toSet());
+		java.util.Set<String> doProcesso = UfTribunal.ufs(numeroProcesso, tribunal);
+		return !permitidas.isEmpty() && !doProcesso.isEmpty() && doProcesso.stream().noneMatch(permitidas::contains);
+	}
 }

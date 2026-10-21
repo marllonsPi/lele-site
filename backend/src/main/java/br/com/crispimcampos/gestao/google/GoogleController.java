@@ -31,11 +31,11 @@ class GoogleController {
 	}
 
 	@PostMapping("/api/google/conectar")
-	Map<String, String> conectar(@AuthenticationPrincipal UsuarioLogado eu) {
-		return Map.of("url", contas.iniciar(eu.id(), eu.email()));
+	Map<String, String> conectar(@AuthenticationPrincipal UsuarioLogado eu, @RequestParam(defaultValue = "false") boolean drive) {
+		return Map.of("url", contas.iniciar(eu.id(), eu.email(), drive));
 	}
 
-	/** URI registrada no Google. Volta para a tela de configuracoes com o resultado. */
+	/** URI registrada no Google. Volta para a tela do Drive do escritorio com o resultado. */
 	@GetMapping("/api/google/callback")
 	ResponseEntity<Void> callback(@AuthenticationPrincipal UsuarioLogado eu, @RequestParam(required = false) String code,
 			@RequestParam(required = false) String state, @RequestParam(required = false) String error) {
@@ -49,7 +49,7 @@ class GoogleController {
 				resultado = "erro";
 			}
 		}
-		return ResponseEntity.status(HttpStatus.FOUND).header(HttpHeaders.LOCATION, URI.create("/configuracoes?google=" + resultado).toString()).build();
+		return ResponseEntity.status(HttpStatus.FOUND).header(HttpHeaders.LOCATION, URI.create("/app/drive?google=" + resultado).toString()).build();
 	}
 
 	@DeleteMapping("/api/google")

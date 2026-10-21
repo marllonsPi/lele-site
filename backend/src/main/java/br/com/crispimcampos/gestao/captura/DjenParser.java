@@ -55,7 +55,27 @@ final class DjenParser {
 		}
 		String hash = texto(m.get("hash"));
 		return new DadosBrutos(Fonte.DJEN, String.valueOf(id), texto(m.get("numero_processo")), texto(m.get("siglaTribunal")),
-				dia, conteudo, hash != null ? hash : Hashes.sha256(conteudo));
+				dia, conteudo, hash != null ? hash : Hashes.sha256(conteudo), metadados(m));
+	}
+
+	private static MetadadosDjen metadados(Map<String, Object> m) {
+		List<MetadadosDjen.Parte> partes = new ArrayList<>();
+		if (m.get("destinatarios") instanceof List<?> l) {
+			for (Object o : l) {
+				if (o instanceof Map<?, ?> d && texto(d.get("nome")) != null) {
+					String polo = texto(d.get("polo"));
+					partes.add(new MetadadosDjen.Parte(limitar(texto(d.get("nome")), 200),
+							"A".equalsIgnoreCase(polo) ? "ATIVO" : "P".equalsIgnoreCase(polo) ? "PASSIVO" : null));
+				}
+			}
+		}
+		MetadadosDjen md = new MetadadosDjen(limitar(texto(m.get("nomeClasse")), 200), limitar(texto(m.get("nomeOrgao")), 200),
+				limitar(texto(m.get("tipoComunicacao")), 100), limitar(texto(m.get("link")), 500), partes);
+		return md.vazio() ? null : md;
+	}
+
+	private static String limitar(String t, int max) {
+		return t == null ? null : t.length() <= max ? t : t.substring(0, max);
 	}
 
 	private static String texto(Object o) {

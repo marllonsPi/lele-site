@@ -5,6 +5,8 @@ import br.com.crispimcampos.gestao.agenda.AgendaService;
 import br.com.crispimcampos.gestao.agenda.ConclusaoService;
 import br.com.crispimcampos.gestao.agenda.StatusAgendamento;
 import br.com.crispimcampos.gestao.agenda.TipoAgendamento;
+import br.com.crispimcampos.gestao.cadastros.AreaAtuacao;
+import br.com.crispimcampos.gestao.cadastros.CadastroService;
 import br.com.crispimcampos.gestao.captura.PublicacaoService;
 import br.com.crispimcampos.gestao.contas.Perfil;
 import br.com.crispimcampos.gestao.contas.UsuarioLogado;
@@ -27,25 +29,44 @@ public class PainelService {
 	private final AgendaService agenda;
 	private final ConclusaoService conclusao;
 	private final PublicacaoService publicacoes;
+	private final CadastroService cadastros;
 	private final Clock relogio;
 
-	PainelService(AgendaService agenda, ConclusaoService conclusao, PublicacaoService publicacoes, Clock relogio) {
+	PainelService(AgendaService agenda, ConclusaoService conclusao, PublicacaoService publicacoes, CadastroService cadastros,
+			Clock relogio) {
 		this.agenda = agenda;
 		this.conclusao = conclusao;
 		this.publicacoes = publicacoes;
+		this.cadastros = cadastros;
 		this.relogio = relogio;
 	}
 
 	@Transactional(readOnly = true)
 	public PainelDto painel(UsuarioLogado ator) {
+		return painel(ator, null);
+	}
+
+	/** {@code area} opcional: so itens de processos (ou, sem processo, de clientes) dessa area. */
+	@Transactional(readOnly = true)
+	public PainelDto painel(UsuarioLogado ator, AreaAtuacao area) {
 		if (ator.perfil() != Perfil.SOCIA) {
 			throw new AcessoNegadoException("O painel e exclusivo das socias");
 		}
 		LocalDate hoje = LocalDate.now(relogio);
-		List<AgendaItemDto> abertos = agenda.todosAbertos(ator);
-		return montar(abertos, conclusao.pendentesDeConferencia(ator).stream()
-				.filter(i -> i.status() == StatusAgendamento.EM_CONFERENCIA_SOCIA).toList(), hoje,
+		List<AgendaItemDto> abertos = filtrarPorArea(agenda.todosAbertos(ator), area);
+		return montar(abertos, filtrarPorArea(conclusao.pendentesDeConferencia(ator).stream()
+				.filter(i -> i.status() == StatusAgendamento.EM_CONFERENCIA_SOCIA).toList(), area), hoje,
 				publicacoes.contarAClassificar(ator));
+	}
+
+	private List<AgendaItemDto> filtrarPorArea(List<AgendaItemDto> itens, AreaAtuacao area) {
+		if (area == null) {
+			return itens;
+		}
+		Map<Long, AreaAtuacao> dosProcessos = cadastros.areasDosProcessos(
+				itens.stream().map(AgendaItemDto::processoId).filter(java.util.Objects::nonNull).distinct().toList());
+		return itens.stream().filter(i -> i.processoId() != null ? dosProcessos.get(i.processoId()) == area
+				: i.clienteId() != null && cadastros.areasDoCliente(i.clienteId()).contains(area)).toList();
 	}
 
 	/** Calculo puro, testavel sem banco. */

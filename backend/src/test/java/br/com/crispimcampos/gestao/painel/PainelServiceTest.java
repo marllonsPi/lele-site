@@ -51,7 +51,8 @@ class PainelServiceTest {
 	@Test
 	void painelEExclusivoDasSocias() {
 		var servico = new PainelService(mock(AgendaService.class), mock(ConclusaoService.class),
-				mock(br.com.crispimcampos.gestao.captura.PublicacaoService.class), Clock.systemDefaultZone());
+				mock(br.com.crispimcampos.gestao.captura.PublicacaoService.class),
+				mock(br.com.crispimcampos.gestao.cadastros.CadastroService.class), Clock.systemDefaultZone());
 		var luana = new UsuarioLogado(5L, "L", "l@exemplo.test", "x", Perfil.ASSISTENTE, true);
 		assertThatThrownBy(() -> servico.painel(luana)).isInstanceOf(RuntimeException.class);
 	}

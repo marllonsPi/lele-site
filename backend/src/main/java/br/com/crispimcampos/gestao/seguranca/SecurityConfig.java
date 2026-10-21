@@ -66,9 +66,11 @@ public class SecurityConfig {
 				// A SPA devolve o valor bruto do cookie no cabecalho; o handler padrao (Xor) exigiria o token mascarado.
 				.csrf(csrf -> csrf
 						.csrfTokenRepository(csrfTokenRepository)
-						.csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
+						.csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+						// formulario do site e link de moderacao: sem sessao, protegidos por limite, isca e token
+						.ignoringRequestMatchers("/api/public/**"))
 				.authorizeHttpRequests(a -> a
-						.requestMatchers("/actuator/health/**", "/api/csrf").permitAll()
+						.requestMatchers("/actuator/health/**", "/api/csrf", "/api/public/**").permitAll()
 						.anyRequest().authenticated())
 				.formLogin(f -> f
 						.loginProcessingUrl("/api/login")

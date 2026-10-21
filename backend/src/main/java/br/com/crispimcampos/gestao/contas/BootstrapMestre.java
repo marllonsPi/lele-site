@@ -74,7 +74,6 @@ class BootstrapMestre implements ApplicationRunner {
 		mestre.atualizarPerfilProfissional(new DadosProfissionais(null, null, "Administrador do sistema", null, false, null));
 		mestre = usuarios.save(mestre);
 		auditoria.registrar(null, "BOOTSTRAP_MESTRE", "usuario", String.valueOf(mestre.getId()), "criado");
-		eventos.publishEvent(new UsuarioCriado(mestre.getId(), Perfil.SOCIA));
 		log.info("Acesso mestre criado (id={})", mestre.getId());
 	}
 }

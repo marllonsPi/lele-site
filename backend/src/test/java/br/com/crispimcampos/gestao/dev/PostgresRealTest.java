@@ -104,7 +104,7 @@ class PostgresRealTest {
 	@Test
 	void migracoesAplicadasEMapeamentoValido() {
 		Integer aplicadas = jdbc.queryForObject("select count(*) from flyway_schema_history where success", Integer.class);
-		assertThat(aplicadas).isEqualTo(18);
+		assertThat(aplicadas).isEqualTo(26);
 	}
 
 	@Test
@@ -193,7 +193,7 @@ class PostgresRealTest {
 			} else {
 				assertThatThrownBy(() -> financeiro.resumoDoCliente(u, maria)).isInstanceOf(SecurityException.class);
 				assertThatThrownBy(() -> financeiro.contratos(u, maria)).isInstanceOf(SecurityException.class);
-				assertThatThrownBy(() -> financeiro.criarContrato(u, maria, null, "x", java.math.BigDecimal.TEN, 1, LocalDate.now())).isInstanceOf(SecurityException.class);
+				assertThatThrownBy(() -> financeiro.criarContrato(u, maria, null, "x", java.math.BigDecimal.TEN, 1, LocalDate.now(), br.com.crispimcampos.gestao.cadastros.AreaAtuacao.CIVEL)).isInstanceOf(SecurityException.class);
 			}
 		}
 	}
@@ -504,9 +504,9 @@ class PostgresRealTest {
 	@org.junit.jupiter.api.Order(Integer.MAX_VALUE)
 	void lgpdExportaEAnonimizaSoSemProcessoAtivo() {
 		UsuarioLogado socia = como("Socia A");
-		var cliente = cadastros.criarCliente(socia.id(), "Ana Ficticia LGPD", "390.533.447-05", "ana@exemplo.test", "(61) 90000-9999", "Rua Teste 9", "obs privada");
+		var cliente = cadastros.criarCliente(socia.id(), "Ana Ficticia LGPD", "390.533.447-05", "ana@exemplo.test", "(61) 90000-9999", "Rua Teste 9", "obs privada", java.util.Set.of(br.com.crispimcampos.gestao.cadastros.AreaAtuacao.CIVEL));
 		var processo = cadastros.criarProcesso(socia.id(), "0000007" + br.com.crispimcampos.gestao.cadastros.NumeroCnj.calcularDv("0000007", "20258070001") + "20258070001",
-				"TJDFT", "Vara", "Classe", "Ativo", null, cliente.id(), como("Advogada C").id());
+				"TJDFT", "Vara", "Classe", "Ativo", null, cliente.id(), como("Advogada C").id(), br.com.crispimcampos.gestao.cadastros.AreaAtuacao.CIVEL);
 		atendimentos.registrarAvulso(socia, cliente.id(), processo.id(), "TELEFONE", null, "Conversa com dado sensivel da Ana.", null);
 
 		var export = lgpd.exportar(socia, cliente.id());

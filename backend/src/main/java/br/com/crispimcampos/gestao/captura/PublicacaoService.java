@@ -71,7 +71,32 @@ public class PublicacaoService {
 		Publicacao p = visivel(u, id);
 		String conteudo = jdbc.query("select b.conteudo from publicacao_fonte f join publicacao_bruta b on b.id = f.bruta_id "
 				+ "where f.publicacao_id = ? order by b.id limit 1", rs -> rs.next() ? rs.getString(1) : null, id);
-		return PublicacaoDto.de(p, fontesDe(List.of(id)).getOrDefault(id, List.of()), conteudo);
+		String json = jdbc.query("select b.metadados from publicacao_fonte f join publicacao_bruta b on b.id = f.bruta_id "
+				+ "where f.publicacao_id = ? and b.metadados is not null order by b.id limit 1", rs -> rs.next() ? rs.getString(1) : null, id);
+		return PublicacaoDto.de(p, fontesDe(List.of(id)).getOrDefault(id, List.of()), conteudo, MetadadosJson.ler(json));
+	}
+
+	/**
+	 * Cadastra processo (e cliente, se ainda nao existir) a partir do que a fonte informou e vincula a publicacao.
+	 * As demais partes entram como parte contraria; a socia so escolhe quem e o cliente.
+	 */
+	@Transactional
+	public PublicacaoDto cadastrarProcesso(UsuarioLogado u, Long id, Long clienteId, String nomeCliente) {
+		Publicacao p = daSocia(u, id);
+		if (p.getProcessoId() != null) {
+			throw new IllegalArgumentException("A publicacao ja esta vinculada a um processo");
+		}
+		MetadadosDjen md = buscar(u, id).metadados();
+		List<String> contrarias = new ArrayList<>();
+		if (md != null) {
+			md.partes().stream().map(MetadadosDjen.Parte::nome).filter(n -> nomeCliente == null || !n.equalsIgnoreCase(nomeCliente.trim()))
+					.distinct().forEach(contrarias::add);
+		}
+		var processo = cadastros.cadastrarProcessoDePublicacao(u.id(), p.getNumeroProcesso(), p.getTribunal(),
+				md == null ? null : md.orgao(), md == null ? null : md.classe(), clienteId, nomeCliente, p.getTitularId(), contrarias);
+		p.vincularProcesso(processo.id());
+		auditoria.registrar(u.id(), "PROCESSO_CADASTRADO_DE_PUBLICACAO", "publicacao", String.valueOf(id), null);
+		return buscar(u, id);
 	}
 
 	@Transactional

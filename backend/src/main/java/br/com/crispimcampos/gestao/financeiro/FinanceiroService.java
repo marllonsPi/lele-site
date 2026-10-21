@@ -1,6 +1,7 @@
 package br.com.crispimcampos.gestao.financeiro;
 
 import br.com.crispimcampos.gestao.auditoria.AuditoriaService;
+import br.com.crispimcampos.gestao.cadastros.AreaAtuacao;
 import br.com.crispimcampos.gestao.contas.Perfil;
 import br.com.crispimcampos.gestao.contas.UsuarioLogado;
 import java.math.BigDecimal;
@@ -39,13 +40,16 @@ public class FinanceiroService {
 
 	@Transactional
 	public Long criarContrato(UsuarioLogado ator, Long clienteId, Long processoId, String descricao, BigDecimal valorTotal,
-			int parcelas, LocalDate primeiroVencimento) {
+			int parcelas, LocalDate primeiroVencimento, AreaAtuacao area) {
 		exigirSocia(ator);
+		if (area == null) {
+			throw new IllegalArgumentException("Informe a area de atuacao do contrato");
+		}
 		existeCliente(clienteId);
 		verificarProcesso(clienteId, processoId);
 		var previstas = Parcelamento.dividir(valorTotal, parcelas, primeiroVencimento);
-		Long id = jdbc.queryForObject("insert into contrato_honorarios (cliente_id, processo_id, descricao, valor_total) values (?, ?, ?, ?) returning id",
-				Long.class, clienteId, processoId, descricao.trim(), valorTotal);
+		Long id = jdbc.queryForObject("insert into contrato_honorarios (cliente_id, processo_id, descricao, valor_total, area) values (?, ?, ?, ?, ?) returning id",
+				Long.class, clienteId, processoId, descricao.trim(), valorTotal, area.name());
 		for (var p : previstas) {
 			jdbc.update("insert into parcela (contrato_id, numero, vencimento, valor) values (?, ?, ?, ?)", id, p.numero(),
 					java.sql.Date.valueOf(p.vencimento()), p.valor());
@@ -56,12 +60,20 @@ public class FinanceiroService {
 
 	@Transactional
 	public void pagarParcela(UsuarioLogado ator, Long parcelaId, LocalDate data, BigDecimal valorPago) {
+		pagarParcela(ator, parcelaId, data, valorPago, null);
+	}
+
+	/** Registra o pagamento (integral) com a data e, opcionalmente, a forma (PIX, DEBITO, DINHEIRO...). */
+	@Transactional
+	public void pagarParcela(UsuarioLogado ator, Long parcelaId, LocalDate data, BigDecimal valorPago, String forma) {
 		exigirSocia(ator);
 		if (valorPago == null || valorPago.signum() <= 0) {
 			throw new IllegalArgumentException("Informe o valor pago");
 		}
-		int n = jdbc.update("update parcela set pago_em = ?, valor_pago = ? where id = ? and pago_em is null",
-				java.sql.Date.valueOf(data == null ? LocalDate.now(relogio) : data), valorPago, parcelaId);
+		int n = jdbc.update("update parcela set pago_em = ?, valor_pago = ?, situacao = 'PAGA', forma_pagamento = ? "
+				+ "where id = ? and situacao in ('ABERTA', 'PARCIAL')",
+				java.sql.Date.valueOf(data == null ? LocalDate.now(relogio) : data), valorPago,
+				forma == null || forma.isBlank() ? null : forma.trim(), parcelaId);
 		if (n == 0) {
 			throw new IllegalArgumentException("Parcela inexistente ou ja paga");
 		}
@@ -72,15 +84,16 @@ public class FinanceiroService {
 	@Transactional(readOnly = true)
 	public List<Map<String, Object>> parcelas(UsuarioLogado ator, Long contratoId) {
 		exigirSocia(ator);
-		return jdbc.queryForList("select id, numero, vencimento, valor, pago_em, valor_pago, "
-				+ "case when pago_em is not null then 'PAGA' when vencimento < ? then 'EM_ATRASO' else 'A_VENCER' end as situacao "
+		return jdbc.queryForList("select id, numero, vencimento, valor, pago_em, valor_pago, forma_pagamento, rotulo, "
+				+ "case when situacao = 'PAGA' then 'PAGA' when situacao = 'CANCELADA' then 'CANCELADA' "
+				+ "when vencimento < ? then 'EM_ATRASO' else 'A_VENCER' end as situacao "
 				+ "from parcela where contrato_id = ? order by numero", java.sql.Date.valueOf(LocalDate.now(relogio)), contratoId);
 	}
 
 	@Transactional(readOnly = true)
 	public List<Map<String, Object>> contratos(UsuarioLogado ator, Long clienteId) {
 		exigirSocia(ator);
-		return jdbc.queryForList("select id, cliente_id, processo_id, descricao, valor_total, ativo from contrato_honorarios where cliente_id = ? order by id", clienteId);
+		return jdbc.queryForList("select id, cliente_id, processo_id, descricao, valor_total, area, ativo from contrato_honorarios where cliente_id = ? order by id", clienteId);
 	}
 
 	// ---- despesas e honorarios variaveis
@@ -156,11 +169,11 @@ public class FinanceiroService {
 	private ResumoFinanceiro resumo(String fc, String fd, String fh, Long id) {
 		java.sql.Date hoje = java.sql.Date.valueOf(LocalDate.now(relogio));
 		BigDecimal contratado = soma("select coalesce(sum(c.valor_total), 0) from contrato_honorarios c where c.ativo and " + fc, id);
-		BigDecimal pagas = soma("select coalesce(sum(p.valor_pago), 0) from parcela p join contrato_honorarios c on c.id = p.contrato_id where c.ativo and p.pago_em is not null and " + fc, id);
-		BigDecimal aVencer = jdbc.queryForObject("select coalesce(sum(p.valor), 0) from parcela p join contrato_honorarios c on c.id = p.contrato_id "
-				+ "where c.ativo and p.pago_em is null and p.vencimento >= ? and " + fc, BigDecimal.class, hoje, id);
-		var atraso = jdbc.queryForMap("select coalesce(sum(p.valor), 0) as total, count(*) as qtd from parcela p join contrato_honorarios c on c.id = p.contrato_id "
-				+ "where c.ativo and p.pago_em is null and p.vencimento < ? and " + fc, hoje, id);
+		BigDecimal pagas = soma("select coalesce(sum(p.valor_pago), 0) from parcela p join contrato_honorarios c on c.id = p.contrato_id where c.ativo and p.situacao in ('PAGA', 'PARCIAL') and " + fc, id);
+		BigDecimal aVencer = jdbc.queryForObject("select coalesce(sum(p.valor - coalesce(p.valor_pago, 0)), 0) from parcela p join contrato_honorarios c on c.id = p.contrato_id "
+				+ "where c.ativo and p.situacao in ('ABERTA', 'PARCIAL') and p.vencimento >= ? and " + fc, BigDecimal.class, hoje, id);
+		var atraso = jdbc.queryForMap("select coalesce(sum(p.valor - coalesce(p.valor_pago, 0)), 0) as total, count(*) as qtd from parcela p join contrato_honorarios c on c.id = p.contrato_id "
+				+ "where c.ativo and p.situacao in ('ABERTA', 'PARCIAL') and p.vencimento < ? and " + fc, hoje, id);
 		BigDecimal despesas = soma("select coalesce(sum(d.valor), 0) from despesa d where " + fd, id);
 		BigDecimal reembolsavel = soma("select coalesce(sum(d.valor), 0) from despesa d where d.reembolsavel and " + fd, id);
 		return new ResumoFinanceiro(contratado, pagas, aVencer, (BigDecimal) atraso.get("total"), ((Number) atraso.get("qtd")).longValue(),

@@ -121,4 +121,11 @@ class AcessoMestreTest {
 		servico.trocarMinhaSenha(SOCIA, "senha-atual-123", "nova-senha-1234");
 		assertThat(new BCryptPasswordEncoder(4).matches("nova-senha-1234", socia.getSenhaHash())).isTrue();
 	}
+
+	@Test
+	void contaMestreNaoApareceNaEquipeMasApareceNaAdministracao() {
+		when(usuarios.findAll()).thenReturn(List.of(mestre, socia, outroMestre));
+		assertThat(servico.listar()).extracting(UsuarioDto::id).containsExactly(SOCIA);
+		assertThat(servico.listarComMestre()).extracting(UsuarioDto::id).containsExactlyInAnyOrder(MESTRE, SOCIA, OUTRO_MESTRE);
+	}
 }

@@ -65,3 +65,10 @@ app.google:
   redirect-uri: ${GOOGLE_REDIRECT_URI:}
   token-key: ${GOOGLE_TOKEN_KEY:}
   gmail.query: ${GOOGLE_GMAIL_QUERY:from:jus.br}
+
+# Importacao da planilha financeira e das pastas de clientes do Google Drive (somente leitura; exige conta Google conectada com acesso ao Drive).
+app.importacao:
+  pasta-clientes-id: ${IMPORTACAO_PASTA_CLIENTES_ID:}
+  planilha-id: ${IMPORTACAO_PLANILHA_ID:}
+  sincronizacao-diaria: ${IMPORTACAO_SINCRONIZACAO_DIARIA:false}
+  conta-usuario-id: ${IMPORTACAO_CONTA_USUARIO_ID:0}

@@ -1,5 +1,6 @@
 package br.com.crispimcampos.gestao.financeiro;
 
+import br.com.crispimcampos.gestao.cadastros.AreaAtuacao;
 import br.com.crispimcampos.gestao.contas.UsuarioLogado;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -29,10 +30,10 @@ import org.springframework.web.bind.annotation.RestController;
 class FinanceiroController {
 
 	record NovoContrato(@NotNull Long clienteId, Long processoId, @NotBlank String descricao, @NotNull BigDecimal valorTotal,
-			@Min(1) @Max(120) int parcelas, @NotNull LocalDate primeiroVencimento) {
+			@Min(1) @Max(120) int parcelas, @NotNull LocalDate primeiroVencimento, @NotNull AreaAtuacao area) {
 	}
 
-	record Pagamento(LocalDate data, @NotNull BigDecimal valor) {
+	record Pagamento(LocalDate data, @NotNull BigDecimal valor, String forma) {
 	}
 
 	record NovaDespesa(@NotNull Long clienteId, Long processoId, @NotBlank String tipo, @NotBlank String descricao,
@@ -44,15 +45,22 @@ class FinanceiroController {
 	}
 
 	private final FinanceiroService servico;
+	private final PainelFinanceiroService painel;
 
-	FinanceiroController(FinanceiroService servico) {
+	FinanceiroController(FinanceiroService servico, PainelFinanceiroService painel) {
 		this.servico = servico;
+		this.painel = painel;
+	}
+
+	@GetMapping("/api/financeiro/painel")
+	PainelFinanceiro painel(@AuthenticationPrincipal UsuarioLogado u, @RequestParam(required = false) AreaAtuacao area) {
+		return painel.painel(u, area);
 	}
 
 	@PostMapping("/api/financeiro/contratos")
 	@ResponseStatus(HttpStatus.CREATED)
 	Map<String, Long> contrato(@AuthenticationPrincipal UsuarioLogado u, @Valid @RequestBody NovoContrato d) {
-		return Map.of("id", servico.criarContrato(u, d.clienteId(), d.processoId(), d.descricao(), d.valorTotal(), d.parcelas(), d.primeiroVencimento()));
+		return Map.of("id", servico.criarContrato(u, d.clienteId(), d.processoId(), d.descricao(), d.valorTotal(), d.parcelas(), d.primeiroVencimento(), d.area()));
 	}
 
 	@GetMapping("/api/financeiro/contratos")
@@ -68,7 +76,7 @@ class FinanceiroController {
 	@PostMapping("/api/financeiro/parcelas/{id}/pagar")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	void pagar(@AuthenticationPrincipal UsuarioLogado u, @PathVariable Long id, @Valid @RequestBody Pagamento p) {
-		servico.pagarParcela(u, id, p.data(), p.valor());
+		servico.pagarParcela(u, id, p.data(), p.valor(), p.forma());
 	}
 
 	@PostMapping("/api/financeiro/despesas")

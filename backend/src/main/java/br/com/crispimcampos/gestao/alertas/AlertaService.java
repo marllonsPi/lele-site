@@ -7,6 +7,7 @@ import br.com.crispimcampos.gestao.contas.Perfil;
 import br.com.crispimcampos.gestao.contas.UsuarioDto;
 import br.com.crispimcampos.gestao.contas.UsuarioLogado;
 import br.com.crispimcampos.gestao.contas.UsuarioService;
+import br.com.crispimcampos.gestao.financeiro.PainelFinanceiroService;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -38,16 +39,18 @@ public class AlertaService {
 	private final AgendaService agenda;
 	private final UsuarioService usuarios;
 	private final CadastroService cadastros;
+	private final PainelFinanceiroService financeiro;
 	private final AuditoriaService auditoria;
 	private final JdbcTemplate jdbc;
 	private final Optional<EnviadorEmail> email;
 	private final Clock relogio;
 
-	AlertaService(AgendaService agenda, UsuarioService usuarios, CadastroService cadastros, AuditoriaService auditoria,
-			JdbcTemplate jdbc, List<EnviadorEmail> enviadores, Clock relogio) {
+	AlertaService(AgendaService agenda, UsuarioService usuarios, CadastroService cadastros, PainelFinanceiroService financeiro,
+			AuditoriaService auditoria, JdbcTemplate jdbc, List<EnviadorEmail> enviadores, Clock relogio) {
 		this.agenda = agenda;
 		this.usuarios = usuarios;
 		this.cadastros = cadastros;
+		this.financeiro = financeiro;
 		this.auditoria = auditoria;
 		this.jdbc = jdbc;
 		this.email = enviadores.stream().findFirst();
@@ -59,8 +62,16 @@ public class AlertaService {
 		List<UsuarioDto> ativos = usuarios.listar().stream().filter(UsuarioDto::ativo).toList();
 		Set<Long> socias = ativos.stream().filter(u -> u.perfil() == Perfil.SOCIA).map(UsuarioDto::id).collect(Collectors.toSet());
 		Map<Long, String> numeros = new HashMap<>();
-		List<NovaNotificacao> novas = GeradorAlertas.gerar(agenda.abertosParaAlertas(), hoje, socias,
-				id -> numeros.computeIfAbsent(id, cadastros::numeroFormatado));
+		List<NovaNotificacao> novas = new java.util.ArrayList<>(GeradorAlertas.gerar(agenda.abertosParaAlertas(), hoje, socias,
+				id -> numeros.computeIfAbsent(id, cadastros::numeroFormatado)));
+		var vencidas = financeiro.resumoVencidas(hoje);
+		if (vencidas.quantidade() > 0) { // sem nomes de clientes na mensagem (como os demais alertas); detalhes no painel financeiro
+			for (Long socia : socias) {
+				novas.add(new NovaNotificacao(TipoAlerta.PARCELA_VENCIDA, 0, socia, "Parcelas vencidas",
+						"Ha " + vencidas.quantidade() + " parcela(s) de honorarios vencida(s), somando R$ " + vencidas.total().toPlainString()
+								+ " em aberto. Veja o painel financeiro."));
+			}
+		}
 		Set<Long> idsAtivos = ativos.stream().map(UsuarioDto::id).collect(Collectors.toSet());
 		Set<Long> semAlertaPorEmail = ativos.stream().filter(u -> !u.alertasEmail()).map(UsuarioDto::id).collect(Collectors.toSet());
 		int geradas = 0;

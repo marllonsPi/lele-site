@@ -1,5 +1,6 @@
 package br.com.crispimcampos.gestao.painel;
 
+import br.com.crispimcampos.gestao.cadastros.AreaAtuacao;
 import br.com.crispimcampos.gestao.contas.UsuarioLogado;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -7,6 +8,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -20,8 +22,8 @@ class PainelController {
 	}
 
 	@GetMapping("/api/painel")
-	PainelDto painel(@AuthenticationPrincipal UsuarioLogado u) {
-		return servico.painel(u);
+	PainelDto painel(@AuthenticationPrincipal UsuarioLogado u, @RequestParam(required = false) AreaAtuacao area) {
+		return servico.painel(u, area);
 	}
 
 	@ExceptionHandler(AcessoNegadoException.class)

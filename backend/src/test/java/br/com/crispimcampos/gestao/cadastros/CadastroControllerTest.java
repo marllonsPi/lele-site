@@ -33,7 +33,7 @@ class CadastroControllerTest {
 		return new UsuarioLogado(7L, "Teste", "t@exemplo.test", "x", p, true);
 	}
 
-	static final String PROCESSO_JSON = "{\"numero\":\"00020802520125150049\",\"tribunal\":\"TJDFT\",\"clienteId\":1,\"advogadoId\":3}";
+	static final String PROCESSO_JSON = "{\"numero\":\"00020802520125150049\",\"tribunal\":\"TJDFT\",\"clienteId\":1,\"advogadoId\":3,\"area\":\"FAMILIA\"}";
 
 	@Test
 	void anonimoRecebe401() throws Exception {
@@ -59,7 +59,7 @@ class CadastroControllerTest {
 	void sociaCriaProcesso() throws Exception {
 		mvc.perform(post("/api/processos").with(user(como(Perfil.SOCIA))).with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf())
 				.contentType(MediaType.APPLICATION_JSON).content(PROCESSO_JSON)).andExpect(status().isCreated());
-		verify(servico).criarProcesso(7L, "00020802520125150049", "TJDFT", null, null, null, null, 1L, 3L);
+		verify(servico).criarProcesso(7L, "00020802520125150049", "TJDFT", null, null, null, null, 1L, 3L, AreaAtuacao.FAMILIA);
 	}
 
 	@Test

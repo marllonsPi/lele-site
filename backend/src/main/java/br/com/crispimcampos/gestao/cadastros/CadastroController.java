@@ -5,10 +5,12 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Set;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -29,12 +31,13 @@ class CadastroController {
 
 	record DadosCliente(@NotBlank @Size(max = 200) String nome, @Size(max = 18) String documento,
 			@Email @Size(max = 254) String email, @Size(max = 30) String telefone, @Size(max = 400) String endereco,
-			@Size(max = 5000) String observacoes) {
+			@Size(max = 5000) String observacoes, @NotEmpty Set<AreaAtuacao> areas) {
 	}
 
 	record DadosProcesso(@NotBlank @Size(max = 30) String numero, @NotBlank @Size(max = 40) String tribunal,
 			@Size(max = 200) String varaComarca, @Size(max = 200) String classe, @Size(max = 100) String situacao,
-			@DecimalMin("0.00") BigDecimal valorCausa, @NotNull Long clienteId, @NotNull Long advogadoId) {
+			@DecimalMin("0.00") BigDecimal valorCausa, @NotNull Long clienteId, @NotNull Long advogadoId,
+			@NotNull AreaAtuacao area) {
 	}
 
 	record DadosParte(@NotBlank @Size(max = 200) String nome, @NotNull PapelParte papel) {
@@ -47,8 +50,8 @@ class CadastroController {
 	}
 
 	@GetMapping("/api/clientes")
-	List<ClienteDto> clientes(@AuthenticationPrincipal UsuarioLogado u) {
-		return servico.listarClientes(u);
+	List<ClienteDto> clientes(@AuthenticationPrincipal UsuarioLogado u, @RequestParam(required = false) AreaAtuacao area) {
+		return servico.listarClientes(u, area);
 	}
 
 	@GetMapping("/api/clientes/{id}")
@@ -60,7 +63,8 @@ class CadastroController {
 	@ResponseStatus(HttpStatus.CREATED)
 	@PreAuthorize("hasRole('SOCIA')")
 	ClienteDto criarCliente(@AuthenticationPrincipal UsuarioLogado u, @Valid @RequestBody DadosCliente d) {
-		return servico.criarCliente(u.id(), d.nome(), d.documento(), d.email(), d.telefone(), d.endereco(), d.observacoes());
+		return servico.criarCliente(u.id(), d.nome(), d.documento(), d.email(), d.telefone(), d.endereco(), d.observacoes(),
+				d.areas());
 	}
 
 	@PutMapping("/api/clientes/{id}")
@@ -68,7 +72,7 @@ class CadastroController {
 	ClienteDto atualizarCliente(@AuthenticationPrincipal UsuarioLogado u, @PathVariable Long id,
 			@Valid @RequestBody DadosCliente d) {
 		return servico.atualizarCliente(u.id(), id, d.nome(), d.documento(), d.email(), d.telefone(), d.endereco(),
-				d.observacoes());
+				d.observacoes(), d.areas());
 	}
 
 	@PostMapping("/api/clientes/{id}/desativar")
@@ -86,8 +90,9 @@ class CadastroController {
 	}
 
 	@GetMapping("/api/processos")
-	List<ProcessoDto> processos(@AuthenticationPrincipal UsuarioLogado u, @RequestParam(required = false) Long clienteId) {
-		return servico.listarProcessos(u, clienteId);
+	List<ProcessoDto> processos(@AuthenticationPrincipal UsuarioLogado u, @RequestParam(required = false) Long clienteId,
+			@RequestParam(required = false) AreaAtuacao area) {
+		return servico.listarProcessos(u, clienteId, area);
 	}
 
 	@GetMapping("/api/processos/{id}")
@@ -100,7 +105,7 @@ class CadastroController {
 	@PreAuthorize("hasRole('SOCIA')")
 	ProcessoDto criarProcesso(@AuthenticationPrincipal UsuarioLogado u, @Valid @RequestBody DadosProcesso d) {
 		return servico.criarProcesso(u.id(), d.numero(), d.tribunal(), d.varaComarca(), d.classe(), d.situacao(),
-				d.valorCausa(), d.clienteId(), d.advogadoId());
+				d.valorCausa(), d.clienteId(), d.advogadoId(), d.area());
 	}
 
 	@PutMapping("/api/processos/{id}")
@@ -108,7 +113,7 @@ class CadastroController {
 	ProcessoDto atualizarProcesso(@AuthenticationPrincipal UsuarioLogado u, @PathVariable Long id,
 			@Valid @RequestBody DadosProcesso d) {
 		return servico.atualizarProcesso(u.id(), id, d.tribunal(), d.varaComarca(), d.classe(), d.situacao(),
-				d.valorCausa(), d.clienteId(), d.advogadoId());
+				d.valorCausa(), d.clienteId(), d.advogadoId(), d.area());
 	}
 
 	@PostMapping("/api/processos/{id}/desativar")

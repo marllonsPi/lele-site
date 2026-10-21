@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -48,8 +49,9 @@ class UsuarioController {
 	}
 
 	@GetMapping("/api/usuarios")
-	List<UsuarioDto> listar() {
-		return servico.listar();
+	List<UsuarioDto> listar(@AuthenticationPrincipal UsuarioLogado ator, @RequestParam(defaultValue = "false") boolean incluirMestre) {
+		// a conta de suporte so aparece para ela mesma, e apenas quando pedida (tela de administracao de contas)
+		return incluirMestre && ator.mestre() ? servico.listarComMestre() : servico.listar();
 	}
 
 	@GetMapping("/api/usuarios/{id}")

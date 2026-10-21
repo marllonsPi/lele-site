@@ -37,6 +37,15 @@ class CapturaController {
 	record Vinculo(@NotNull Long processoId) {
 	}
 
+	record CadastroAutomatico(Long clienteId, String nomeCliente) {
+	}
+
+	record Agendamento(boolean ativa, String horario, CapturaService.Execucao ultima) {
+	}
+
+	record LigarAgendamento(boolean ativa) {
+	}
+
 	record Execucao(LocalDate de, LocalDate ate) {
 	}
 
@@ -47,14 +56,21 @@ class CapturaController {
 	record Importacao(@NotNull Long titularId, @NotEmpty List<@Valid ItemManual> itens) {
 	}
 
-	record NovoFiltro(@NotNull Long usuarioId, @NotNull Fonte fonte, @NotBlank String tribunalPrefixo, String excecoes) {
+	record NovoFiltro(@NotNull Long usuarioId, @NotNull Fonte fonte, String modo, String tribunalPrefixo, String excecoes, String ufs,
+			String oabNumero, String oabUf) {
+	}
+
+	record EdicaoFiltro(@NotNull Fonte fonte, String modo, String tribunalPrefixo, String excecoes, String ufs, String oabNumero,
+			String oabUf, boolean ativo) {
 	}
 
 	private final PublicacaoService publicacoes;
 	private final CapturaService captura;
 	private final FiltroService filtros;
+	private final CapturaAgendada agendada;
 
-	CapturaController(PublicacaoService publicacoes, CapturaService captura, FiltroService filtros) {
+	CapturaController(PublicacaoService publicacoes, CapturaService captura, FiltroService filtros, CapturaAgendada agendada) {
+		this.agendada = agendada;
 		this.publicacoes = publicacoes;
 		this.captura = captura;
 		this.filtros = filtros;
@@ -86,6 +102,25 @@ class CapturaController {
 		return publicacoes.vincularProcesso(u, id, v.processoId());
 	}
 
+	@PostMapping("/api/publicacoes/{id}/cadastrar-processo")
+	PublicacaoDto cadastrarProcesso(@AuthenticationPrincipal UsuarioLogado u, @PathVariable Long id, @RequestBody CadastroAutomatico c) {
+		return publicacoes.cadastrarProcesso(u, id, c.clienteId(), c.nomeCliente());
+	}
+
+	@GetMapping("/api/captura/agendamento")
+	@PreAuthorize("hasRole('SOCIA')")
+	Agendamento agendamento() {
+		var ex = captura.execucoes();
+		return new Agendamento(agendada.ativa(), agendada.cron(), ex.isEmpty() ? null : ex.get(0));
+	}
+
+	@PutMapping("/api/captura/agendamento")
+	@PreAuthorize("hasRole('SOCIA')")
+	Agendamento ligarAgendamento(@AuthenticationPrincipal UsuarioLogado u, @RequestBody LigarAgendamento l) {
+		agendada.definir(u.id(), l.ativa());
+		return agendamento();
+	}
+
 	@PostMapping("/api/captura/executar")
 	@PreAuthorize("hasRole('SOCIA')")
 	List<CapturaService.Execucao> executar(@AuthenticationPrincipal UsuarioLogado u, @RequestBody(required = false) Execucao e) {
@@ -98,6 +133,20 @@ class CapturaController {
 	@PreAuthorize("hasRole('SOCIA')")
 	List<CapturaService.Execucao> execucoes() {
 		return captura.execucoes();
+	}
+
+	@DeleteMapping("/api/captura/execucoes/{id}")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	@PreAuthorize("hasRole('SOCIA')")
+	void excluirExecucao(@AuthenticationPrincipal UsuarioLogado u, @PathVariable Long id) {
+		captura.excluirExecucao(u.id(), id);
+	}
+
+	@DeleteMapping("/api/captura/execucoes")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	@PreAuthorize("hasRole('SOCIA')")
+	void limparExecucoes(@AuthenticationPrincipal UsuarioLogado u) {
+		captura.limparExecucoes(u.id());
 	}
 
 	@GetMapping("/api/captura/ignorados")
@@ -124,14 +173,22 @@ class CapturaController {
 	@ResponseStatus(HttpStatus.CREATED)
 	@PreAuthorize("hasRole('SOCIA')")
 	FiltroService.FiltroDto criarFiltro(@AuthenticationPrincipal UsuarioLogado u, @Valid @RequestBody NovoFiltro f) {
-		return filtros.criar(u.id(), f.usuarioId(), f.fonte(), f.tribunalPrefixo(), f.excecoes());
+		return filtros.criar(u.id(), f.usuarioId(), new FiltroService.DadosFiltro(f.fonte(), f.modo(), f.tribunalPrefixo(), f.excecoes(),
+				f.ufs(), f.oabNumero(), f.oabUf()));
+	}
+
+	@PutMapping("/api/captura/filtros/{id}")
+	@PreAuthorize("hasRole('SOCIA')")
+	FiltroService.FiltroDto atualizarFiltro(@AuthenticationPrincipal UsuarioLogado u, @PathVariable Long id, @Valid @RequestBody EdicaoFiltro f) {
+		return filtros.atualizar(u.id(), id, new FiltroService.DadosFiltro(f.fonte(), f.modo(), f.tribunalPrefixo(), f.excecoes(), f.ufs(),
+				f.oabNumero(), f.oabUf()), f.ativo());
 	}
 
 	@DeleteMapping("/api/captura/filtros/{id}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	@PreAuthorize("hasRole('SOCIA')")
-	void desativarFiltro(@AuthenticationPrincipal UsuarioLogado u, @PathVariable Long id) {
-		filtros.desativar(u.id(), id);
+	void excluirFiltro(@AuthenticationPrincipal UsuarioLogado u, @PathVariable Long id) {
+		filtros.excluir(u.id(), id);
 	}
 
 	@ExceptionHandler(CapturaNaoEncontradaException.class)

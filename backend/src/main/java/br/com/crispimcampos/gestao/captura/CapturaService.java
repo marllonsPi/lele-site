@@ -44,7 +44,7 @@ public class CapturaService {
 	/** OABs ativas de usuarios ativos (socias e advogados). */
 	public List<OabMonitorada> monitoradas() {
 		List<OabMonitorada> lista = new ArrayList<>();
-		for (UsuarioDto u : usuarios.listar()) {
+		for (UsuarioDto u : usuarios.listarComMestre()) {
 			if (!u.ativo()) {
 				continue;
 			}
@@ -71,7 +71,7 @@ public class CapturaService {
 					: proprios.stream().map(t -> new OabMonitorada(t, null, null)).toList();
 			for (OabMonitorada oab : alvos) {
 				try {
-					var r = pipeline.processar(oab.titularId(), fonte.buscar(oab, de, ate));
+					var r = pipeline.processar(oab.titularId(), oab.numero() == null ? null : oab, fonte.buscar(oab, de, ate));
 					lidos += r.lidos();
 					novos += r.novasPublicacoes();
 				} catch (RuntimeException e) {
@@ -102,6 +102,20 @@ public class CapturaService {
 				(rs, n) -> new Execucao(rs.getLong(1), rs.getString(2), rs.getTimestamp(3).toInstant(),
 						rs.getTimestamp(4) == null ? null : rs.getTimestamp(4).toInstant(), rs.getString(5), rs.getInt(6),
 						rs.getInt(7), rs.getString(8)));
+	}
+
+	public void excluirExecucao(Long atorId, Long id) {
+		if (jdbc.update("delete from execucao_captura where id = ?", id) == 0) {
+			throw new CapturaNaoEncontradaException("Execucao nao encontrada");
+		}
+		auditoria.registrar(atorId, "EXECUCAO_CAPTURA_EXCLUIDA", "execucao_captura", String.valueOf(id), null);
+	}
+
+	/** Limpa o historico concluido; execucoes em andamento ficam. */
+	public int limparExecucoes(Long atorId) {
+		int n = jdbc.update("delete from execucao_captura where resultado <> 'EM_ANDAMENTO'");
+		auditoria.registrar(atorId, "EXECUCOES_CAPTURA_LIMPAS", "execucao_captura", null, "removidas=" + n);
+		return n;
 	}
 
 	/** Itens ignorados por filtro (nada some sem registro). */

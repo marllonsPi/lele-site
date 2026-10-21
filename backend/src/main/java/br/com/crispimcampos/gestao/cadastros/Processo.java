@@ -5,6 +5,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -37,6 +39,9 @@ class Processo {
 	@Column(name = "valor_causa")
 	private BigDecimal valorCausa;
 
+	@Enumerated(EnumType.STRING)
+	private AreaAtuacao area;
+
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
 	@JoinColumn(name = "cliente_id")
 	private Cliente cliente;
@@ -68,6 +73,10 @@ class Processo {
 		this.advogadoId = advogadoId;
 	}
 
+	void definirArea(AreaAtuacao area) {
+		this.area = area;
+	}
+
 	void desativar() {
 		this.ativo = false;
 	}
@@ -79,6 +88,7 @@ class Processo {
 	String getClasse() { return classe; }
 	String getSituacao() { return situacao; }
 	BigDecimal getValorCausa() { return valorCausa; }
+	AreaAtuacao getArea() { return area; }
 	Cliente getCliente() { return cliente; }
 	Long getAdvogadoId() { return advogadoId; }
 	boolean isAtivo() { return ativo; }

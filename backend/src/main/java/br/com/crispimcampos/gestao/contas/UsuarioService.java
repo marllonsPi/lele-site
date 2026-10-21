@@ -18,6 +18,9 @@ public class UsuarioService {
 	static final int SENHA_MINIMA = 12;
 	private static final Set<Perfil> PERFIS_COM_OAB = Set.of(Perfil.SOCIA, Perfil.ADVOGADO);
 
+	private static final java.util.Comparator<Usuario> POR_NOME = java.util.Comparator
+			.comparing((Usuario u) -> u.getNome().toLowerCase(java.util.Locale.ROOT)).thenComparing(Usuario::getId);
+
 	private final UsuarioRepository usuarios;
 	private final OabRepository oabs;
 	private final PasswordEncoder encoder;
@@ -33,9 +36,19 @@ public class UsuarioService {
 		this.eventos = eventos;
 	}
 
+	/**
+	 * Equipe do escritorio, em ordem alfabetica. A conta de acesso mestre (suporte do sistema) nunca entra aqui:
+	 * esta lista alimenta combos, matriz, relatorios e alertas. Quem precisa dela usa {@link #listarComMestre()}.
+	 */
 	@Transactional(readOnly = true)
 	public List<UsuarioDto> listar() {
-		return usuarios.findAll().stream().map(this::paraDto).toList();
+		return usuarios.findAll().stream().filter(u -> !u.isMestre()).sorted(POR_NOME).map(this::paraDto).toList();
+	}
+
+	/** Todas as contas, inclusive o acesso mestre: so para a administracao de contas pelo proprio mestre. */
+	@Transactional(readOnly = true)
+	public List<UsuarioDto> listarComMestre() {
+		return usuarios.findAll().stream().sorted(POR_NOME).map(this::paraDto).toList();
 	}
 
 	@Transactional(readOnly = true)
@@ -69,7 +82,9 @@ public class UsuarioService {
 		u = usuarios.save(u);
 		auditoria.registrar(atorId, "USUARIO_CRIADO", "usuario", String.valueOf(u.getId()),
 				"perfil=" + perfil + (mestre ? " mestre" : ""));
-		eventos.publishEvent(new UsuarioCriado(u.getId(), perfil));
+		if (!mestre) { // o acesso mestre le tudo sem a matriz e nao aparece para a equipe
+			eventos.publishEvent(new UsuarioCriado(u.getId(), perfil));
+		}
 		return paraDto(u);
 	}
 

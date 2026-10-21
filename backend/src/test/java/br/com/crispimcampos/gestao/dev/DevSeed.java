@@ -108,9 +108,9 @@ public class DevSeed implements ApplicationRunner {
 		UsuarioLogado socia2 = logado(b, Perfil.SOCIA);
 		UsuarioLogado assistente = logado(e, Perfil.ASSISTENTE);
 
-		var maria = cadastros.criarCliente(a.id(), "Maria Ficticia", "529.982.247-25", "maria@exemplo.test", "(61) 90000-0001", "Rua Ficticia 1", null);
-		var empresa = cadastros.criarCliente(a.id(), "Empresa Ficticia Ltda", "11.222.333/0001-81", "contato@exemplo.test", null, null, "Cliente corporativo de teste");
-		var joao = cadastros.criarCliente(a.id(), "Joao Ficticio", "111.444.777-35", null, "(61) 90000-0003", null, null);
+		var maria = cadastros.criarCliente(a.id(), "Maria Ficticia", "529.982.247-25", "maria@exemplo.test", "(61) 90000-0001", "Rua Ficticia 1", null, java.util.Set.of(br.com.crispimcampos.gestao.cadastros.AreaAtuacao.FAMILIA, br.com.crispimcampos.gestao.cadastros.AreaAtuacao.CIVEL));
+		var empresa = cadastros.criarCliente(a.id(), "Empresa Ficticia Ltda", "11.222.333/0001-81", "contato@exemplo.test", null, null, "Cliente corporativo de teste", java.util.Set.of(br.com.crispimcampos.gestao.cadastros.AreaAtuacao.TRABALHISTA));
+		var joao = cadastros.criarCliente(a.id(), "Joao Ficticio", "111.444.777-35", null, "(61) 90000-0003", null, null, java.util.Set.of(br.com.crispimcampos.gestao.cadastros.AreaAtuacao.PREVIDENCIARIO));
 
 		ProcessoDto pC = processo(a, 1, maria.id(), c.id(), "TJDFT");
 		ProcessoDto pD = processo(a, 2, empresa.id(), d.id(), "TRT-10");
@@ -144,7 +144,7 @@ public class DevSeed implements ApplicationRunner {
 		compromissos.marcar(socia, TipoAgendamento.AUD, pD.id(), null, "Audiencia de julgamento", d.id(), false, LocalDateTime.of(hoje.plusDays(10), LocalTime.of(9, 0)), 90, Modalidade.PRESENCIAL, "Tribunal - Sala 7");
 		compromissos.marcar(socia, TipoAgendamento.ATD, null, joao.id(), "Primeira consulta", c.id(), false, LocalDateTime.of(hoje, LocalTime.of(16, 0)), 45, Modalidade.TELEFONE, null);
 		// Captura: filtro da Socia A (e-mail de TRT, exceto TRT-10) e publicacoes ficticias para a fila "A classificar"
-		filtros.criar(a.id(), a.id(), Fonte.EMAIL, "TRT", "TRT-10");
+		filtros.criar(a.id(), a.id(), new br.com.crispimcampos.gestao.captura.FiltroService.DadosFiltro(Fonte.EMAIL, "IGNORAR", "TRT", "TRT-10", null, null, null));
 		String n1 = numeroDoProcesso(1);
 		pipeline.processar(c.id(), java.util.List.of(
 				new DadosBrutos(Fonte.DJEN, "9001", n1, "TJDFT", hoje, "INTIMACAO (teste): fica a parte intimada para apresentar contestacao no prazo legal.", "h9001"),
@@ -158,7 +158,7 @@ public class DevSeed implements ApplicationRunner {
 		// Atendimento e financeiro (so socias veem o financeiro)
 		atendimentos.registrarAvulso(assistente, maria.id(), pC.id(), "WHATSAPP", LocalDateTime.of(hoje.minusDays(1), LocalTime.of(11, 30)), "Cliente perguntou sobre a data da audiencia.", e.id());
 		atendimentos.registrarAndamento(socia, pC.id(), hoje.minusDays(2), "Peticao protocolada e juntada aos autos.");
-		Long contrato = financeiro.criarContrato(socia, maria.id(), pC.id(), "Honorarios contratuais - caso Maria", new java.math.BigDecimal("6000.00"), 6, hoje.minusMonths(2));
+		Long contrato = financeiro.criarContrato(socia, maria.id(), pC.id(), "Honorarios contratuais - caso Maria", new java.math.BigDecimal("6000.00"), 6, hoje.minusMonths(2), br.com.crispimcampos.gestao.cadastros.AreaAtuacao.FAMILIA);
 		financeiro.pagarParcela(socia, financeiro.parcelas(socia, contrato).get(0).get("id") instanceof Number n ? n.longValue() : 0L, hoje.minusMonths(2), new java.math.BigDecimal("1000.00"));
 		financeiro.registrarDespesa(socia, maria.id(), pC.id(), "CUSTAS", "Custas iniciais", new java.math.BigDecimal("350.00"), hoje.minusMonths(2), true);
 		financeiro.registrarHonorarioVariavel(socia, maria.id(), pC.id(), "EXITO", "Exito de 10% sobre o valor recebido", new java.math.BigDecimal("1500.00"));
@@ -181,7 +181,7 @@ public class DevSeed implements ApplicationRunner {
 		String resto = "2025" + "8" + "07" + "0001";
 		String numero = seq + NumeroCnj.calcularDv(seq, resto) + resto;
 		return cadastros.criarProcesso(ator.id(), numero, tribunal, "1a Vara Ficticia", "Procedimento Comum", "Em andamento",
-				new java.math.BigDecimal("15000.00"), clienteId, advogadoId);
+				new java.math.BigDecimal("15000.00"), clienteId, advogadoId, br.com.crispimcampos.gestao.cadastros.AreaAtuacao.CIVEL);
 	}
 
 	private static UsuarioLogado logado(UsuarioDto u, Perfil perfil) {
