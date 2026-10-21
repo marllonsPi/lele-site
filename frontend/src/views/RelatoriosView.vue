@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { az, azRotulos } from '../utils/ordenacao'
 import { computed, onMounted, ref } from 'vue'
 import { listarClientes, type Cliente } from '../api/cadastros'
 import {
@@ -168,7 +169,7 @@ onMounted(async () => {
       <label>
         Tipo
         <select v-model="tipo">
-          <option v-for="(r, v) in ROTULO_TIPO_INTERNO" :key="v" :value="v">{{ r }}</option>
+          <option v-for="[v, r] in azRotulos(ROTULO_TIPO_INTERNO)" :key="v" :value="v">{{ r }}</option>
         </select>
       </label>
       <label>De <input v-model="filtros.de" type="date" /></label>
@@ -177,14 +178,14 @@ onMounted(async () => {
         Pessoa
         <select v-model="filtros.usuarioId">
           <option :value="null">Todas / eu</option>
-          <option v-for="u in usuarios" :key="u.id" :value="u.id">{{ u.nome }}</option>
+          <option v-for="u in az(usuarios, (x) => x.nome)" :key="u.id" :value="u.id">{{ u.nome }}</option>
         </select>
       </label>
       <label v-if="tipo === 'FINANCEIRO_CLIENTE' || tipo === 'ATENDIMENTOS'">
         Cliente
         <select v-model="filtros.clienteId">
           <option :value="null">Todos</option>
-          <option v-for="c in clientes" :key="c.id" :value="c.id">{{ c.nome }}</option>
+          <option v-for="c in az(clientes, (x) => x.nome)" :key="c.id" :value="c.id">{{ c.nome }}</option>
         </select>
       </label>
       <div class="grupo-botoes">
@@ -217,7 +218,7 @@ onMounted(async () => {
         Cliente
         <select v-model="clienteId" @change="carregarHistorico">
           <option :value="null">Selecione</option>
-          <option v-for="c in clientes" :key="c.id" :value="c.id">{{ c.nome }}</option>
+          <option v-for="c in az(clientes, (x) => x.nome)" :key="c.id" :value="c.id">{{ c.nome }}</option>
         </select>
       </label>
     </div>

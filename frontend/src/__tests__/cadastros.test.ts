@@ -13,7 +13,7 @@ import type { Eu } from '../api/sessao'
 import { logarComo } from './helpers'
 import { config } from '@vue/test-utils'
 
-config.global.stubs = { RouterLink: true }
+config.global.stubs = { RouterLink: true, teleport: true }
 
 const m = vi.hoisted(() => ({
   listarClientes: vi.fn(),
@@ -46,16 +46,17 @@ vi.mock('../api/publicacoes', async (original) => ({
   ...(await original<typeof import('../api/publicacoes')>()),
   listarFiltros: vi.fn(async () => []),
   criarFiltro: vi.fn(),
-  desativarFiltro: vi.fn(),
+  atualizarFiltro: vi.fn(),
+  excluirFiltro: vi.fn(),
 }))
 vi.mock('vue-router', async (original) => ({ ...(await original<typeof import('vue-router')>()), useRoute: () => ({ query: {} }) }))
 
 const cliente = (p: Partial<Cliente> = {}): Cliente => ({
-  id: 1, nome: 'Maria Cliente', documento: '000.000.000-00', email: 'm@t.test', telefone: null, endereco: null, observacoes: null, ativo: true, ...p,
+  id: 1, nome: 'Maria Cliente', documento: '000.000.000-00', email: 'm@t.test', telefone: null, endereco: null, observacoes: null, ativo: true, areas: ['FAMILIA'], cadastroIncompleto: false, aConferir: false, rg: null, estadoCivil: null, ...p,
 })
 const processo = (p: Partial<Processo> = {}): Processo => ({
   id: 1, numero: '00000013120258070001', numeroFormatado: '0000001-31.2025.8.07.0001', tribunal: 'TJDFT', varaComarca: null, classe: null,
-  situacao: null, valorCausa: null, clienteId: 1, clienteNome: 'Maria Cliente', advogadoId: 3, ativo: true, partes: [{ id: 1, nome: 'Fulano', papel: 'CONTRARIA' }], ...p,
+  situacao: null, valorCausa: null, clienteId: 1, clienteNome: 'Maria Cliente', advogadoId: 3, ativo: true, area: 'CIVEL', partes: [{ id: 1, nome: 'Fulano', papel: 'CONTRARIA' }], ...p,
 })
 const usuario = (p: Partial<Usuario> = {}): Usuario => ({
   id: 1, nome: 'Sócia A', email: 'a@t.test', perfil: 'SOCIA', ativo: true, supervisorId: null, oabs: [], mestre: false, telefone: null, whatsapp: null, cargo: null,
@@ -107,10 +108,37 @@ describe('ClientesView', () => {
     const w = await montar(ClientesView)
     await botao(w, 'Novo cliente').trigger('click')
     await w.find('form input').setValue('Novo Cliente')
+    const caixas = w.findAll('form input[type=checkbox]')
+    expect(caixas).toHaveLength(10)
+    await caixas[0]!.setValue(true)
+    await w.findAll('form input[type=checkbox]')[2]!.setValue(true)
     await w.find('form').trigger('submit')
     await flushPromises()
-    expect(m.criarCliente).toHaveBeenCalledWith(expect.objectContaining({ nome: 'Novo Cliente' }))
+    expect(m.criarCliente).toHaveBeenCalledWith(expect.objectContaining({ nome: 'Novo Cliente', areas: ['TRABALHISTA', 'FAMILIA'] }))
     expect(w.find('[role=status]').text()).toContain('cadastrado')
+  })
+
+  it('nao salva cliente sem area de atuacao', async () => {
+    const w = await montar(ClientesView)
+    await botao(w, 'Novo cliente').trigger('click')
+    await w.find('form input').setValue('Sem Area')
+    await w.find('form').trigger('submit')
+    await flushPromises()
+    expect(m.criarCliente).not.toHaveBeenCalled()
+    expect(w.text()).toContain('ao menos uma área')
+  })
+
+  it('alerta cadastro incompleto e filtra por area', async () => {
+    m.listarClientes.mockResolvedValue([
+      cliente({ id: 1, nome: 'Com Area', areas: ['FAMILIA'] }),
+      cliente({ id: 2, nome: 'Sem Area', areas: [], cadastroIncompleto: true }),
+    ])
+    const w = await montar(ClientesView)
+    expect(w.find('[role=alert]').text()).toContain('1 cliente(s) com cadastro incompleto')
+    expect(w.text()).toContain('Cadastro incompleto: falta a área de atuação')
+    await w.find('select').setValue('FAMILIA')
+    expect(w.findAll('article')).toHaveLength(1)
+    expect(w.text()).toContain('Com Area')
   })
 
   it('mostra o erro do servidor', async () => {
@@ -152,9 +180,10 @@ describe('ProcessosView', () => {
     const selects = f.findAll('select')
     await selects[0]!.setValue(1)
     await selects[1]!.setValue(3)
+    await selects[2]!.setValue('TRABALHISTA')
     await f.trigger('submit')
     await flushPromises()
-    expect(m.criarProcesso).toHaveBeenCalledWith(expect.objectContaining({ numero: '00000013120258070001', clienteId: 1, advogadoId: 3 }))
+    expect(m.criarProcesso).toHaveBeenCalledWith(expect.objectContaining({ numero: '00000013120258070001', clienteId: 1, advogadoId: 3, area: 'TRABALHISTA' }))
   })
 })
 
@@ -169,9 +198,9 @@ describe('UsuariosView', () => {
     await f.find('input[type=email]').setValue('e@t.test')
     await f.find('select').setValue('ESTAGIARIO')
     await flushPromises()
-    await f.findAll('select')[1]!.setValue(3)
-    await f.find('input[type=password]').setValue('segredo-123')
-    await f.trigger('submit')
+    await w.findAll('form.formulario select')[1]!.setValue(3)
+    await w.find('form.formulario input[type=password]').setValue('segredo-123')
+    await w.find('form.formulario').trigger('submit')
     await flushPromises()
     expect(m.criarUsuario).toHaveBeenCalledWith(
       expect.objectContaining({ nome: 'Estag Novo', perfil: 'ESTAGIARIO', supervisorId: 3, senha: 'segredo-123' }),
@@ -182,7 +211,7 @@ describe('UsuariosView', () => {
     m.adicionarOab.mockResolvedValue({})
     const w = await montar(UsuariosView)
     await w.findAll('button').filter((b) => b.text() === 'OABs')[0]!.trigger('click')
-    const f = w.find('article form')
+    const f = w.find('form.grupo-botoes')
     await f.find('input').setValue('12345')
     await f.findAll('input')[1]!.setValue('df')
     await f.trigger('submit')

@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import logo from '../assets/logo-white.png'
 import { ROTULO_PERFIL } from '../api/sessao'
+import Operador from './Operador.vue'
 import { useSessao } from '../composables/useSessao'
 import { useTema } from '../composables/useTema'
 import { itensPara, porGrupo } from '../router/navegacao'
@@ -58,6 +59,7 @@ async function encerrar() {
           </router-link>
         </section>
       </nav>
+      <Operador v-if="eu" />
       <div v-if="eu" class="usuario">
         <span class="avatar" aria-hidden="true">{{ iniciais }}</span>
         <div class="usuario-dados">

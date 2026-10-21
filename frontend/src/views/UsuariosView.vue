@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { az, azPor, azRotulos } from '../utils/ordenacao'
 import { computed, onMounted, ref } from 'vue'
 import {
   adicionarOab,
@@ -15,15 +16,21 @@ import {
   type Usuario,
 } from '../api/cadastros'
 import {
+  atualizarFiltro,
   criarFiltro,
-  desativarFiltro,
+  dadosDoFiltro,
+  excluirFiltro,
   listarFiltros,
+  resumoDoFiltro,
   ROTULO_FONTE,
+  type DadosFiltro,
   type FiltroCaptura,
-  type Fonte,
 } from '../api/publicacoes'
 import { ROTULO_PERFIL, type Perfil } from '../api/sessao'
 import Feedback from '../components/Feedback.vue'
+import Modal from '../components/Modal.vue'
+import SeletorOrdem from '../components/SeletorOrdem.vue'
+import { useOrdenacao } from '../composables/useOrdenacao'
 import { useFeedback } from '../composables/useFeedback'
 import { useSessao } from '../composables/useSessao'
 import { useUsuarios } from '../composables/useUsuarios'
@@ -52,7 +59,8 @@ const aba = ref<Aba>('dados')
 const form = ref(vazio())
 const novaSenha = ref('')
 const oab = ref({ numero: '', uf: 'DF', principal: false })
-const filtro = ref({ fonte: 'DJEN' as Fonte, tribunalPrefixo: '', excecoes: '' })
+const filtro = ref<DadosFiltro>(filtroVazio())
+const filtroEditando = ref<FiltroCaptura | null>(null)
 
 const perfis = Object.keys(ROTULO_PERFIL) as Perfil[]
 const euMestre = computed(() => eu.value?.mestre === true)
@@ -66,12 +74,27 @@ const abasVisiveis = computed(() =>
 )
 const filtrosDaConta = computed(() => filtros.value.filter((f) => f.usuarioId === atual.value?.id))
 
+const ordem = useOrdenacao<Usuario>('contas', [
+  { chave: 'nome', rotulo: 'Nome', valor: (u) => u.nome },
+  { chave: 'perfil', rotulo: 'Perfil', valor: (u) => ROTULO_PERFIL[u.perfil] },
+  { chave: 'cargo', rotulo: 'Cargo', valor: (u) => u.cargo },
+  { chave: 'recentes', rotulo: 'Cadastro mais recente', valor: (u) => -u.id },
+], [
+  { chave: 'perfil', rotulo: 'Perfil', valor: (u) => ROTULO_PERFIL[u.perfil] },
+  { chave: 'situacao', rotulo: 'Situação', valor: (u) => (u.ativo ? 'Ativas' : 'Inativas') },
+])
+
 const lista = computed(() => {
   const q = busca.value.trim().toLowerCase()
   return usuarios.value
     .filter((u) => (mostrarInativos.value || u.ativo) && (!q || (u.nome + ' ' + u.email + ' ' + (u.cargo ?? '')).toLowerCase().includes(q)))
-    .sort((a, b) => Number(b.mestre) - Number(a.mestre) || a.nome.localeCompare(b.nome))
 })
+
+const gruposLista = computed(() => ordem.grupos(lista.value))
+
+function filtroVazio(): DadosFiltro {
+  return { fonte: 'DJEN', modo: 'IGNORAR', tribunalPrefixo: '', excecoes: '', ufs: '', oabNumero: '', oabUf: '' }
+}
 
 function vazio() {
   return {
@@ -113,7 +136,7 @@ function iniciais(nome: string): string {
 
 async function recarregar() {
   await executar(async () => {
-    ;[usuarios.value, filtros.value] = await Promise.all([listarUsuarios(), listarFiltros()])
+    ;[usuarios.value, filtros.value] = await Promise.all([listarUsuarios(euMestre.value), listarFiltros()])
   }, '', true)
   carregando.value = false
   await recarregarNomes(true)
@@ -208,18 +231,52 @@ async function alterarOab(acao: () => Promise<unknown>, mensagem: string) {
 }
 
 async function incluirFiltro(u: Usuario) {
+  const dados = { ...filtro.value, tribunalPrefixo: filtro.value.tribunalPrefixo.trim(), excecoes: filtro.value.excecoes.trim() }
+  const editado = filtroEditando.value
   const ok = await executar(
-    () => criarFiltro({ usuarioId: u.id, fonte: filtro.value.fonte, tribunalPrefixo: filtro.value.tribunalPrefixo.trim(), excecoes: filtro.value.excecoes.trim() }),
-    'Filtro criado.',
+    () => (editado ? atualizarFiltro(editado.id, { ...dados, ativo: editado.ativo }) : criarFiltro({ usuarioId: u.id, ...dados })),
+    editado ? 'Filtro atualizado.' : 'Filtro criado.',
   )
   if (ok) {
-    filtro.value = { ...filtro.value, tribunalPrefixo: '', excecoes: '' }
+    cancelarEdicaoFiltro()
+    await recarregar()
+  }
+}
+
+function editarFiltro(f: FiltroCaptura) {
+  filtroEditando.value = f
+  filtro.value = dadosDoFiltro(f)
+}
+
+function cancelarEdicaoFiltro() {
+  filtroEditando.value = null
+  filtro.value = { ...filtroVazio(), fonte: filtro.value.fonte }
+}
+
+/** Escolha de OAB no formulario: "numero/UF" ou vazio (todas). */
+const oabDoFiltro = computed({
+  get: () => (filtro.value.oabNumero ? `${filtro.value.oabNumero}/${filtro.value.oabUf}` : ''),
+  set: (v: string) => {
+    const [n, uf] = v ? v.split('/') : ['', '']
+    filtro.value = { ...filtro.value, oabNumero: n ?? '', oabUf: uf ?? '' }
+  },
+})
+
+async function alternarFiltro(f: FiltroCaptura) {
+  const msg = f.ativo ? 'Filtro desativado.' : 'Filtro reativado.'
+  if (await executar(() => atualizarFiltro(f.id, { ...dadosDoFiltro(f), ativo: !f.ativo }), msg)) {
     await recarregar()
   }
 }
 
 async function removerFiltro(f: FiltroCaptura) {
-  if (await executar(() => desativarFiltro(f.id), 'Filtro desativado.')) {
+  if (!window.confirm(`Excluir definitivamente o filtro "${f.tribunalPrefixo}"? O que ele já ignorou continua no registro de ignorados.`)) {
+    return
+  }
+  if (await executar(() => excluirFiltro(f.id), 'Filtro excluído.')) {
+    if (filtroEditando.value?.id === f.id) {
+      cancelarEdicaoFiltro()
+    }
     await recarregar()
   }
 }
@@ -239,12 +296,8 @@ onMounted(recarregar)
 
     <Feedback :erro="erro" :aviso="aviso" />
 
-    <article v-if="editando !== null" class="painel" aria-label="Editor de conta">
-      <div class="cartao-topo">
-        <h2>{{ editando === 'novo' ? 'Nova conta' : form.nome }}</h2>
-        <span v-if="atual?.mestre" class="selo selo-mestre">Acesso mestre</span>
-        <button type="button" class="botao-secundario cartao-quando" @click="fechar">Fechar</button>
-      </div>
+    <Modal :aberto="editando !== null" :titulo="editando === 'novo' ? 'Nova conta' : form.nome || 'Editar conta'" larg="lg" sem-rodape :erro="erro" @fechar="fechar">
+      <p v-if="atual?.mestre"><span class="selo selo-mestre">Acesso mestre</span></p>
       <p v-if="protegida" class="erro">Esta conta tem acesso mestre e só pode ser alterada por outro acesso mestre.</p>
 
       <div class="abas" role="tablist">
@@ -268,14 +321,14 @@ onMounted(recarregar)
             <label>
               Perfil
               <select v-model="form.perfil" :disabled="atual?.mestre">
-                <option v-for="p in perfis" :key="p" :value="p">{{ ROTULO_PERFIL[p] }}</option>
+                <option v-for="p in azPor(perfis, ROTULO_PERFIL)" :key="p" :value="p">{{ ROTULO_PERFIL[p] }}</option>
               </select>
             </label>
             <label v-if="form.perfil === 'ESTAGIARIO'">
               Supervisor(a)
               <select v-model="form.supervisorId" required>
                 <option :value="null" disabled>Selecione um advogado</option>
-                <option v-for="s in supervisores" :key="s.id" :value="s.id">{{ s.nome }}</option>
+                <option v-for="s in az(supervisores, (x) => x.nome)" :key="s.id" :value="s.id">{{ s.nome }}</option>
               </select>
             </label>
             <label v-if="editando === 'novo'">
@@ -334,19 +387,22 @@ onMounted(recarregar)
       <div v-else-if="aba === 'captura' && atual">
         <p class="suave">
           Filtros decidem o que entra na fila desta pessoa. Ex.: prefixo "TRT" com exceção "TRT-10" ignora os TRT, menos o TRT-10.
-          O que o filtro ignora fica no registro de ignorados, nunca some.
+          "Só trazer estes estados" (ex.: GO) descobre o estado pelo número do processo; o que não dá para identificar (Justiça Federal, tribunais superiores, e-mail sem número) continua entrando. O que o filtro ignora fica no registro de ignorados, nunca some.
         </p>
         <div class="tabela-rolavel" v-if="filtrosDaConta.length">
           <table>
             <thead>
-              <tr><th scope="col">Fonte</th><th scope="col">Tribunal (prefixo)</th><th scope="col">Exceções</th><th scope="col"><span class="sr-only">Ação</span></th></tr>
+              <tr><th scope="col">Fonte</th><th scope="col">Regra</th><th scope="col"><span class="sr-only">Ação</span></th></tr>
             </thead>
             <tbody>
               <tr v-for="f in filtrosDaConta" :key="f.id" :class="{ suave: !f.ativo }">
                 <td>{{ ROTULO_FONTE[f.fonte] }}</td>
-                <td>{{ f.tribunalPrefixo }}</td>
-                <td>{{ f.excecoes }}</td>
-                <td><button v-if="f.ativo && !protegida" type="button" class="botao-link" @click="removerFiltro(f)">desativar</button></td>
+                <td>{{ resumoDoFiltro(f) }}</td>
+                <td v-if="!protegida">
+                  <button type="button" class="botao-link" @click="editarFiltro(f)">editar</button>
+                  <button type="button" class="botao-link" @click="alternarFiltro(f)">{{ f.ativo ? 'desativar' : 'reativar' }}</button>
+                  <button type="button" class="botao-link" @click="removerFiltro(f)">excluir</button>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -356,12 +412,30 @@ onMounted(recarregar)
           <label>
             Fonte
             <select v-model="filtro.fonte">
-              <option v-for="(rotulo, f) in ROTULO_FONTE" :key="f" :value="f">{{ rotulo }}</option>
+              <option v-for="[f, rotulo] in azRotulos(ROTULO_FONTE)" :key="f" :value="f">{{ rotulo }}</option>
             </select>
           </label>
-          <label>Tribunal (prefixo) <input v-model="filtro.tribunalPrefixo" required maxlength="40" placeholder="TRT" /></label>
-          <label>Exceções (vírgula) <input v-model="filtro.excecoes" placeholder="TRT-10" /></label>
-          <button type="submit" class="botao-secundario">Adicionar filtro</button>
+          <label>
+            Regra
+            <select v-model="filtro.modo">
+              <option value="IGNORAR">Ignorar tribunal</option>
+              <option value="SO_UF">Só trazer estes estados</option>
+            </select>
+          </label>
+          <template v-if="filtro.modo === 'IGNORAR'">
+            <label>Tribunal (prefixo) <input v-model="filtro.tribunalPrefixo" required maxlength="40" placeholder="TRT" /></label>
+            <label>Exceções (vírgula) <input v-model="filtro.excecoes" placeholder="TRT-10" /></label>
+          </template>
+          <label v-else>Estados (UF, vírgula) <input v-model="filtro.ufs" required maxlength="60" placeholder="GO" /></label>
+          <label>
+            Vale para a OAB
+            <select v-model="oabDoFiltro">
+              <option value="">Todas as OABs</option>
+              <option v-for="o in atual.oabs.filter((x) => x.ativa)" :key="o.id" :value="`${o.numero}/${o.uf}`">OAB {{ o.numero }}/{{ o.uf }}</option>
+            </select>
+          </label>
+          <button type="submit" class="botao-secundario">{{ filtroEditando ? 'Salvar filtro' : 'Adicionar filtro' }}</button>
+          <button v-if="filtroEditando" type="button" class="botao-link" @click="cancelarEdicaoFiltro">Cancelar edição</button>
         </form>
       </div>
 
@@ -384,7 +458,7 @@ onMounted(recarregar)
         </div>
         <p class="suave">Contas desativadas não entram no sistema, mas o histórico (auditoria, prazos, publicações) é preservado.</p>
       </div>
-    </article>
+    </Modal>
 
     <div class="barra-ferramentas">
       <label class="busca">
@@ -393,10 +467,13 @@ onMounted(recarregar)
       </label>
       <label class="marcar"><input v-model="mostrarInativos" type="checkbox" /> Mostrar inativas</label>
     </div>
+    <SeletorOrdem :ordem="ordem" :total="lista.length" />
     <p v-if="carregando">Carregando...</p>
     <p v-else-if="lista.length === 0" class="vazio">Nenhuma conta encontrada.</p>
 
-    <article v-for="u in lista" :key="u.id" class="cartao cartao-conta" :class="{ inativo: !u.ativo, mestre: u.mestre }">
+    <template v-for="g in gruposLista" :key="g.titulo">
+      <h2 v-if="g.titulo" class="grupo-titulo">{{ g.titulo }} <span class="suave">({{ g.itens.length }})</span></h2>
+      <article v-for="u in g.itens" :key="u.id"  class="cartao cartao-conta" :class="{ inativo: !u.ativo, mestre: u.mestre }">
       <header class="cartao-topo">
         <span class="avatar" aria-hidden="true">{{ iniciais(u.nome) }}</span>
         <b>{{ u.nome }}</b>
@@ -421,7 +498,8 @@ onMounted(recarregar)
         <button v-if="u.perfil === 'SOCIA' || u.perfil === 'ADVOGADO'" type="button" class="botao-secundario" @click="abrirEdicao(u, 'oabs')">OABs</button>
         <button type="button" class="botao-secundario" @click="abrirEdicao(u, 'acesso')">Acesso</button>
       </div>
-    </article>
+      </article>
+    </template>
   </section>
 </template>
 
@@ -454,7 +532,7 @@ onMounted(recarregar)
 
 @media (min-width: 48rem) {
   .grade-form {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 </style>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { az, azRotulos } from '../utils/ordenacao'
+import { computed, onMounted, ref } from 'vue'
 import {
   listarAndamentosPendentes,
   listarAtendimentos,
@@ -13,6 +14,9 @@ import {
 } from '../api/atendimento'
 import { listarClientes, listarProcessos, type Cliente, type Processo } from '../api/cadastros'
 import Feedback from '../components/Feedback.vue'
+import SeletorOrdem from '../components/SeletorOrdem.vue'
+import { useOrdenacao } from '../composables/useOrdenacao'
+import Modal from '../components/Modal.vue'
 import { useFeedback } from '../composables/useFeedback'
 import { useSessao } from '../composables/useSessao'
 import { useUsuarios } from '../composables/useUsuarios'
@@ -23,6 +27,18 @@ const { carregar: carregarUsuarios, nome } = useUsuarios()
 const { erro, aviso, executar } = useFeedback()
 
 const atendimentos = ref<Atendimento[]>([])
+const ordem = useOrdenacao<Atendimento>('atendimentos', [
+  { chave: 'recentes', rotulo: 'Mais recente', valor: (x) => -Date.parse(x.momento) },
+  { chave: 'cliente', rotulo: 'Cliente', valor: (x) => nomeCliente(x.clienteId) },
+  { chave: 'canal', rotulo: 'Canal', valor: (x) => ROTULO_CANAL[x.canal as Canal] ?? x.canal },
+  { chave: 'atendente', rotulo: 'Atendente', valor: (x) => nome(x.atendenteId) },
+], [
+  { chave: 'cliente', rotulo: 'Cliente', valor: (x) => nomeCliente(x.clienteId) },
+  { chave: 'canal', rotulo: 'Canal', valor: (x) => ROTULO_CANAL[x.canal as Canal] ?? x.canal },
+  { chave: 'atendente', rotulo: 'Atendente', valor: (x) => nome(x.atendenteId) },
+])
+const gruposLista = computed(() => ordem.grupos(atendimentos.value))
+
 const andamentos = ref<Andamento[]>([])
 const clientes = ref<Cliente[]>([])
 const processos = ref<Processo[]>([])
@@ -110,20 +126,21 @@ onMounted(async () => {
 
     <h2>Andamentos a repassar ao cliente</h2>
     <div class="barra-ferramentas">
-      <button type="button" class="botao-secundario" :aria-expanded="novoAnd" @click="novoAnd = !novoAnd">Registrar andamento</button>
+      <button type="button" class="botao-secundario" @click="novoAnd = true">Registrar andamento</button>
     </div>
-    <form v-if="novoAnd" class="formulario" @submit.prevent="registrarAnd">
-      <label>
-        Processo
-        <select v-model="formAnd.processoId" required>
-          <option value="">Selecione</option>
-          <option v-for="p in processos" :key="p.id" :value="p.id">{{ p.numeroFormatado }} · {{ p.clienteNome }}</option>
-        </select>
-      </label>
-      <label>Data <input v-model="formAnd.data" type="date" /></label>
-      <label>Descrição <textarea v-model="formAnd.descricao" rows="2" required></textarea></label>
-      <button type="submit" class="botao-primario">Registrar</button>
-    </form>
+    <Modal :aberto="novoAnd" titulo="Registrar andamento" form-id="f-registrarAnd-844" salvar-rotulo="Registrar" :erro="erro" @fechar="novoAnd = false">
+      <form id="f-registrarAnd-844" class="formulario" @submit.prevent="registrarAnd">
+        <label>
+          Processo
+          <select v-model="formAnd.processoId" required>
+            <option value="">Selecione</option>
+            <option v-for="p in az(processos, (x) => x.clienteNome + ' ' + x.numeroFormatado)" :key="p.id" :value="p.id">{{ p.numeroFormatado }} · {{ p.clienteNome }}</option>
+          </select>
+        </label>
+        <label>Data <input v-model="formAnd.data" type="date" /></label>
+        <label>Descrição <textarea v-model="formAnd.descricao" rows="2" required></textarea></label>
+      </form>
+    </Modal>
     <p v-if="!carregando && andamentos.length === 0" class="suave">Nenhum andamento pendente de repasse.</p>
     <article v-for="a in andamentos" :key="a.id" class="cartao">
       <header class="cartao-topo">
@@ -152,40 +169,44 @@ onMounted(async () => {
         Cliente
         <select v-model="filtroCliente" @change="recarregar">
           <option :value="null">Todos</option>
-          <option v-for="c in clientes" :key="c.id" :value="c.id">{{ c.nome }}</option>
+          <option v-for="c in az(clientes, (x) => x.nome)" :key="c.id" :value="c.id">{{ c.nome }}</option>
         </select>
       </label>
-      <button type="button" class="botao-primario" :aria-expanded="novoAtd" @click="novoAtd = !novoAtd">Registrar atendimento</button>
+      <button type="button" class="botao-primario" @click="novoAtd = true">Registrar atendimento</button>
     </div>
-    <form v-if="novoAtd" class="formulario" @submit.prevent="registrarAtd">
-      <label>
-        Cliente
-        <select v-model="formAtd.clienteId" required>
-          <option value="">Selecione</option>
-          <option v-for="c in clientes" :key="c.id" :value="c.id">{{ c.nome }}</option>
-        </select>
-      </label>
-      <label>
-        Processo (opcional)
-        <select v-model="formAtd.processoId">
-          <option value="">Nenhum</option>
-          <option v-for="p in processos.filter((x) => x.clienteId === formAtd.clienteId)" :key="p.id" :value="p.id">
-            {{ p.numeroFormatado }}
-          </option>
-        </select>
-      </label>
-      <label>
-        Canal
-        <select v-model="formAtd.canal">
-          <option v-for="(r, v) in ROTULO_CANAL" :key="v" :value="v">{{ r }}</option>
-        </select>
-      </label>
-      <label>Resumo <textarea v-model="formAtd.resumo" rows="2" required></textarea></label>
-      <button type="submit" class="botao-primario">Registrar</button>
-    </form>
+    <Modal :aberto="novoAtd" titulo="Registrar atendimento" form-id="f-registrarAtd-434" salvar-rotulo="Registrar" :erro="erro" @fechar="novoAtd = false">
+      <form id="f-registrarAtd-434" class="formulario" @submit.prevent="registrarAtd">
+        <label>
+          Cliente
+          <select v-model="formAtd.clienteId" required>
+            <option value="">Selecione</option>
+            <option v-for="c in az(clientes, (x) => x.nome)" :key="c.id" :value="c.id">{{ c.nome }}</option>
+          </select>
+        </label>
+        <label>
+          Processo (opcional)
+          <select v-model="formAtd.processoId">
+            <option value="">Nenhum</option>
+            <option v-for="p in processos.filter((x) => x.clienteId === formAtd.clienteId)" :key="p.id" :value="p.id">
+              {{ p.numeroFormatado }}
+            </option>
+          </select>
+        </label>
+        <label>
+          Canal
+          <select v-model="formAtd.canal">
+            <option v-for="[v, r] in azRotulos(ROTULO_CANAL)" :key="v" :value="v">{{ r }}</option>
+          </select>
+        </label>
+        <label>Resumo <textarea v-model="formAtd.resumo" rows="2" required></textarea></label>
+      </form>
+    </Modal>
+    <SeletorOrdem :ordem="ordem" :total="atendimentos.length" />
     <p v-if="carregando">Carregando...</p>
     <p v-else-if="atendimentos.length === 0" class="suave">Nenhum atendimento.</p>
-    <article v-for="x in atendimentos" :key="x.id" class="cartao">
+    <template v-for="g in gruposLista" :key="g.titulo">
+      <h2 v-if="g.titulo" class="grupo-titulo">{{ g.titulo }} <span class="suave">({{ g.itens.length }})</span></h2>
+      <article v-for="x in g.itens" :key="x.id"  class="cartao">
       <header class="cartao-topo">
         <b>{{ nomeCliente(x.clienteId) }}</b>
         <span class="selo">{{ ROTULO_CANAL[x.canal as Canal] ?? x.canal }}</span>
@@ -196,6 +217,7 @@ onMounted(async () => {
         Atendente: {{ nome(x.atendenteId) }}<template v-if="x.processoId"> · {{ numeroProcesso(x.processoId) }}</template>
         · {{ x.origem === 'AGENDAMENTO' ? 'gerado ao concluir o agendamento' : 'registro avulso' }}
       </p>
-    </article>
+      </article>
+    </template>
   </section>
 </template>

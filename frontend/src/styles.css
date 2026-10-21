@@ -594,7 +594,7 @@ button:disabled {
 
 @media (min-width: 48rem) {
   .formulario {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: end;
   }
 
@@ -915,4 +915,211 @@ a.indicador:hover {
   background: var(--ink);
   padding: 0.9rem 1rem;
   border-radius: var(--raio);
+}
+
+/* Area de atuacao */
+.opcao-linha {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 1rem 0.25rem 0;
+}
+.alerta-incompleto {
+  border-left: 4px solid var(--cor-erro);
+  padding: 0.5rem 0.75rem;
+  background: color-mix(in srgb, var(--cor-erro) 10%, transparent);
+}
+.filtro-area {
+  display: inline-block;
+  margin-bottom: 1rem;
+}
+
+/* ---- Modal de edicao ---- */
+.modal-fundo {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--espaco-3);
+  background: rgba(16, 12, 8, 0.55);
+  backdrop-filter: blur(3px);
+  animation: modal-fundo-entra 0.15s ease-out;
+}
+.modal {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-height: calc(100dvh - 2rem);
+  background: var(--cor-superficie);
+  color: var(--cor-texto);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-g);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.35);
+  animation: modal-entra 0.18s ease-out;
+  outline: none;
+}
+.modal-md {
+  max-width: min(50rem, 96vw);
+}
+.modal-lg {
+  max-width: min(76rem, 96vw);
+}
+.modal-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-3);
+  padding: var(--espaco-3) var(--espaco-4);
+  border-bottom: 1px solid var(--cor-borda);
+}
+.modal-topo h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+.modal-fechar {
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--cor-texto-suave);
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.modal-fechar:hover {
+  background: var(--cor-superficie-2);
+  color: var(--cor-texto);
+}
+.modal-corpo {
+  flex: 1;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: var(--espaco-4);
+}
+.modal-corpo .formulario {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.modal-rodape {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--espaco-2);
+  padding: var(--espaco-3) var(--espaco-4);
+  border-top: 1px solid var(--cor-borda);
+  background: var(--cor-superficie-2);
+  border-radius: 0 0 var(--raio-g) var(--raio-g);
+}
+@keyframes modal-entra {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+}
+@keyframes modal-fundo-entra {
+  from {
+    opacity: 0;
+  }
+}
+@media (max-width: 640px) {
+  .modal-fundo {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .modal {
+    max-height: 94dvh;
+    border-radius: var(--raio-g) var(--raio-g) 0 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .modal,
+  .modal-fundo {
+    animation: none;
+  }
+}
+
+/* ---- Acabamento: interacao mais fluida e legivel ---- */
+button,
+.como-botao,
+input,
+select,
+textarea,
+.cartao {
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+.formulario input:not([type='checkbox']):not([type='radio']),
+.formulario select,
+.formulario textarea,
+.modal-corpo input:not([type='checkbox']):not([type='radio']),
+.modal-corpo select,
+.modal-corpo textarea {
+  border-radius: 8px;
+}
+.formulario input:focus-visible,
+.formulario select:focus-visible,
+.formulario textarea:focus-visible,
+.modal-corpo input:focus-visible,
+.modal-corpo select:focus-visible,
+.modal-corpo textarea:focus-visible {
+  outline: 2px solid var(--cor-foco);
+  outline-offset: 1px;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--cor-foco) 20%, transparent);
+}
+.botao-primario:not(:disabled):hover,
+.botao-secundario:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+.botao-primario:not(:disabled):active,
+.botao-secundario:not(:disabled):active {
+  transform: none;
+}
+.cartao:hover {
+  box-shadow: 0 2px 4px rgba(16, 12, 8, 0.08), 0 12px 28px rgba(16, 12, 8, 0.1);
+}
+.barra-ferramentas {
+  align-items: flex-end;
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
+
+/* Campos nunca estouram a coluna (evita rolagem horizontal em grades e modais) */
+input:not([type='checkbox']):not([type='radio']),
+select,
+textarea {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.modal-corpo label,
+.modal-corpo .formulario > *,
+.modal-corpo .grade-form > * {
+  min-width: 0;
+}
+.modal-corpo .grupo-botoes {
+  align-items: end;
+}
+.modal-corpo .grupo-botoes label {
+  flex: 1 1 12rem;
+}
+.modal-corpo .tabela-rolavel {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.grupo-titulo {
+  margin: var(--espaco-4) 0 var(--espaco-2);
+  padding-bottom: var(--espaco-1);
+  font-size: 1.05rem;
+  border-bottom: 2px solid var(--ouro);
 }

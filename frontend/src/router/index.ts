@@ -14,11 +14,15 @@ import CalendarioView from '../views/CalendarioView.vue'
 import PublicacoesView from '../views/PublicacoesView.vue'
 import CapturaView from '../views/CapturaView.vue'
 import PainelView from '../views/PainelView.vue'
+import DriveView from '../views/DriveView.vue'
+import ComentariosView from '../views/ComentariosView.vue'
 import AtendimentoView from '../views/AtendimentoView.vue'
 import FinanceiroView from '../views/FinanceiroView.vue'
 import RelatoriosView from '../views/RelatoriosView.vue'
 import ModelosView from '../views/ModelosView.vue'
 import SegurancaView from '../views/SegurancaView.vue'
+import HonorariosView from '../views/HonorariosView.vue'
+import ImportacaoView from '../views/ImportacaoView.vue'
 import SistemaView from '../views/SistemaView.vue'
 import NaoEncontradaView from '../views/NaoEncontradaView.vue'
 
@@ -42,11 +46,17 @@ export function criarRoteador(historico: RouterHistory = createWebHistory(import
           { path: 'calendario', name: 'calendario', component: CalendarioView, meta: { titulo: 'Calendário' } },
           { path: 'publicacoes', name: 'publicacoes', component: PublicacoesView, meta: { titulo: 'Publicações' } },
           { path: 'captura', name: 'captura', component: CapturaView, meta: { titulo: 'Captura', perfis: ['SOCIA'] } },
+          { path: 'honorarios', name: 'honorarios', component: HonorariosView, meta: { titulo: 'Honorários', perfis: ['SOCIA'] } },
+          { path: 'importacao', name: 'importacao', component: ImportacaoView, meta: { titulo: 'Importação', perfis: ['SOCIA'], mestre: true } },
+          // retorno do consentimento do Google (o servidor redireciona para /configuracoes?google=...)
+          { path: 'configuracoes', redirect: (para) => ({ name: 'drive', query: para.query }) },
+          { path: 'drive', name: 'drive', component: DriveView, meta: { titulo: 'Drive do escritório', perfis: ['SOCIA'] } },
           { path: 'painel', name: 'painel', component: PainelView, meta: { titulo: 'Painel das sócias', perfis: ['SOCIA'] } },
           { path: 'atendimento', name: 'atendimento', component: AtendimentoView, meta: { titulo: 'Atendimento' } },
           { path: 'financeiro', name: 'financeiro', component: FinanceiroView, meta: { titulo: 'Financeiro', perfis: ['SOCIA'] } },
           { path: 'relatorios', name: 'relatorios', component: RelatoriosView, meta: { titulo: 'Relatórios' } },
           { path: 'modelos', name: 'modelos', component: ModelosView, meta: { titulo: 'Modelos de peças' } },
+          { path: 'comentarios', name: 'comentarios', component: ComentariosView, meta: { titulo: 'Comentários do site', perfis: ['SOCIA'] } },
           { path: 'sistema', name: 'sistema', component: SistemaView, meta: { titulo: 'Sistema', perfis: ['SOCIA'], mestre: true } },
           { path: 'seguranca', name: 'seguranca', component: SegurancaView, meta: { titulo: 'Minha conta' } },
           { path: ':resto(.*)*', name: 'nao-encontrada', component: NaoEncontradaView, meta: { titulo: 'Página não encontrada' } },

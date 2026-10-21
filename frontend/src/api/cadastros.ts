@@ -1,6 +1,23 @@
 import { api } from './http'
 import type { Perfil } from './sessao'
 
+export type AreaAtuacao =
+  | 'TRABALHISTA' | 'PREVIDENCIARIO' | 'FAMILIA' | 'SUCESSAO' | 'IMOBILIARIO'
+  | 'CONDOMINIAL' | 'MILITAR' | 'CRIMINAL' | 'ADMINISTRATIVO' | 'CIVEL'
+export const ROTULO_AREA: Record<AreaAtuacao, string> = {
+  TRABALHISTA: 'Trabalhista',
+  PREVIDENCIARIO: 'Previdenciário',
+  FAMILIA: 'Família',
+  SUCESSAO: 'Sucessão',
+  IMOBILIARIO: 'Imobiliário',
+  CONDOMINIAL: 'Condominial',
+  MILITAR: 'Militar',
+  CRIMINAL: 'Criminal',
+  ADMINISTRATIVO: 'Administrativo',
+  CIVEL: 'Cível',
+}
+export const AREAS = Object.keys(ROTULO_AREA) as AreaAtuacao[]
+
 export interface Cliente {
   id: number
   nome: string
@@ -10,8 +27,13 @@ export interface Cliente {
   endereco: string | null
   observacoes: string | null
   ativo: boolean
+  areas: AreaAtuacao[]
+  cadastroIncompleto: boolean
+  aConferir: boolean
+  rg: string | null
+  estadoCivil: string | null
 }
-export type DadosCliente = Omit<Cliente, 'id' | 'ativo'>
+export type DadosCliente = Omit<Cliente, 'id' | 'ativo' | 'cadastroIncompleto' | 'aConferir' | 'rg' | 'estadoCivil'>
 
 export type PapelParte = 'CLIENTE' | 'CONTRARIA' | 'OUTRO'
 export const ROTULO_PAPEL: Record<PapelParte, string> = { CLIENTE: 'Cliente', CONTRARIA: 'Parte contrária', OUTRO: 'Outro' }
@@ -35,6 +57,7 @@ export interface Processo {
   clienteNome: string
   advogadoId: number
   ativo: boolean
+  area: AreaAtuacao | null
   partes: Parte[]
 }
 export interface DadosProcesso {
@@ -46,6 +69,7 @@ export interface DadosProcesso {
   valorCausa: number | null
   clienteId: number
   advogadoId: number
+  area: AreaAtuacao | null
 }
 
 export interface Oab {
@@ -119,21 +143,25 @@ export interface DadosFeriado {
   descricao: string
 }
 
-export const listarClientes = () => api<Cliente[]>('GET', '/api/clientes')
+export const listarClientes = (area?: AreaAtuacao | null) =>
+  api<Cliente[]>('GET', '/api/clientes' + (area ? `?area=${area}` : ''))
 export const criarCliente = (d: DadosCliente) => api<Cliente>('POST', '/api/clientes', { json: d })
 export const atualizarCliente = (id: number, d: DadosCliente) => api<Cliente>('PUT', `/api/clientes/${id}`, { json: d })
 export const desativarCliente = (id: number) => api('POST', `/api/clientes/${id}/desativar`)
 export const reativarCliente = (id: number) => api('POST', `/api/clientes/${id}/reativar`)
 
-export const listarProcessos = (clienteId?: number) =>
-  api<Processo[]>('GET', '/api/processos' + (clienteId ? `?clienteId=${clienteId}` : ''))
+export const listarProcessos = (clienteId?: number, area?: AreaAtuacao | null) => {
+  const q = [clienteId ? `clienteId=${clienteId}` : '', area ? `area=${area}` : ''].filter(Boolean).join('&')
+  return api<Processo[]>('GET', '/api/processos' + (q ? `?${q}` : ''))
+}
 export const criarProcesso = (d: DadosProcesso) => api<Processo>('POST', '/api/processos', { json: d })
 export const atualizarProcesso = (id: number, d: DadosProcesso) => api<Processo>('PUT', `/api/processos/${id}`, { json: d })
 export const desativarProcesso = (id: number) => api('POST', `/api/processos/${id}/desativar`)
 export const adicionarParte = (id: number, nome: string, papel: PapelParte) =>
   api<Processo>('POST', `/api/processos/${id}/partes`, { json: { nome, papel } })
 
-export const listarUsuarios = () => api<Usuario[]>('GET', '/api/usuarios')
+export const listarUsuarios = (incluirMestre = false) =>
+  api<Usuario[]>('GET', incluirMestre ? '/api/usuarios?incluirMestre=true' : '/api/usuarios')
 export const criarUsuario = (d: DadosUsuario & { senha: string }) => api<Usuario>('POST', '/api/usuarios', { json: d })
 export const atualizarUsuario = (id: number, d: DadosUsuario) => api<Usuario>('PUT', `/api/usuarios/${id}`, { json: d })
 export const desativarUsuario = (id: number) => api('POST', `/api/usuarios/${id}/desativar`)

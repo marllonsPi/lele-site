@@ -157,9 +157,10 @@ describe('FinanceiroView', () => {
     const f = w.find('form.formulario')
     await f.find('input').setValue('Contrato novo')
     await f.find('input[type=number]').setValue(1200)
+    await f.findAll('select')[1]!.setValue('CIVEL')
     await f.trigger('submit')
     await flushPromises()
-    expect(m.criarContrato).toHaveBeenCalledWith(expect.objectContaining({ clienteId: 1, descricao: 'Contrato novo', valorTotal: 1200, parcelas: 1 }))
+    expect(m.criarContrato).toHaveBeenCalledWith(expect.objectContaining({ clienteId: 1, descricao: 'Contrato novo', valorTotal: 1200, parcelas: 1, area: 'CIVEL' }))
   })
 
   it('registra despesa e honorario variavel', async () => {

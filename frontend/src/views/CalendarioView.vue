@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { azRotulos } from '../utils/ordenacao'
 import { computed, onMounted, ref } from 'vue'
 import {
   atualizarFeriado,
@@ -11,6 +12,7 @@ import {
   type TipoFeriado,
 } from '../api/cadastros'
 import Feedback from '../components/Feedback.vue'
+import Modal from '../components/Modal.vue'
 import { useFeedback } from '../composables/useFeedback'
 import { useSessao } from '../composables/useSessao'
 import { formatarData } from '../utils/datas'
@@ -86,28 +88,26 @@ onMounted(recarregar)
       <button v-if="ehSocia" type="button" class="botao-primario" @click="abrirNovo">Novo feriado ou suspensão</button>
     </div>
 
-    <form v-if="editando !== null" class="formulario" @submit.prevent="salvar">
-      <label>
-        Escopo
-        <select v-model="form.escopo">
-          <option v-for="(r, v) in ROTULO_ESCOPO" :key="v" :value="v">{{ r }}</option>
-        </select>
-      </label>
-      <label>Referência (UF, cidade ou tribunal) <input v-model="form.referencia" maxlength="80" /></label>
-      <label>
-        Tipo
-        <select v-model="form.tipo">
-          <option v-for="(r, v) in ROTULO_TIPO" :key="v" :value="v">{{ r }}</option>
-        </select>
-      </label>
-      <label>Data inicial <input v-model="form.dataInicial" type="date" required /></label>
-      <label>Data final (se período) <input v-model="form.dataFinal" type="date" /></label>
-      <label>Descrição <input v-model="form.descricao" required maxlength="200" /></label>
-      <div class="grupo-botoes">
-        <button type="submit" class="botao-primario">Salvar</button>
-        <button type="button" class="botao-secundario" @click="editando = null">Cancelar</button>
-      </div>
-    </form>
+    <Modal :aberto="editando !== null" :titulo="editando === 'novo' ? 'Novo feriado ou suspensão' : 'Editar feriado ou suspensão'" form-id="f-salvar-feriado" salvar-rotulo="Salvar" :erro="erro" @fechar="editando = null">
+      <form id="f-salvar-feriado" class="formulario" @submit.prevent="salvar">
+        <label>
+          Escopo
+          <select v-model="form.escopo">
+            <option v-for="[v, r] in azRotulos(ROTULO_ESCOPO)" :key="v" :value="v">{{ r }}</option>
+          </select>
+        </label>
+        <label>Referência (UF, cidade ou tribunal) <input v-model="form.referencia" maxlength="80" /></label>
+        <label>
+          Tipo
+          <select v-model="form.tipo">
+            <option v-for="[v, r] in azRotulos(ROTULO_TIPO)" :key="v" :value="v">{{ r }}</option>
+          </select>
+        </label>
+        <label>Data inicial <input v-model="form.dataInicial" type="date" required /></label>
+        <label>Data final (se período) <input v-model="form.dataFinal" type="date" /></label>
+        <label>Descrição <input v-model="form.descricao" required maxlength="200" /></label>
+      </form>
+    </Modal>
 
     <Feedback :erro="erro" :aviso="aviso" />
     <p v-if="carregando">Carregando...</p>

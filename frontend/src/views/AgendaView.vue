@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { az, azRotulos } from '../utils/ordenacao'
+import Modal from '../components/Modal.vue'
 import { computed, onMounted, ref } from 'vue'
 import {
   carregarAgenda,
@@ -92,7 +94,7 @@ function aoFinalizar(item: ItemAgenda) {
 }
 
 async function abrirNovo() {
-  novo.value = !novo.value
+  novo.value = true
   if (novo.value && processos.value.length === 0) {
     try {
       ;[processos.value, clientes.value] = await Promise.all([carregarProcessos(), carregarClientes()])
@@ -144,57 +146,58 @@ onMounted(async () => {
         Ver agenda de
         <select v-model="alvo" @change="recarregar">
           <option :value="null">Minha agenda</option>
-          <option v-for="u in responsaveis" :key="u.id" :value="u.id">{{ u.nome }}</option>
+          <option v-for="u in az(responsaveis, (x) => x.nome)" :key="u.id" :value="u.id">{{ u.nome }}</option>
         </select>
       </label>
-      <button type="button" class="botao-primario" :aria-expanded="novo" @click="abrirNovo">
-        {{ novo ? 'Fechar' : 'Marcar audiência ou atendimento' }}
+      <button type="button" class="botao-primario" @click="abrirNovo">
+        Marcar audiência ou atendimento
       </button>
     </div>
 
-    <form v-if="novo" class="formulario" @submit.prevent="marcar">
-      <label>
-        Tipo
-        <select v-model="form.tipo">
-          <option value="AUD">Audiência</option>
-          <option value="ATD">Atendimento de cliente</option>
-        </select>
-      </label>
-      <label>
-        Processo {{ form.tipo === 'ATD' ? '(opcional)' : '' }}
-        <select v-model="form.processoId" :required="form.tipo === 'AUD'">
-          <option value="">Selecione</option>
-          <option v-for="p in processos" :key="p.id" :value="p.id">{{ p.numeroFormatado }} · {{ p.clienteNome }}</option>
-        </select>
-      </label>
-      <label v-if="form.tipo === 'ATD'">
-        Cliente {{ form.processoId === '' ? '' : '(opcional)' }}
-        <select v-model="form.clienteId" :required="form.processoId === ''">
-          <option value="">Selecione</option>
-          <option v-for="c in clientes" :key="c.id" :value="c.id">{{ c.nome }}</option>
-        </select>
-      </label>
-      <label>
-        {{ form.tipo === 'ATD' ? 'Advogado que atenderá' : 'Responsável' }}
-        <select v-model="form.responsavelId" :disabled="!podeEscolherUsuario">
-          <option v-if="!podeEscolherUsuario && eu" :value="eu.id">{{ eu.nome }}</option>
-          <option v-for="u in podeEscolherUsuario ? responsaveis : []" :key="u.id" :value="u.id">{{ u.nome }}</option>
-        </select>
-      </label>
-      <label>Data <input v-model="form.data" type="date" required /></label>
-      <label>Hora <input v-model="form.hora" type="time" required /></label>
-      <label>Duração (min) <input v-model.number="form.duracaoMin" type="number" min="5" step="5" required /></label>
-      <label>
-        Modalidade
-        <select v-model="form.modalidade">
-          <option v-for="(rotulo, valor) in ROTULO_MODALIDADE" :key="valor" :value="valor">{{ rotulo }}</option>
-        </select>
-      </label>
-      <label>Local ou link <input v-model="form.localOuLink" maxlength="300" /></label>
-      <label>Descrição <input v-model="form.descricao" maxlength="300" /></label>
-      <label class="marcar"><input v-model="form.urgente" type="checkbox" /> Urgente</label>
-      <button type="submit" class="botao-primario">Marcar</button>
-    </form>
+    <Modal :aberto="novo" titulo="Marcar audiência ou atendimento" form-id="f-marcar-621" salvar-rotulo="Marcar" :erro="erro" @fechar="novo = false">
+      <form id="f-marcar-621" class="formulario" @submit.prevent="marcar">
+        <label>
+          Tipo
+          <select v-model="form.tipo">
+            <option value="AUD">Audiência</option>
+            <option value="ATD">Atendimento de cliente</option>
+          </select>
+        </label>
+        <label>
+          Processo {{ form.tipo === 'ATD' ? '(opcional)' : '' }}
+          <select v-model="form.processoId" :required="form.tipo === 'AUD'">
+            <option value="">Selecione</option>
+            <option v-for="p in az(processos, (x) => x.clienteNome + ' ' + x.numeroFormatado)" :key="p.id" :value="p.id">{{ p.numeroFormatado }} · {{ p.clienteNome }}</option>
+          </select>
+        </label>
+        <label v-if="form.tipo === 'ATD'">
+          Cliente {{ form.processoId === '' ? '' : '(opcional)' }}
+          <select v-model="form.clienteId" :required="form.processoId === ''">
+            <option value="">Selecione</option>
+            <option v-for="c in az(clientes, (x) => x.nome)" :key="c.id" :value="c.id">{{ c.nome }}</option>
+          </select>
+        </label>
+        <label>
+          {{ form.tipo === 'ATD' ? 'Advogado que atenderá' : 'Responsável' }}
+          <select v-model="form.responsavelId" :disabled="!podeEscolherUsuario">
+            <option v-if="!podeEscolherUsuario && eu" :value="eu.id">{{ eu.nome }}</option>
+            <option v-for="u in az(podeEscolherUsuario ? responsaveis : [], (x) => x.nome)" :key="u.id" :value="u.id">{{ u.nome }}</option>
+          </select>
+        </label>
+        <label>Data <input v-model="form.data" type="date" required /></label>
+        <label>Hora <input v-model="form.hora" type="time" required /></label>
+        <label>Duração (min) <input v-model.number="form.duracaoMin" type="number" min="5" step="5" required /></label>
+        <label>
+          Modalidade
+          <select v-model="form.modalidade">
+            <option v-for="[valor, rotulo] in azRotulos(ROTULO_MODALIDADE)" :key="valor" :value="valor">{{ rotulo }}</option>
+          </select>
+        </label>
+        <label>Local ou link <input v-model="form.localOuLink" maxlength="300" /></label>
+        <label>Descrição <input v-model="form.descricao" maxlength="300" /></label>
+        <label class="marcar"><input v-model="form.urgente" type="checkbox" /> Urgente</label>
+      </form>
+    </Modal>
 
     <p v-if="aviso" class="ok" role="status">{{ aviso }}</p>
     <ul v-if="avisosConflito.length" class="alerta" role="status">

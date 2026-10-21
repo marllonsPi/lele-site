@@ -1,4 +1,5 @@
 import { api } from './http'
+import type { AreaAtuacao } from './cadastros'
 
 export interface ResumoFinanceiro {
   contratado: number
@@ -20,10 +21,11 @@ export interface Contrato {
   processo_id: number | null
   descricao: string
   valor_total: number
+  area: AreaAtuacao | null
   ativo: boolean
 }
 
-export type SituacaoParcela = 'PAGA' | 'A_VENCER' | 'EM_ATRASO'
+export type SituacaoParcela = 'PAGA' | 'A_VENCER' | 'EM_ATRASO' | 'CANCELADA'
 export interface Parcela {
   id: number
   numero: number
@@ -44,9 +46,10 @@ export const criarContrato = (d: {
   valorTotal: number
   parcelas: number
   primeiroVencimento: string
+  area: AreaAtuacao
 }) => api<{ id: number }>('POST', '/api/financeiro/contratos', { json: d })
-export const pagarParcela = (id: number, data: string, valor: number) =>
-  api('POST', `/api/financeiro/parcelas/${id}/pagar`, { json: { data, valor } })
+export const pagarParcela = (id: number, data: string, valor: number, forma?: string) =>
+  api('POST', `/api/financeiro/parcelas/${id}/pagar`, { json: forma ? { data, valor, forma } : { data, valor } })
 export const registrarDespesa = (d: {
   clienteId: number
   processoId: number | null

@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import { az, azPor, azRotulos } from '../utils/ordenacao'
 import { computed, onMounted, ref } from 'vue'
 import { ROTULO_TIPO, TIPOS_PRAZO, type TipoAgendamento } from '../api/agenda'
 import { listarProcessos, type Processo } from '../api/cadastros'
 import {
   buscarPublicacao,
+  cadastrarProcessoDePublicacao,
   classificarPublicacao,
   descartarPublicacao,
   listarPublicacoes,
@@ -11,20 +13,38 @@ import {
   ROTULO_FONTE,
   vincularProcesso,
   type EstadoPublicacao,
+  type MetadadosPublicacao,
   type Publicacao,
 } from '../api/publicacoes'
 import Feedback from '../components/Feedback.vue'
+import SeletorOrdem from '../components/SeletorOrdem.vue'
+import { useOrdenacao } from '../composables/useOrdenacao'
+import Modal from '../components/Modal.vue'
 import FormMotivo from '../components/FormMotivo.vue'
 import { useFeedback } from '../composables/useFeedback'
 import { useSessao } from '../composables/useSessao'
 import { useUsuarios } from '../composables/useUsuarios'
 import { formatarData, hojeIso } from '../utils/datas'
+import { somarDiasUteis, sugerir } from '../utils/sugestaoPublicacao'
 
 const { eu, temPerfil } = useSessao()
 const { usuarios, carregar: carregarUsuarios, nome } = useUsuarios()
 const { erro, aviso, executar } = useFeedback()
 
 const publicacoes = ref<Publicacao[]>([])
+const ordem = useOrdenacao<Publicacao>('publicacoes', [
+  { chave: 'recentes', rotulo: 'Data da publicação', valor: (p) => -Date.parse(p.dataPublicacao) },
+  { chave: 'processo', rotulo: 'Número do processo', valor: (p) => p.numeroProcesso },
+  { chave: 'tribunal', rotulo: 'Tribunal', valor: (p) => p.tribunal },
+  { chave: 'situacao', rotulo: 'Situação', valor: (p) => ROTULO_ESTADO[p.estado] },
+  { chave: 'titular', rotulo: 'Em nome de', valor: (p) => nome(p.titularId) },
+], [
+  { chave: 'tribunal', rotulo: 'Tribunal', valor: (p) => p.tribunal },
+  { chave: 'situacao', rotulo: 'Situação', valor: (p) => ROTULO_ESTADO[p.estado] },
+  { chave: 'titular', rotulo: 'Em nome de', valor: (p) => nome(p.titularId) },
+])
+const gruposLista = computed(() => ordem.grupos(publicacoes.value))
+
 const processos = ref<Processo[]>([])
 const carregando = ref(true)
 const estado = ref<EstadoPublicacao | ''>('')
@@ -33,6 +53,10 @@ const descartando = ref<number | null>(null)
 const vinculando = ref<number | null>(null)
 const processoEscolhido = ref<number | ''>('')
 const conteudos = ref<Record<number, string>>({})
+const cadastrando = ref<number | null>(null)
+const metaCadastro = ref<MetadadosPublicacao | null>(null)
+const clienteEscolhido = ref('')
+const motivosAuto = ref<string[]>([])
 
 const ehSocia = computed(() => temPerfil('SOCIA'))
 const responsaveis = computed(() => usuarios.value.filter((u) => u.ativo))
@@ -69,7 +93,25 @@ async function carregarProcessos() {
 async function abrirClassificar(p: Publicacao) {
   await carregarProcessos()
   form.value = { ...formVazio(), processoId: p.processoId ?? '', descricao: p.resumo?.slice(0, 300) ?? '' }
+  motivosAuto.value = []
   classificando.value = classificando.value === p.id ? null : p.id
+  if (classificando.value !== p.id) return
+  // preenche sozinho a partir do texto integral; a socia confere e ajusta
+  await executar(async () => {
+    const texto = p.conteudo ?? (await buscarPublicacao(p.id)).conteudo ?? p.resumo ?? ''
+    if (!texto) return
+    const s = sugerir(texto)
+    const inicio = somarDiasUteis(p.dataPublicacao, 1)
+    form.value = {
+      ...form.value,
+      tipo: s.tipo,
+      urgente: s.urgente,
+      descricao: s.descricao,
+      inicioPrazo: inicio,
+      prazoFatal: s.dias ? somarDiasUteis(inicio, s.dias - 1) : form.value.prazoFatal,
+    }
+    motivosAuto.value = s.motivos
+  }, '', true)
 }
 
 async function classificar(p: Publicacao) {
@@ -96,6 +138,27 @@ async function classificar(p: Publicacao) {
 async function descartar(p: Publicacao, motivo: string) {
   if (await executar(() => descartarPublicacao(p.id, motivo), 'Publicação descartada com registro.')) {
     descartando.value = null
+    await recarregar()
+  }
+}
+
+async function abrirCadastro(p: Publicacao) {
+  if (cadastrando.value === p.id) {
+    cadastrando.value = null
+    return
+  }
+  await executar(async () => {
+    const completa = await buscarPublicacao(p.id)
+    metaCadastro.value = completa.metadados
+    clienteEscolhido.value = completa.metadados?.partes[0]?.nome ?? ''
+    cadastrando.value = p.id
+  }, '', true)
+}
+
+async function cadastrarAuto(p: Publicacao) {
+  const nomeCliente = clienteEscolhido.value.trim()
+  if (await executar(() => cadastrarProcessoDePublicacao(p.id, { clienteId: null, nomeCliente }), 'Processo e cliente cadastrados a partir da publicação.')) {
+    cadastrando.value = null
     await recarregar()
   }
 }
@@ -143,16 +206,19 @@ onMounted(async () => {
         Estado
         <select v-model="estado" @change="recarregar">
           <option value="">Todos</option>
-          <option v-for="(r, v) in ROTULO_ESTADO" :key="v" :value="v">{{ r }}</option>
+          <option v-for="[v, r] in azRotulos(ROTULO_ESTADO)" :key="v" :value="v">{{ r }}</option>
         </select>
       </label>
     </div>
 
     <Feedback :erro="erro" :aviso="aviso" />
+    <SeletorOrdem :ordem="ordem" :total="publicacoes.length" />
     <p v-if="carregando">Carregando...</p>
     <p v-else-if="publicacoes.length === 0" class="suave">Nenhuma publicação.</p>
 
-    <article v-for="p in publicacoes" :key="p.id" class="cartao" :class="{ destaque: p.estado === 'A_CLASSIFICAR' }">
+    <template v-for="g in gruposLista" :key="g.titulo">
+      <h2 v-if="g.titulo" class="grupo-titulo">{{ g.titulo }} <span class="suave">({{ g.itens.length }})</span></h2>
+      <article v-for="p in g.itens" :key="p.id"  class="cartao" :class="{ destaque: p.estado === 'A_CLASSIFICAR' }">
       <header class="cartao-topo">
         <b>{{ p.numeroFormatado || p.numeroProcesso }}</b>
         <span v-for="f in p.fontes" :key="f" class="selo">{{ ROTULO_FONTE[f] }}</span>
@@ -174,6 +240,7 @@ onMounted(async () => {
           {{ conteudos[p.id] !== undefined ? 'Ocultar texto' : 'Ver texto completo' }}
         </button>
         <template v-if="ehSocia && p.estado === 'A_CLASSIFICAR'">
+          <button v-if="p.sugerirCadastro" type="button" class="botao-secundario" @click="abrirCadastro(p)">Cadastrar processo automaticamente</button>
           <button type="button" class="botao-primario" @click="abrirClassificar(p)">Classificar</button>
           <button type="button" class="botao-secundario" @click="descartando = descartando === p.id ? null : p.id">Descartar</button>
         </template>
@@ -200,38 +267,64 @@ onMounted(async () => {
           Processo
           <select v-model="processoEscolhido" required>
             <option value="">Selecione</option>
-            <option v-for="x in processos" :key="x.id" :value="x.id">{{ x.numeroFormatado }} · {{ x.clienteNome }}</option>
+            <option v-for="x in az(processos, (x) => x.clienteNome + ' ' + x.numeroFormatado)" :key="x.id" :value="x.id">{{ x.numeroFormatado }} · {{ x.clienteNome }}</option>
           </select>
         </label>
         <button type="submit" class="botao-secundario">Vincular</button>
       </form>
 
-      <form v-if="classificando === p.id" class="formulario" @submit.prevent="classificar(p)">
-        <label>
-          Tipo de prazo
-          <select v-model="form.tipo">
-            <option v-for="t in TIPOS_PRAZO" :key="t" :value="t">{{ t }} · {{ ROTULO_TIPO[t] }}</option>
-          </select>
-        </label>
-        <label>
-          Processo
-          <select v-model="form.processoId" :required="!p.processoId">
-            <option value="">{{ p.processoId ? 'Já vinculado' : 'Selecione' }}</option>
-            <option v-for="x in processos" :key="x.id" :value="x.id">{{ x.numeroFormatado }} · {{ x.clienteNome }}</option>
-          </select>
-        </label>
-        <label>
-          Responsável
-          <select v-model="form.responsavelId" required>
-            <option v-for="u in responsaveis" :key="u.id" :value="u.id">{{ u.nome }}</option>
-          </select>
-        </label>
-        <label>Início do prazo <input v-model="form.inicioPrazo" type="date" required /></label>
-        <label>Prazo fatal <input v-model="form.prazoFatal" type="date" required /></label>
-        <label>Descrição <input v-model="form.descricao" maxlength="300" /></label>
-        <label class="marcar"><input v-model="form.urgente" type="checkbox" /> Urgente</label>
-        <button type="submit" class="botao-primario">Classificar e criar prazo</button>
-      </form>
-    </article>
+      <Modal :aberto="cadastrando === p.id" titulo="Cadastrar processo e cliente" form-id="f-cadastrarAutop" salvar-rotulo="Cadastrar" :erro="erro" @fechar="cadastrando = null">
+        <form id="f-cadastrarAutop" class="formulario" @submit.prevent="cadastrarAuto(p)">
+          <p class="suave largo">
+            Dados lidos da publicação:
+            <template v-if="metaCadastro">
+              {{ [metaCadastro.classe, metaCadastro.orgao, metaCadastro.tipoComunicacao].filter(Boolean).join(' · ') || 'sem classe/órgão' }}
+              <a v-if="metaCadastro.link" :href="metaCadastro.link" target="_blank" rel="noopener noreferrer">abrir no tribunal</a>
+            </template>
+            <template v-else>a fonte não informou classe, órgão nem partes: digite o cliente.</template>
+          </p>
+          <label>
+            Quem é o cliente?
+            <input v-model="clienteEscolhido" list="partes-publicacao" required maxlength="200" />
+            <datalist id="partes-publicacao">
+              <option v-for="pt in metaCadastro?.partes ?? []" :key="pt.nome" :value="pt.nome">{{ pt.polo ?? '' }}</option>
+            </datalist>
+          </label>
+          <p class="suave largo">As demais partes entram como parte contrária. Se já existir cliente com este nome, ele é reaproveitado.</p>
+        </form>
+      </Modal>
+
+      <Modal :aberto="classificando === p.id" titulo="Classificar e criar prazo" form-id="f-classificarp" salvar-rotulo="Criar prazo" :erro="erro" @fechar="classificando = null">
+        <form id="f-classificarp" class="formulario" @submit.prevent="classificar(p)">
+          <p v-if="motivosAuto.length" class="suave largo">
+            Preenchido automaticamente a partir do texto ({{ motivosAuto.join('; ') }}). Confira antes de salvar; feriados não são considerados.
+          </p>
+          <label>
+            Tipo de prazo
+            <select v-model="form.tipo">
+              <option v-for="t in azPor(TIPOS_PRAZO, ROTULO_TIPO)" :key="t" :value="t">{{ t }} · {{ ROTULO_TIPO[t] }}</option>
+            </select>
+          </label>
+          <label>
+            Processo
+            <select v-model="form.processoId" :required="!p.processoId">
+              <option value="">{{ p.processoId ? 'Já vinculado' : 'Selecione' }}</option>
+              <option v-for="x in az(processos, (x) => x.clienteNome + ' ' + x.numeroFormatado)" :key="x.id" :value="x.id">{{ x.numeroFormatado }} · {{ x.clienteNome }}</option>
+            </select>
+          </label>
+          <label>
+            Responsável
+            <select v-model="form.responsavelId" required>
+              <option v-for="u in az(responsaveis, (x) => x.nome)" :key="u.id" :value="u.id">{{ u.nome }}</option>
+            </select>
+          </label>
+          <label>Início do prazo <input v-model="form.inicioPrazo" type="date" required /></label>
+          <label>Prazo fatal <input v-model="form.prazoFatal" type="date" required /></label>
+          <label>Descrição <input v-model="form.descricao" maxlength="300" /></label>
+          <label class="marcar"><input v-model="form.urgente" type="checkbox" /> Urgente</label>
+        </form>
+      </Modal>
+      </article>
+    </template>
   </section>
 </template>

@@ -1,20 +1,28 @@
 <script setup lang="ts">
+import { azPor } from '../utils/ordenacao'
 import { onMounted, ref } from 'vue'
+import { AREAS, ROTULO_AREA, type AreaAtuacao } from '../api/cadastros'
 import { carregarPainel, type Painel } from '../api/publicacoes'
 import CartaoAgenda from '../components/CartaoAgenda.vue'
 import Feedback from '../components/Feedback.vue'
+import PainelFinanceiro from '../components/PainelFinanceiro.vue'
 import { useFeedback } from '../composables/useFeedback'
 import { useUsuarios } from '../composables/useUsuarios'
 
 const { carregar: carregarUsuarios, nome } = useUsuarios()
 const { erro, executar } = useFeedback()
 const painel = ref<Painel | null>(null)
+const area = ref<AreaAtuacao | ''>('')
+
+async function recarregar() {
+  await executar(async () => {
+    painel.value = await carregarPainel(area.value || null)
+  })
+}
 
 onMounted(async () => {
   await carregarUsuarios()
-  await executar(async () => {
-    painel.value = await carregarPainel()
-  })
+  await recarregar()
 })
 
 const secoes = [
@@ -29,6 +37,13 @@ const secoes = [
 <template>
   <section>
     <h1>Painel das sócias</h1>
+    <label class="filtro-area">
+      Área de atuação
+      <select v-model="area" @change="recarregar">
+        <option value="">Todas</option>
+        <option v-for="a in azPor(AREAS, ROTULO_AREA)" :key="a" :value="a">{{ ROTULO_AREA[a] }}</option>
+      </select>
+    </label>
     <Feedback :erro="erro" />
     <p v-if="!painel && !erro">Carregando...</p>
     <template v-if="painel">
@@ -60,5 +75,6 @@ const secoes = [
         <CartaoAgenda v-for="i in painel[s.chave]" :key="s.chave + i.id" :item="i" />
       </template>
     </template>
+    <PainelFinanceiro :area="area" />
   </section>
 </template>

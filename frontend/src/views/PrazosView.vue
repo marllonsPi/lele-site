@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Modal from '../components/Modal.vue'
 import { computed, onMounted, ref } from 'vue'
 import {
   carregarPrazos,
@@ -15,6 +16,9 @@ import {
 import { ApiError } from '../api/http'
 import AgendamentoDetalhe from '../components/AgendamentoDetalhe.vue'
 import BolinhaTipo from '../components/BolinhaTipo.vue'
+import SeletorOrdem from '../components/SeletorOrdem.vue'
+import { useOrdenacao } from '../composables/useOrdenacao'
+import { az, azPor, porNome } from '../utils/ordenacao'
 import { useSessao } from '../composables/useSessao'
 import { useUsuarios } from '../composables/useUsuarios'
 import { formatarData, hojeIso } from '../utils/datas'
@@ -23,6 +27,20 @@ const { eu, temPerfil } = useSessao()
 const { usuarios, carregar: carregarUsuarios, nome } = useUsuarios()
 
 const prazos = ref<Prazo[]>([])
+const ordem = useOrdenacao<Prazo>('prazos', [
+  { chave: 'fatal', rotulo: 'Prazo fatal', valor: (p) => p.prazoFatal },
+  { chave: 'interno', rotulo: 'Prazo interno', valor: (p) => p.prazoInterno },
+  { chave: 'responsavel', rotulo: 'Responsável', valor: (p) => nome(p.responsavelId) },
+  { chave: 'tipo', rotulo: 'Tipo', valor: (p) => p.tipo },
+  { chave: 'situacao', rotulo: 'Situação', valor: (p) => ROTULO_STATUS[p.status] },
+  { chave: 'urgencia', rotulo: 'Urgentes primeiro', valor: (p) => (p.urgente ? 0 : 1) },
+], [
+  { chave: 'responsavel', rotulo: 'Responsável', valor: (p) => nome(p.responsavelId) },
+  { chave: 'tipo', rotulo: 'Tipo', valor: (p) => ROTULO_TIPO[p.tipo] },
+  { chave: 'situacao', rotulo: 'Situação', valor: (p) => ROTULO_STATUS[p.status] },
+  { chave: 'urgencia', rotulo: 'Urgência', valor: (p) => (p.urgente ? 'Urgentes' : 'Normais') },
+])
+const gruposLista = computed(() => ordem.grupos(prazos.value))
 const processos = ref<ProcessoResumo[]>([])
 const carregando = ref(true)
 const erro = ref('')
@@ -45,7 +63,8 @@ function formVazio() {
 }
 
 const podeEscolherUsuario = computed(() => temPerfil('SOCIA'))
-const responsaveis = computed(() => usuarios.value.filter((u) => u.ativo))
+const responsaveis = computed(() => porNome(usuarios.value.filter((u) => u.ativo), (u) => u.nome))
+const processosOrdenados = computed(() => porNome(processos.value, (p) => p.clienteNome + ' ' + p.numeroFormatado))
 
 function mensagem(e: unknown): string {
   return e instanceof ApiError && e.detalhe ? e.detalhe : 'Não foi possível concluir a operação.'
@@ -84,7 +103,7 @@ async function conferir(p: Prazo) {
 }
 
 async function abrirNovo() {
-  novo.value = !novo.value
+  novo.value = true
   if (novo.value && processos.value.length === 0) {
     try {
       processos.value = await carregarProcessos()
@@ -136,46 +155,50 @@ onMounted(async () => {
     <h1>Prazos</h1>
     <p class="suave">Quem lança o prazo não o confere; estagiários não conferem.</p>
     <div class="barra-ferramentas">
-      <button type="button" class="botao-primario" :aria-expanded="novo" @click="abrirNovo">
-        {{ novo ? 'Fechar' : 'Lançar prazo' }}
+      <button type="button" class="botao-primario" @click="abrirNovo">
+        Lançar prazo
       </button>
     </div>
 
-    <form v-if="novo" class="formulario" @submit.prevent="lancar">
-      <label>
-        Processo
-        <select v-model="form.processoId" required>
-          <option value="">Selecione</option>
-          <option v-for="p in processos" :key="p.id" :value="p.id">{{ p.numeroFormatado }} · {{ p.clienteNome }}</option>
-        </select>
-      </label>
-      <label>
-        Tipo
-        <select v-model="form.tipo">
-          <option v-for="t in TIPOS_PRAZO" :key="t" :value="t">{{ t }} · {{ ROTULO_TIPO[t] }}</option>
-        </select>
-      </label>
-      <label>
-        Responsável
-        <select v-model="form.responsavelId" :disabled="!podeEscolherUsuario">
-          <option v-if="!podeEscolherUsuario && eu" :value="eu.id">{{ eu.nome }}</option>
-          <option v-for="u in podeEscolherUsuario ? responsaveis : []" :key="u.id" :value="u.id">{{ u.nome }}</option>
-        </select>
-      </label>
-      <label>Início do prazo (intimação) <input v-model="form.inicioPrazo" type="date" required /></label>
-      <label>Prazo fatal <input v-model="form.prazoFatal" type="date" required /></label>
-      <label>Descrição <input v-model="form.descricao" maxlength="300" /></label>
-      <label class="marcar"><input v-model="form.urgente" type="checkbox" /> Urgente</label>
-      <p class="suave">O prazo interno (3 dias úteis antes do fatal) é calculado pelo sistema.</p>
-      <button type="submit" class="botao-primario">Lançar</button>
-    </form>
+    <Modal :aberto="novo" titulo="Lançar prazo" form-id="f-lancar-621" salvar-rotulo="Lançar" :erro="erro" @fechar="novo = false">
+      <form id="f-lancar-621" class="formulario" @submit.prevent="lancar">
+        <label>
+          Processo
+          <select v-model="form.processoId" required>
+            <option value="">Selecione</option>
+            <option v-for="p in az(processosOrdenados, (x) => x.clienteNome + ' ' + x.numeroFormatado)" :key="p.id" :value="p.id">{{ p.numeroFormatado }} · {{ p.clienteNome }}</option>
+          </select>
+        </label>
+        <label>
+          Tipo
+          <select v-model="form.tipo">
+            <option v-for="t in azPor(TIPOS_PRAZO, ROTULO_TIPO)" :key="t" :value="t">{{ t }} · {{ ROTULO_TIPO[t] }}</option>
+          </select>
+        </label>
+        <label>
+          Responsável
+          <select v-model="form.responsavelId" :disabled="!podeEscolherUsuario">
+            <option v-if="!podeEscolherUsuario && eu" :value="eu.id">{{ eu.nome }}</option>
+            <option v-for="u in az(podeEscolherUsuario ? responsaveis : [], (x) => x.nome)" :key="u.id" :value="u.id">{{ u.nome }}</option>
+          </select>
+        </label>
+        <label>Início do prazo (intimação) <input v-model="form.inicioPrazo" type="date" required /></label>
+        <label>Prazo fatal <input v-model="form.prazoFatal" type="date" required /></label>
+        <label>Descrição <input v-model="form.descricao" maxlength="300" /></label>
+        <label class="marcar"><input v-model="form.urgente" type="checkbox" /> Urgente</label>
+        <p class="suave">O prazo interno (3 dias úteis antes do fatal) é calculado pelo sistema.</p>
+      </form>
+    </Modal>
 
     <p v-if="aviso" class="ok" role="status">{{ aviso }}</p>
     <p v-if="erro" class="erro" role="alert">{{ erro }}</p>
+    <SeletorOrdem :ordem="ordem" :total="prazos.length" />
     <p v-if="carregando">Carregando...</p>
     <p v-else-if="prazos.length === 0" class="suave">Nenhum prazo.</p>
 
-    <article v-for="p in prazos" :key="p.id" class="cartao" :class="{ 'status-AGUARDANDO': p.status === 'AGUARDANDO_CONFERENCIA_PRAZO' }">
+    <template v-for="g in gruposLista" :key="g.titulo">
+      <h2 v-if="g.titulo" class="grupo-titulo">{{ g.titulo }} <span class="suave">({{ g.itens.length }})</span></h2>
+      <article v-for="p in g.itens" :key="p.id"  class="cartao" :class="{ 'status-AGUARDANDO': p.status === 'AGUARDANDO_CONFERENCIA_PRAZO' }">
       <header class="cartao-topo">
         <BolinhaTipo :tipo="p.tipo" />
         <span v-if="p.urgente" class="urgente"><span aria-hidden="true">⚠</span> URGENTE</span>
@@ -197,6 +220,7 @@ onMounted(async () => {
         </button>
       </div>
       <AgendamentoDetalhe v-if="abertos.has(p.id)" :id="p.id" />
-    </article>
+      </article>
+    </template>
   </section>
 </template>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import { az, azPor } from '../utils/ordenacao'
 import { computed, onMounted, ref } from 'vue'
-import { listarClientes, listarProcessos, type Cliente, type Processo } from '../api/cadastros'
+import { AREAS, listarClientes, listarProcessos, ROTULO_AREA, type AreaAtuacao, type Cliente, type Processo } from '../api/cadastros'
 import {
   criarContrato,
   listarContratos,
@@ -15,11 +16,12 @@ import {
   type SituacaoParcela,
 } from '../api/financeiro'
 import Feedback from '../components/Feedback.vue'
+import Modal from '../components/Modal.vue'
 import { useFeedback } from '../composables/useFeedback'
 import { formatarData, hojeIso } from '../utils/datas'
 import { formatarMoeda } from '../utils/moeda'
 
-const ROTULO_SITUACAO: Record<SituacaoParcela, string> = { PAGA: 'Paga', A_VENCER: 'A vencer', EM_ATRASO: 'Em atraso' }
+const ROTULO_SITUACAO: Record<SituacaoParcela, string> = { PAGA: 'Paga', A_VENCER: 'A vencer', EM_ATRASO: 'Em atraso', CANCELADA: 'Cancelada' }
 
 const { erro, aviso, executar } = useFeedback()
 
@@ -30,10 +32,10 @@ const resumo = ref<ResumoFinanceiro | null>(null)
 const contratos = ref<Contrato[]>([])
 const parcelas = ref<Record<number, Parcela[]>>({})
 const pagando = ref<number | null>(null)
-const pagamento = ref({ data: hojeIso(), valor: 0 })
+const pagamento = ref({ data: hojeIso(), valor: 0, forma: '' })
 const painel = ref<'contrato' | 'despesa' | 'honorario' | null>(null)
 
-const contratoForm = ref({ processoId: '' as number | '', descricao: '', valorTotal: 0, parcelas: 1, primeiroVencimento: hojeIso(30) })
+const contratoForm = ref({ processoId: '' as number | '', descricao: '', valorTotal: 0, parcelas: 1, primeiroVencimento: hojeIso(30), area: '' as AreaAtuacao | '' })
 const despesaForm = ref({ processoId: '' as number | '', tipo: 'CUSTAS' as 'CUSTAS' | 'DESPESA', descricao: '', valor: 0, data: hojeIso(), reembolsavel: false })
 const honorarioForm = ref({ processoId: '' as number | '', tipo: 'EXITO' as 'EXITO' | 'SUCUMBENCIA', descricao: '', valorPrevisto: 0 })
 
@@ -91,6 +93,7 @@ async function novoContrato() {
           valorTotal: f.valorTotal,
           parcelas: f.parcelas,
           primeiroVencimento: f.primeiroVencimento,
+          area: f.area as AreaAtuacao,
         }),
       'Contrato criado com as parcelas.',
     ),
@@ -135,11 +138,11 @@ async function novoHonorario() {
 
 function abrirPagamento(p: Parcela) {
   pagando.value = pagando.value === p.id ? null : p.id
-  pagamento.value = { data: hojeIso(), valor: p.valor }
+  pagamento.value = { data: hojeIso(), valor: p.valor, forma: '' }
 }
 
 async function pagar(p: Parcela) {
-  const ok = await executar(() => pagarParcela(p.id, pagamento.value.data, pagamento.value.valor), 'Pagamento registrado.')
+  const ok = await executar(() => (pagamento.value.forma ? pagarParcela(p.id, pagamento.value.data, pagamento.value.valor, pagamento.value.forma) : pagarParcela(p.id, pagamento.value.data, pagamento.value.valor)), 'Pagamento registrado.')
   if (ok) {
     pagando.value = null
     await carregarCliente()
@@ -162,7 +165,7 @@ onMounted(async () => {
         Cliente
         <select v-model="clienteId" @change="carregarCliente">
           <option :value="null">Selecione</option>
-          <option v-for="c in clientes" :key="c.id" :value="c.id">{{ c.nome }}</option>
+          <option v-for="c in az(clientes, (x) => x.nome)" :key="c.id" :value="c.id">{{ c.nome }}</option>
         </select>
       </label>
     </div>
@@ -182,67 +185,77 @@ onMounted(async () => {
       </div>
 
       <div class="barra-ferramentas">
-        <button type="button" class="botao-secundario" @click="painel = painel === 'contrato' ? null : 'contrato'">Novo contrato</button>
-        <button type="button" class="botao-secundario" @click="painel = painel === 'despesa' ? null : 'despesa'">Registrar despesa</button>
-        <button type="button" class="botao-secundario" @click="painel = painel === 'honorario' ? null : 'honorario'">Honorário de êxito/sucumbência</button>
+        <button type="button" class="botao-secundario" @click="painel = 'contrato'">Novo contrato</button>
+        <button type="button" class="botao-secundario" @click="painel = 'despesa'">Registrar despesa</button>
+        <button type="button" class="botao-secundario" @click="painel = 'honorario'">Honorário de êxito/sucumbência</button>
       </div>
 
-      <form v-if="painel === 'contrato'" class="formulario" @submit.prevent="novoContrato">
-        <label>
-          Processo (opcional)
-          <select v-model="contratoForm.processoId">
-            <option value="">Nenhum</option>
-            <option v-for="p in processosDoCliente" :key="p.id" :value="p.id">{{ p.numeroFormatado }}</option>
-          </select>
-        </label>
-        <label>Descrição <input v-model="contratoForm.descricao" required /></label>
-        <label>Valor total (R$) <input v-model.number="contratoForm.valorTotal" type="number" min="0.01" step="0.01" required /></label>
-        <label>Parcelas <input v-model.number="contratoForm.parcelas" type="number" min="1" max="120" required /></label>
-        <label>Primeiro vencimento <input v-model="contratoForm.primeiroVencimento" type="date" required /></label>
-        <button type="submit" class="botao-primario">Criar contrato</button>
-      </form>
+      <Modal :aberto="painel === 'contrato'" titulo="Novo contrato" form-id="f-novoContrato-173" salvar-rotulo="Criar contrato" :erro="erro" @fechar="painel = null">
+        <form id="f-novoContrato-173" class="formulario" @submit.prevent="novoContrato">
+          <label>
+            Processo (opcional)
+            <select v-model="contratoForm.processoId">
+              <option value="">Nenhum</option>
+              <option v-for="p in az(processosDoCliente, (x) => x.numeroFormatado)" :key="p.id" :value="p.id">{{ p.numeroFormatado }}</option>
+            </select>
+          </label>
+          <label>
+            Área de atuação
+            <select v-model="contratoForm.area" required>
+              <option value="" disabled>Selecione</option>
+              <option v-for="a in azPor(AREAS, ROTULO_AREA)" :key="a" :value="a">{{ ROTULO_AREA[a] }}</option>
+            </select>
+          </label>
+          <label>Descrição <input v-model="contratoForm.descricao" required /></label>
+          <label>Valor total (R$) <input v-model.number="contratoForm.valorTotal" type="number" min="0.01" step="0.01" required /></label>
+          <label>Parcelas <input v-model.number="contratoForm.parcelas" type="number" min="1" max="120" required /></label>
+          <label>Primeiro vencimento <input v-model="contratoForm.primeiroVencimento" type="date" required /></label>
+        </form>
+      </Modal>
 
-      <form v-if="painel === 'despesa'" class="formulario" @submit.prevent="novaDespesa">
-        <label>
-          Tipo
-          <select v-model="despesaForm.tipo">
-            <option value="CUSTAS">Custas</option>
-            <option value="DESPESA">Despesa</option>
-          </select>
-        </label>
-        <label>
-          Processo (opcional)
-          <select v-model="despesaForm.processoId">
-            <option value="">Nenhum</option>
-            <option v-for="p in processosDoCliente" :key="p.id" :value="p.id">{{ p.numeroFormatado }}</option>
-          </select>
-        </label>
-        <label>Descrição <input v-model="despesaForm.descricao" required /></label>
-        <label>Valor (R$) <input v-model.number="despesaForm.valor" type="number" min="0.01" step="0.01" required /></label>
-        <label>Data <input v-model="despesaForm.data" type="date" /></label>
-        <label class="marcar"><input v-model="despesaForm.reembolsavel" type="checkbox" /> Reembolsável pelo cliente</label>
-        <button type="submit" class="botao-primario">Registrar</button>
-      </form>
+      <Modal :aberto="painel === 'despesa'" titulo="Registrar despesa" form-id="f-novaDespesa-214" salvar-rotulo="Registrar" :erro="erro" @fechar="painel = null">
+        <form id="f-novaDespesa-214" class="formulario" @submit.prevent="novaDespesa">
+          <label>
+            Tipo
+            <select v-model="despesaForm.tipo">
+              <option value="CUSTAS">Custas</option>
+              <option value="DESPESA">Despesa</option>
+            </select>
+          </label>
+          <label>
+            Processo (opcional)
+            <select v-model="despesaForm.processoId">
+              <option value="">Nenhum</option>
+              <option v-for="p in az(processosDoCliente, (x) => x.numeroFormatado)" :key="p.id" :value="p.id">{{ p.numeroFormatado }}</option>
+            </select>
+          </label>
+          <label>Descrição <input v-model="despesaForm.descricao" required /></label>
+          <label>Valor (R$) <input v-model.number="despesaForm.valor" type="number" min="0.01" step="0.01" required /></label>
+          <label>Data <input v-model="despesaForm.data" type="date" /></label>
+          <label class="marcar"><input v-model="despesaForm.reembolsavel" type="checkbox" /> Reembolsável pelo cliente</label>
+        </form>
+      </Modal>
 
-      <form v-if="painel === 'honorario'" class="formulario" @submit.prevent="novoHonorario">
-        <label>
-          Tipo
-          <select v-model="honorarioForm.tipo">
-            <option value="EXITO">Êxito</option>
-            <option value="SUCUMBENCIA">Sucumbência</option>
-          </select>
-        </label>
-        <label>
-          Processo (opcional)
-          <select v-model="honorarioForm.processoId">
-            <option value="">Nenhum</option>
-            <option v-for="p in processosDoCliente" :key="p.id" :value="p.id">{{ p.numeroFormatado }}</option>
-          </select>
-        </label>
-        <label>Descrição <input v-model="honorarioForm.descricao" required /></label>
-        <label>Valor previsto (R$) <input v-model.number="honorarioForm.valorPrevisto" type="number" min="0.01" step="0.01" required /></label>
-        <button type="submit" class="botao-primario">Registrar</button>
-      </form>
+      <Modal :aberto="painel === 'honorario'" titulo="Honorário de êxito ou sucumbência" form-id="f-novoHonorario-382" salvar-rotulo="Registrar" :erro="erro" @fechar="painel = null">
+        <form id="f-novoHonorario-382" class="formulario" @submit.prevent="novoHonorario">
+          <label>
+            Tipo
+            <select v-model="honorarioForm.tipo">
+              <option value="EXITO">Êxito</option>
+              <option value="SUCUMBENCIA">Sucumbência</option>
+            </select>
+          </label>
+          <label>
+            Processo (opcional)
+            <select v-model="honorarioForm.processoId">
+              <option value="">Nenhum</option>
+              <option v-for="p in az(processosDoCliente, (x) => x.numeroFormatado)" :key="p.id" :value="p.id">{{ p.numeroFormatado }}</option>
+            </select>
+          </label>
+          <label>Descrição <input v-model="honorarioForm.descricao" required /></label>
+          <label>Valor previsto (R$) <input v-model.number="honorarioForm.valorPrevisto" type="number" min="0.01" step="0.01" required /></label>
+        </form>
+      </Modal>
 
       <h2>Contratos e parcelas</h2>
       <p v-if="contratos.length === 0" class="suave">Nenhum contrato.</p>
@@ -266,13 +279,21 @@ onMounted(async () => {
                   <td>{{ formatarData(p.vencimento) }}</td>
                   <td>{{ formatarMoeda(p.valor) }}</td>
                   <td>{{ ROTULO_SITUACAO[p.situacao] }}<template v-if="p.pago_em"> em {{ formatarData(p.pago_em) }}</template></td>
-                  <td><button v-if="p.situacao !== 'PAGA'" type="button" class="botao-link" @click="abrirPagamento(p)">registrar pagamento</button></td>
+                  <td><button v-if="p.situacao !== 'PAGA' && p.situacao !== 'CANCELADA'" type="button" class="botao-link" @click="abrirPagamento(p)">registrar pagamento</button></td>
                 </tr>
                 <tr v-if="pagando === p.id">
                   <td colspan="5">
                     <form class="grupo-botoes" @submit.prevent="pagar(p)">
                       <label>Data <input v-model="pagamento.data" type="date" required /></label>
                       <label>Valor pago (R$) <input v-model.number="pagamento.valor" type="number" min="0.01" step="0.01" required /></label>
+                      <label>
+                        Forma de pagamento
+                        <select v-model="pagamento.forma">
+                          <option value="">Não informar</option>
+                          <option>PIX</option><option>Dinheiro</option><option>Cartão de débito</option><option>Cartão de crédito</option>
+                          <option>Boleto</option><option>Transferência</option>
+                        </select>
+                      </label>
                       <button type="submit" class="botao-primario">Confirmar pagamento</button>
                     </form>
                   </td>

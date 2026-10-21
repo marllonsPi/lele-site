@@ -1,13 +1,18 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { ROTULO_MODALIDADE, ROTULO_STATUS, type ItemAgenda } from '../api/agenda'
+import { useSessao } from '../composables/useSessao'
 import { useUsuarios } from '../composables/useUsuarios'
 import { formatarData, formatarHora } from '../utils/datas'
 import AgendamentoDetalhe from './AgendamentoDetalhe.vue'
+import QuadroSugestao from './QuadroSugestao.vue'
 import BolinhaTipo from './BolinhaTipo.vue'
 
-defineProps<{ item: ItemAgenda }>()
+const props = defineProps<{ item: ItemAgenda }>()
 const { nome } = useUsuarios()
+const { eu, temPerfil } = useSessao()
+/** Quadro de honorarios: socias, ou o advogado que conduz o atendimento. O servidor confere de novo. */
+const podeHonorarios = computed(() => temPerfil('SOCIA') || (temPerfil('ADVOGADO') && eu.value?.id === props.item.responsavelId))
 const aberto = ref(false)
 
 function quando(i: ItemAgenda): string {
@@ -52,5 +57,6 @@ function quando(i: ItemAgenda): string {
     </div>
     <slot name="extra" :item="item" />
     <AgendamentoDetalhe v-if="aberto" :id="item.id" />
+    <QuadroSugestao v-if="aberto && item.tipo === 'ATD' && podeHonorarios" :agendamento-id="item.id" :pode-assinar="temPerfil('SOCIA')" />
   </article>
 </template>

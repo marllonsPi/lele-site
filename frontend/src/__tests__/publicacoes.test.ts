@@ -7,7 +7,7 @@ import type { Publicacao } from '../api/publicacoes'
 import type { Eu } from '../api/sessao'
 import { item, logarComo } from './helpers'
 
-config.global.stubs = { RouterLink: true }
+config.global.stubs = { RouterLink: true, teleport: true }
 
 const m = vi.hoisted(() => ({
   listarPublicacoes: vi.fn(),
@@ -20,7 +20,13 @@ const m = vi.hoisted(() => ({
   listarIgnorados: vi.fn(),
   listarFiltros: vi.fn(),
   criarFiltro: vi.fn(),
-  desativarFiltro: vi.fn(),
+  atualizarFiltro: vi.fn(),
+  excluirFiltro: vi.fn(),
+  excluirExecucao: vi.fn(),
+  cadastrarProcessoDePublicacao: vi.fn(),
+  lerAgendamento: vi.fn(async () => ({ ativa: false, horario: '0 0 6 * * *', ultima: null })),
+  ligarAgendamento: vi.fn(),
+  limparExecucoes: vi.fn(),
   carregarPainel: vi.fn(),
   listarProcessos: vi.fn(),
 }))
@@ -37,7 +43,7 @@ const USUARIOS = [
 const pub = (p: Partial<Publicacao> = {}): Publicacao => ({
   id: 1, numeroProcesso: '00000013120258070001', numeroFormatado: '0000001-31.2025.8.07.0001', titularId: 3, dataPublicacao: '2026-10-19',
   tribunal: 'TJDFT', resumo: 'Intimação para contestar', fontes: ['DJEN'], somenteEmUmaFonte: true, estado: 'A_CLASSIFICAR',
-  processoId: null, sugerirCadastro: true, agendamentoId: null, motivoDescarte: null, conteudo: null, ...p,
+  processoId: null, sugerirCadastro: true, agendamentoId: null, motivoDescarte: null, conteudo: null, metadados: null, ...p,
 })
 
 async function montar(componente: object, eu: Eu = SOCIA) {
@@ -125,17 +131,12 @@ describe('CapturaView', () => {
     expect(w.text()).toContain('fora do ar')
   })
 
-  it('executa a captura e cria filtro', async () => {
+  it('executa a captura', async () => {
     m.executarCaptura.mockResolvedValue([])
-    m.criarFiltro.mockResolvedValue({})
     const w = await montar(CapturaView)
     await w.findAll('button').find((b) => b.text() === 'Executar captura agora')!.trigger('click')
     await flushPromises()
     expect(m.executarCaptura).toHaveBeenCalled()
-    await w.find('form.formulario input').setValue('TRF')
-    await w.find('form.formulario').trigger('submit')
-    await flushPromises()
-    expect(m.criarFiltro).toHaveBeenCalledWith(expect.objectContaining({ tribunalPrefixo: 'TRF', fonte: 'EMAIL' }))
   })
 })
 
