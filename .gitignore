@@ -15,3 +15,6 @@ frontend/dist/
 # dados reais nunca no Git
 *.dump
 *.sql.gz*
+
+# endereco da VM e afins: so local
+deploy/oci/local.env

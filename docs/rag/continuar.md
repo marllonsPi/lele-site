@@ -8,6 +8,8 @@ Atualizado em 2026-10-21. Complementa `estado.md`; nao repete o que la esta. Sem
 3. Validar: `cd backend && ./mvnw -o test` (258 testes; Postgres embutido zonky, sem Docker) e `cd frontend && npx vue-tsc --noEmit -p tsconfig.app.json && npx vitest run && npm run build` (117 testes). Falha preexistente: `PostgresRealTest.relatoriosInternosRespeitamPerfilEGeramPdf` (espera 2 itens na agenda de amanha, recebe 3: depende da data).
 4. Teste manual com dados ficticios: `docs/11-guia-de-teste.md`.
 
+Endereco da VM: os scripts `deploy/oci/*.sh` exigem `VM=usuario@host` (variavel de ambiente ou arquivo local `deploy/oci/local.env`, ignorado pelo Git; o IP nao e versionado: ver console OCI). Chave: `~/.ssh/crispim_ed25519`.
+
 ## 2. Onde esta o que
 | Assunto | Onde |
 |---|---|
