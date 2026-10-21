@@ -749,9 +749,13 @@
                     <textarea name="message" rows="4" maxlength="700" placeholder="Escreva seu comentário" required></textarea>
                   </label>
                 </div>
+                <label class="form-field" style="position:absolute;left:-9999px;height:0;overflow:hidden" aria-hidden="true">
+                  <span>Não preencha este campo</span>
+                  <input type="text" name="website" tabindex="-1" autocomplete="off" />
+                </label>
                 <button class="btn" type="submit">Enviar para aprovação</button>
                 <p class="form-note">
-                  O comentário abre seu e-mail para envio à moderação. Após aprovação, ele é adicionado ao site no próximo update do Git.
+                  Seu comentário é enviado às advogadas para aprovação. Depois de aprovado, ele aparece aqui automaticamente. Seu e-mail não é publicado.
                 </p>
                 <p class="comment-feedback" id="comment-feedback" role="status"></p>
               </form>
@@ -872,7 +876,6 @@
       const intakeFeedback = document.getElementById("intake-feedback");
       const intakeReview = document.getElementById("intake-review");
       const processNumberField = document.getElementById("process-number-field");
-      const MODERATION_EMAIL = "crispim.campos@advdf.com.br";
       const INTAKE_WHATSAPP = "556199927375";
       const INTAKE_STORAGE_KEY = "crispim-campos-intake-session-complete";
       let currentIntakeStep = 1;
@@ -1127,42 +1130,55 @@
       });
 
       if (commentsForm) {
-        commentsForm.addEventListener("submit", (event) => {
+        commentsForm.addEventListener("submit", async (event) => {
           event.preventDefault();
           commentFeedback.textContent = "";
           commentFeedback.classList.remove("success", "error");
 
           const formData = new FormData(commentsForm);
           const payload = {
-            name: String(formData.get("name") || "").trim(),
+            nome: String(formData.get("name") || "").trim(),
             email: String(formData.get("email") || "").trim(),
-            message: String(formData.get("message") || "").trim(),
+            mensagem: String(formData.get("message") || "").trim(),
+            website: String(formData.get("website") || ""),
           };
 
-          if (!payload.name || !payload.email || !payload.message) {
+          if (!payload.nome || !payload.email || !payload.mensagem) {
             commentFeedback.textContent = "Preencha nome, e-mail e comentário.";
             commentFeedback.classList.add("error");
             return;
           }
 
-          const subject = "Novo comentário para aprovação - Site";
-          const body = [
-            "Novo comentário recebido pelo site:",
-            "",
-            `Nome: ${payload.name}`,
-            `E-mail: ${payload.email}`,
-            "",
-            "Comentário:",
-            payload.message,
-            "",
-            "Se aprovado, publicar no bloco de comentários do index.html.",
-          ].join("\n");
-
-          window.location.href = `mailto:${encodeURIComponent(MODERATION_EMAIL)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-          commentFeedback.textContent =
-            "Seu aplicativo de e-mail foi aberto para enviar o comentário à moderação.";
-          commentFeedback.classList.add("success");
-          commentsForm.reset();
+          const botao = commentsForm.querySelector('button[type="submit"]');
+          botao.disabled = true;
+          try {
+            const resposta = await fetch("/api/public/comentarios", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            });
+            if (resposta.status === 202) {
+              commentFeedback.textContent =
+                "Obrigada! Seu comentário foi enviado às advogadas e aparecerá aqui depois de aprovado.";
+              commentFeedback.classList.add("success");
+              commentsForm.reset();
+            } else if (resposta.status === 429) {
+              commentFeedback.textContent = "Você já enviou comentários recentemente. Tente novamente mais tarde.";
+              commentFeedback.classList.add("error");
+            } else {
+              let detalhe = "";
+              try {
+                detalhe = (await resposta.json()).detail || "";
+              } catch (_) {}
+              commentFeedback.textContent = detalhe || "Não foi possível enviar agora. Tente novamente em instantes.";
+              commentFeedback.classList.add("error");
+            }
+          } catch (_) {
+            commentFeedback.textContent = "Sem conexão com o servidor. Tente novamente em instantes.";
+            commentFeedback.classList.add("error");
+          } finally {
+            botao.disabled = false;
+          }
         });
       }
 
@@ -1216,6 +1232,15 @@
 
       showIntakeStep(1);
       renderComments(approvedComments.map(normalizeComment));
+      // Comentários aprovados pelas advogadas vêm do sistema; se a consulta falhar, ficam os depoimentos já embutidos.
+      fetch("/api/public/comentarios", { headers: { Accept: "application/json" } })
+        .then((r) => (r.ok ? r.json() : Promise.reject(new Error("falha"))))
+        .then((lista) => {
+          if (Array.isArray(lista) && lista.length) {
+            renderComments(lista.map((c) => normalizeComment({ name: c.nome, message: c.mensagem, createdAt: c.data })));
+          }
+        })
+        .catch(() => {});
     </script>
   </body>
 </html>
