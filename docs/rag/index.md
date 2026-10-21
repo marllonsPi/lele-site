@@ -1,6 +1,6 @@
 # RAG Do Sistema Crispim & Campos
 
-Memoria do projeto para qualquer IA. Fonte da verdade funcional: `docs/00-especificacao.md`. Ordem de confianca: codigo atual > este arquivo e `docs/` > RAG global (`/home/p_991274/ai`, card `systems/crispim-campos.md`) > conhecimento geral.
+Memoria do projeto para qualquer IA. Fonte da verdade funcional: `docs/00-especificacao.md`. Ordem de confianca: codigo atual > este arquivo e `docs/` > RAG particular (`marllonsPi/ai`, card `projects/crispim-campos.md`) > conhecimento geral.
 
 ## Pasta do ambiente Sistema
 Esta pasta (`crispim-campos`) e o ambiente "Sistema" do escritorio. Alem do sistema (`backend/`, `frontend/`, `docs/`), contem o site institucional do mesmo escritorio em `site/` ("lele-site"), que tem RAG propria: ler `site/AGENTS.md` para qualquer tarefa do site. Decisao 2026-10-19: site e sistema sao um produto so (ver `docs/07-integracao-site.md`), mas as stacks seguem distintas (site estatico, sistema Java/Vue): nao aplicar stack/regras de um ao outro ate a integracao ser feita.
@@ -17,7 +17,9 @@ Esta pasta (`crispim-campos`) e o ambiente "Sistema" do escritorio. Alem do sist
 | Site, portal do cliente, integracao | `docs/07-integracao-site.md`, `site/AGENTS.md` |
 | Deploy na VM Oracle | `docs/08-infra-oracle.md`, `docs/09-plano-deploy-oracle.md` |
 | Conexao Google / captura por e-mail | `docs/13-conexao-google.md` |
-| O que fazer a seguir | `docs/04-roadmap.md`, `estado.md` |
+| Importacao da planilha financeira e do Drive | `docs/14-importacao.md` |
+| Tabelas de honorarios, sugestao, propostas, minuta e relatorios | `docs/15-honorarios.md` |
+| O que fazer a seguir / retomar em outra maquina | `continuar.md`, `estado.md`, `docs/04-roadmap.md` |
 
 ## Arquivos
 | Arquivo | Conteudo |
@@ -25,6 +27,7 @@ Esta pasta (`crispim-campos`) e o ambiente "Sistema" do escritorio. Alem do sist
 | `invariantes.md` | Regras que nunca podem ser quebradas |
 | `decisions.md` | Decisoes tomadas (ADR curto, com data) |
 | `estado.md` | Estado vigente (fase, o que existe, proximo passo) |
+| `continuar.md` | Retomada: ambiente, proximos passos, itens fora do Git, armadilhas |
 | `licoes.md` | Erros e armadilhas para nao repetir |
 
 ## Protocolo de manutencao (cuidar para sempre)

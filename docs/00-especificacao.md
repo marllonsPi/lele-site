@@ -139,3 +139,8 @@ Relatorio para ser entregue ao cliente, gerado a partir dos andamentos e movimen
 
 ## 15. REQUISITOS GERAIS
 Interface em portugues, responsiva (celular e computador), registro de todas as acoes (quem fez, o que e quando), backup diario e controle de acesso conforme a LGPD.
+
+## 16. EVOLUCOES DE 2026-10-21 (pedido das socias)
+- Cadastros: area de atuacao (Trabalhista, Previdenciario, Familia, Sucessao, Imobiliario, Condominial, Militar, Criminal, Administrativo, Civel). Cliente: uma ou mais, obrigatoria ao salvar; processo e contrato: uma. Filtro por area em clientes, processos e painel das socias. Cliente sem area mostra "cadastro incompleto" ate preencher. Detalhe: `docs/14-importacao.md`.
+- Financeiro: importacao da planilha financeira e das pastas de clientes do Google Drive com previa, confirmacao de socia, relatorio e sincronizacao diaria; painel financeiro (recebido/em aberto por mes, vencidas, a vencer 7/30 dias, receita por area) e alerta de parcela vencida; tudo restrito as socias. Detalhe: `docs/14-importacao.md`.
+- Honorarios: tabelas da OAB (DF/SP) e do escritorio, sugestao no atendimento, proposta com valor sugerido x fechado, alerta e justificativa abaixo do minimo da OAB, minuta do contrato, lancamento das parcelas na assinatura e relatorios. Detalhe: `docs/15-honorarios.md`.

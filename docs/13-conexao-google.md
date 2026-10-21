@@ -28,3 +28,10 @@ Decisao de 2026-10-19 (pedido da usuaria): cada pessoa conecta a PROPRIA conta G
 - Vazamento do banco nao expoe tokens sem a chave; vazamento da chave + banco expoe leitura do Gmail: a chave fica so no `.env` da VM e no cofre.
 - Rotacao da chave: ainda nao automatizada (`versao_chave` ja gravada); trocar a chave exige todos reconectarem.
 - A revogacao pela pessoa tambem pode ser feita em myaccount.google.com/permissions.
+
+
+## Atualizacao 2026-10-21: Drive do escritorio (escopo `drive`)
+- A conexao "Google com Drive" agora pede o escopo `https://www.googleapis.com/auth/drive` (antes `drive.readonly`): o sistema GRAVA os anexos no Drive (cria `<raiz>/<cliente>/<processo>` e envia arquivos). Nunca apaga nada no Drive. App Interno do Workspace: sem verificacao do Google.
+- Conta e pasta raiz ficam no banco (`drive_config`, tela `/drive`); o `.env` so da o valor inicial (`IMPORTACAO_PASTA_CLIENTES_ID`). Quem conecta com Drive e escolhe a pasta vira a conta usada pelo servidor.
+- Anexos com caminho `drive:<id>` vivem no Drive; sem Drive ativo (ou se falhar) vao para o disco local e podem ser levados depois pelo botao da tela Drive.
+- Callback do Google volta para `/app/drive?google=...`.

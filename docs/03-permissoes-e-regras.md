@@ -29,6 +29,10 @@ Socias editam esta matriz por tela (tabela `RegraVisibilidade`).
 | Marcar Conferido/Devolvido (socia) | sim | nao | nao | nao |
 | Painel das socias | sim | nao | nao | nao |
 | Financeiro | sim | nao | nao | nao |
+| Importacao (planilha/Drive) e painel financeiro | sim | nao | nao | nao |
+| Tabelas de honorarios, modelo do contrato, relatorios de honorarios | sim | nao | nao | nao |
+| Quadro de sugestao e proposta de honorarios | sim | so no atendimento (ATD) que conduz | nao | nao |
+| Documentos do cliente (contrato de honorarios: so socias) | sim | os do cliente que ve | os do cliente que ve | os do cliente que ve |
 | Relatorio ao cliente (gerar/aprovar) | sim | so dos proprios processos (Wendell, Andressa) / responsavel | nao | nao |
 
 ## Fluxos de estado

@@ -59,3 +59,19 @@ Lacunas da spec e decisoes abertas. Nao decidir por analogia: perguntar. Ao reso
 40. Backup do Postgres existe; falta incluir `STORAGE_DIR` (anexos e modelos) e testar restauracao (pendencia 30).
 41. Relatorio ao cliente: o texto das movimentacoes vem do resumo da publicacao e precisa de revisao do advogado (linguagem simples). Confirmar se andamentos tambem devem nascer de movimentos que nao sejam publicacoes (pendencia 8).
 42. Anonimizacao LGPD preserva processos, relatorios enviados e auditoria (retencao legal). Confirmar prazos de retencao (pendencia 16).
+
+## Importacao e honorarios (2026-10-21)
+43. A planilha financeira nao tem CPF/CNPJ, data nem forma de pagamento das parcelas pagas: clientes casam por nome (a conferir) e parcelas pagas ficam sem data. Decidir se a planilha passa a ter colunas de CPF/CNPJ, data e forma de pagamento.
+44. Estrutura real das pastas do Drive e dos modelos de contrato nao foi vista: o extrator assume uma pasta por cliente na raiz configurada (`IMPORTACAO_PASTA_CLIENTES_ID`) e contratos/procuracoes em PDF com texto, DOCX ou TXT. Rodar com 2 ou 3 clientes reais, conferir a previa e ajustar os padroes (CPF, RG, endereco, valor, parcelas, assinatura).
+45. Drive exige projeto no Google Cloud com a API do Drive ativada e o escopo `drive.readonly` (restrito) na tela de consentimento, alem de `GOOGLE_*` (docs/13). Cada socia conecta "Google com Drive" em `/importacao`. O retorno do consentimento ainda vai para `/configuracoes?google=...` (rota redireciona para `/importacao`); conferir o prefixo `/app/` no layout unificado.
+46. Sincronizacao diaria desligada: ligar com `IMPORTACAO_SINCRONIZACAO_DIARIA=true`, `IMPORTACAO_CONTA_USUARIO_ID`, `IMPORTACAO_PLANILHA_ID`, `IMPORTACAO_PASTA_CLIENTES_ID`. Confirmar se o que ela aplica sozinha (parcelas, despesas, documentos novos sem divergencia) e aceitavel ou se tudo deve esperar confirmacao.
+47. Lancamentos "EXTRA - ..." da planilha (honorarios avulsos sem cliente) e despesas do escritorio: extras sao ignorados com motivo (lancar manualmente com o cliente); despesas vao para `despesa_escritorio`. Confirmar o destino desejado.
+48. Importacao nao gera parcelas a partir do texto do contrato do Drive (so valor, numero de parcelas, forma e assinatura); parcelas vem da planilha ou do lancamento manual.
+49. Areas: "Saude" e "Bancario" foram mapeadas para Civel; "Regularizacao" para Administrativo. Confirmar o mapeamento de tipo de acao -> area (`AreaPorTexto`); o que nao casa pede escolha na previa.
+50. Tabela OAB/SP: a planilha enviada tem so a OAB/DF. Enquanto nao houver tabela da OAB/SP, a sugestao para SP aparece sem piso (com aviso). Enviar a planilha da OAB/SP (mesmo formato) e importar com seccional SP.
+51. Fases (judicial/extrajudicial/recurso/cumprimento) foram inferidas do texto do servico; revisar na tela Honorarios. Servicos com area equivalente inexistente (ex.: Consultoria Preventiva) entram sem area ate as socias definirem.
+52. Politica comercial lida da planilha: fator 1,2 sobre o minimo, desconto 10% (5% trabalhista), desconto por pacote 0% ate as socias definirem. A planilha tambem fala em exito trabalhista de 35% a 40% (aviso: abaixo do minimo e vedado, salvo exito).
+53. Modelo oficial do contrato de honorarios nao foi enviado: vale um modelo-padrao generico (editavel em Honorarios > Modelo do contrato). Trocar pelo texto do escritorio e conferir os campos.
+54. Contrato lancado por socia ao "assinar": advogado nao lanca no financeiro (invariante 1). Confirmar se deseja que o advogado registre a assinatura (a socia confirmaria depois).
+55. "Reunioes realizadas" = atendimentos concluidos (registro `atendimento` de origem AGENDAMENTO); "contratos fechados" = propostas com valor fechado. Confirmar a definicao de conversao.
+56. Pro bono/permuta (valor fechado zero) nao lanca parcelas; registrar permuta como pagamento em bens fica fora do sistema.

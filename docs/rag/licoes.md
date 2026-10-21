@@ -29,3 +29,7 @@ Primeiro boot real contra Postgres 16 (VM) falhou: `Schema validation: wrong col
 - `getServletPath()` e vazio no MockMvc: filtros de caminho devem usar `getRequestURI()`.
 - `pkill -f`/`ps | grep` com padrao que aparece no proprio comando mata o shell; encerrar processos pelas portas (`ss -ltnp`).
 - `readOnly = true` nao pode envolver `AuditoriaService.registrar` (INSERT): consulta auditada nao e readOnly.
+- Idempotencia de importacao: a chave de origem tem de ser estavel (cliente normalizado + rotulo + ordinal) e comparar o texto gravado no banco, nao uma re-serializacao (BigDecimal 7000.00 vira 7000.0 ao reler o JSON).
+- Dado de planilha real e sujo (totais no meio das linhas, "R$400,00" texto, data como texto, status em branco): interpretar com avisos por linha e linha ignorada com motivo; nunca descartar nem chutar em silencio.
+- `cat > arquivo` sem entrada padrao trava o shell; criar arquivos com a ferramenta de escrita ou com heredoc completo. Dois `mvnw` na mesma pasta (outra sessao) corrompem `target/`: reexecutar.
+- Ordem de listeners em Vue: `@change` roda antes do `v-model` do mesmo `select`; usar `watch` para reagir ao valor ja atualizado.
